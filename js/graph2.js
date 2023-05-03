@@ -24,7 +24,6 @@ const defaultLinkFields = ["id", "edge name", "description"];
 // Gestion des données
 let nodesData = [];
 let linksData = [];
-let node, link, nodeLabels, linkLabels;
 
 // Force simulation
 const simulation = d3.forceSimulation(nodesData)
@@ -63,26 +62,6 @@ function updateGraph() {
          .attr("x2", d => d.target.x)
          .attr("y2", d => d.target.y);
   });
-  // Labels de noeuds
-  nodeLabels = nodeLabels.data(graph.nodes, d => d.id);
-  nodeLabels.exit().remove();
-  nodeLabels = nodeLabels.enter().append("text")
-              .attr("dx", 15)
-              .attr("dy", ".35em")
-              .text(d => d["node name"])
-              .merge(nodeLabels);
-  createLabels();
-
-  // Labels de liens
-  linkLabels = linkLabels.data(graph.links, d => d.id);
-  linkLabels.exit().remove();
-  linkLabels = linkLabels.enter().append("text")
-              .attr("dx", 80)
-              .attr("dy", ".35em")
-              .text(d => d["edge name"])
-              .merge(linkLabels);
-
-  
 }
 
 // Fonction pour gérer le mouvement des nœuds
@@ -90,29 +69,12 @@ function ticked() {
   node.attr("cx", d => d.x)
       .attr("cy", d => d.y);
 
-  node.selectAll(".node-label")
-      .attr("x", d => d.x)
-      .attr("y", d => d.y);
-
   link.attr("x1", d => d.source.x)
-      .attr("y1", d => d.source.y)
-      .attr("x2", d => d.target.x)
-      .attr("y2", d => d.target.y);
-
-  link.selectAll(".link-label")
-      .attr("x", d => (d.source.x + d.target.x) / 2)
-      .attr("y", d => (d.source.y + d.target.y) / 2);
-
-  // Mettre à jour la position des labels de noeuds
-  nodeLabels.attr("x", d => d.x)
-            .attr("y", d => d.y);
-
-  // Mettre à jour la position des labels de liens
-  linkLabels.attr("x", d => (d.source.x + d.target.x) / 2)
-            .attr("y", d => (d.source.y + d.target.y) / 2);
-
+    .attr("y1", d => d.source.y)
+    .attr("x2", d => d.target.x)
+    .attr("y2", d => d.target.y);
+  updateGraph();
 }
-
 
 // Drag behavior
 const drag = simulation => {
@@ -192,24 +154,8 @@ function importGraph(jsonData) {
   }
   simulation.alpha(0.3).restart();
   });
-
-  function createLabels() {
-    // Création des labels pour les nœuds
-    node.append("text")
-      .attr("class", "node-label")
-      .attr("dx", 10)
-      .attr("dy", ".35em")
-      .text(d => d.id);
   
-    // Création des labels pour les liens
-    link.append("text")
-      .attr("class", "link-label")
-      .attr("dy", ".35em")
-      .attr("text-anchor", "middle")
-      .text(d => d.id);
-  }
 
-  
 // ####################### IMPORT #######################
 // Importer un graph JSON à partir d'un fichier
 
