@@ -62,24 +62,6 @@ function updateGraph() {
          .attr("x2", d => d.target.x)
          .attr("y2", d => d.target.y);
   });
-// Update node labels
-const nodeLabels = svg.select(".node-labels")
-  .selectAll("text")
-  .data(nodes, d => d.id);
-
-nodeLabels.exit().remove();
-
-nodeLabels.enter()
-  .append("text")
-    .attr("font-size", 12)
-    .attr("dx", 12)
-    .attr("dy", ".35em")
-    .text(d => d.name) // Utilisez l'attribut "name" au lieu de "id" ici
-  .merge(nodeLabels)
-    .attr("x", d => d.x)
-    .attr("y", d => d.y);
-
-
 }
 
 // Fonction pour gérer le mouvement des nœuds
@@ -91,20 +73,6 @@ function ticked() {
     .attr("y1", d => d.source.y)
     .attr("x2", d => d.target.x)
     .attr("y2", d => d.target.y);
-    nodeLabels.attr("x", d => d.x)
-    .attr("y", d => d.y);
-
-  
-  labelsEnter.attr("x", d => d.x)
-  .attr("y", d => d.y);
-
-  // Update node labels position
-  svg.selectAll(".node-labels text")
-  .attr("x", d => d.x)
-  .attr("y", d => d.y);
-
-
-
   updateGraph();
 }
 
