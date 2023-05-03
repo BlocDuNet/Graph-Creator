@@ -1,6 +1,6 @@
 const graph = d3.select("#graph");
-const width = 800;
-const height = 600;
+const width = 200; // 200 pour test. 800
+const height = 300; // 300 pour test. 600
 const colors = d3.scaleOrdinal(d3.schemeCategory10);
 
 const svg = graph.append("svg")
@@ -105,11 +105,21 @@ function importGraph(jsonData) {
   nodesData = jsonData.nodes;
   linksData = jsonData.links;
 
+  // Créez un index des nœuds par ID pour faciliter la recherche
+  const nodeById = new Map(nodesData.map(d => [d.id, d]));
+
+  // Mettez à jour les liens pour utiliser les objets de nœuds
+  linksData.forEach(link => {
+    link.source = nodeById.get(link.source);
+    link.target = nodeById.get(link.target);
+  });
+
   simulation.nodes(nodesData);
   simulation.force("link").links(linksData);
 
   updateGraph();
-  }
+}
+
   
   // Exporter un graph JSON
   function exportGraph() {
