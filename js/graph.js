@@ -62,6 +62,21 @@ function updateGraph() {
          .attr("x2", d => d.target.x)
          .attr("y2", d => d.target.y);
   });
+// Labels
+const labels = svg.select(".labels")
+  .selectAll("text")
+  .data(graph.nodes, d => d.id);
+
+labels.exit().remove();
+
+const labelsEnter = labels.enter()
+  .append("text")
+  .attr("class", "label")
+  .attr("dx", 12)
+  .attr("dy", ".35em")
+  .text(d => d["name"]);
+
+labelsEnter.merge(labels);
 
   // Node labels
 const nodeLabels = svg.select(".node-labels")
@@ -92,8 +107,10 @@ function ticked() {
     nodeLabels.attr("x", d => d.x)
     .attr("y", d => d.y);
 
-  updateGraph();
   
+  labelsEnter.attr("x", d => d.x)
+  .attr("y", d => d.y);
+  updateGraph();
 }
 
 // Drag behavior
