@@ -73,6 +73,7 @@ function ticked() {
     .attr("y1", d => d.source.y)
     .attr("x2", d => d.target.x)
     .attr("y2", d => d.target.y);
+  updateGraph();
 }
 
 // Drag behavior
@@ -104,21 +105,36 @@ const drag = simulation => {
 function importGraph(jsonData) {
   nodesData = jsonData.nodes;
   linksData = jsonData.links;
+  
 
   // Créez un index des nœuds par ID pour faciliter la recherche
   const nodeById = new Map(nodesData.map(d => [d.id, d]));
 
+  // Initialisez les positions x et y des nœuds
+  nodesData.forEach(node => {
+    node.x = Math.random() * width;
+    node.y = Math.random() * height;
+  });
+
   // Mettez à jour les liens pour utiliser les objets de nœuds
-  linksData.forEach(link => {
+  linksData = linksData.filter(link => {
     link.source = nodeById.get(link.source);
     link.target = nodeById.get(link.target);
-  });
+
+  // Filtrer les liens avec des nœuds source et cible valides
+  return link.source !== undefined && link.target !== undefined;
+});
+
 
   simulation.nodes(nodesData);
   simulation.force("link").links(linksData);
 
   updateGraph();
+
+  // Redémarrez la simulation avec les nouvelles données et réinitialisez l'alpha
+  simulation.alpha(1).restart();
 }
+
 
   
   // Exporter un graph JSON
@@ -141,6 +157,44 @@ function importGraph(jsonData) {
   simulation.alpha(0.3).restart();
   });
   
+
+// ####################### IMPORT #######################
+// Importer un graph JSON à partir d'un fichier
+
+/*
+function importGraphFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const jsonData = JSON.parse(event.target.result);
+    importGraph(jsonData);
+  };
+  reader.readAsText(file);
+}
+
+// Exporter un graph JSON dans un fichier
+function exportGraphToFile() {
+  const jsonData = exportGraph();
+  const blob = new Blob([jsonData], {type: "application/json;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "graph.json";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+// Liez les boutons d'importation et d'exportation aux fonctions
+const importButton = d3.select("#importButton");
+const importFile = d3.select("#importFile");
+const exportButton = d3.select("#exportButton");
+
+importButton.on("click", () => importFile.node().click());
+importFile.on("change", () => importGraphFromFile(importFile.node().files[0]));
+exportButton.on("click", exportGraphToFile);
+
+*/
+// ####################### IMPORT - END #######################
+
   // Exemple de données pour tester
   const exampleData = {
   nodes: [
@@ -150,7 +204,7 @@ function importGraph(jsonData) {
   ],
   links: [
   {id: 1, source: 1, target: 2, "edge name": "Edge 1", description: "This is edge 1"},
-  {id: 2, source: 2, target: 3, "edge name": "Edge 2", description: "This is edge 2"}
+ 
   ]
   };
   
