@@ -62,36 +62,23 @@ function updateGraph() {
          .attr("x2", d => d.target.x)
          .attr("y2", d => d.target.y);
   });
-// Labels
-const labels = svg.select(".labels")
-  .selectAll("text")
-  .data(graph.nodes, d => d.id);
-
-labels.exit().remove();
-
-const labelsEnter = labels.enter()
-  .append("text")
-  .attr("class", "label")
-  .attr("dx", 12)
-  .attr("dy", ".35em")
-  .text(d => d["name"]);
-
-labelsEnter.merge(labels);
-
-  // Node labels
+// Update node labels
 const nodeLabels = svg.select(".node-labels")
-.selectAll("text")
-.data(graph.nodes, d => d.id);
+  .selectAll("text")
+  .data(nodes, d => d.id);
 
 nodeLabels.exit().remove();
 
 nodeLabels.enter()
-.append("text")
-.attr("class", "node-label")
-.attr("dx", 12)
-.attr("dy", ".35em")
-.text(d => d["node name"])
-.merge(nodeLabels);
+  .append("text")
+    .attr("font-size", 12)
+    .attr("dx", 12)
+    .attr("dy", ".35em")
+    .text(d => d.name) // Utilisez l'attribut "name" au lieu de "id" ici
+  .merge(nodeLabels)
+    .attr("x", d => d.x)
+    .attr("y", d => d.y);
+
 
 }
 
@@ -110,6 +97,14 @@ function ticked() {
   
   labelsEnter.attr("x", d => d.x)
   .attr("y", d => d.y);
+
+  // Update node labels position
+  svg.selectAll(".node-labels text")
+  .attr("x", d => d.x)
+  .attr("y", d => d.y);
+
+
+
   updateGraph();
 }
 
