@@ -18,8 +18,8 @@ configMenu.append("label")
   .text("Activer le champ de force");
 
 // Définition des champs par défaut
-const defaultNodeFields = ["id", "node name", "description"];
-const defaultLinkFields = ["id", "edge name", "description"];
+const defaultNodeFields = ["id", "node", "description"];
+const defaultLinkFields = ["id", "edge", "description"];
 
 // Gestion des données
 let nodesData = [];
@@ -195,9 +195,9 @@ exportButton.on("click", exportGraphToFile);
   // Exemple de données pour tester
   const exampleData = {
   nodes: [
-  {id: 1, "node name": "Node 1", description: "This is node 1"},
-  {id: 2, "node name": "Node 2", description: "This is node 2"},
-  {id: 3, "node name": "Node 3", description: "This is node 3"}
+  {id: 1, "name": "Node 1", description: "This is node 1"},
+  {id: 2, "name": "Node 2", description: "This is node 2"},
+  {id: 3, "name": "Node 3", description: "This is node 3"}
   ],
   links: [
   {id: 1, source: 1, target: 2, "edge name": "Edge 1", description: "This is edge 1"},

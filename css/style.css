@@ -1,10 +1,5 @@
 .label {
-    font-family: "Arial", sans-serif;
     font-size: 12px;
-  }
-  
-.node-label {
-    font-family: "Arial", sans-serif;
-    font-size: 12px;
-  }
-  
+    font-family: sans-serif;
+    fill: #333;
+}
