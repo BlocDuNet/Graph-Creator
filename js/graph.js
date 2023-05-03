@@ -1,7 +1,6 @@
-
 const graph = d3.select("#graph");
-const width = 800;
-const height = 600;
+const width = 200; // 200 pour test. 800
+const height = 300; // 300 pour test. 600
 const colors = d3.scaleOrdinal(d3.schemeCategory10);
 
 const svg = graph.append("svg")
@@ -27,7 +26,7 @@ let nodesData = [];
 let linksData = [];
 
 // Force simulation
-const forceSimulation = d3.forceSimulation(nodesData)
+const simulation = d3.forceSimulation(nodesData)
   .force("link", d3.forceLink(linksData).id(d => d.id))
   .force("charge", d3.forceManyBody())
   .force("center", d3.forceCenter(width / 2, height / 2))
@@ -44,17 +43,25 @@ const node = svg.append("g")
 
 // Fonction pour mettre à jour le graphique
 function updateGraph() {
-  node.data(nodesData)
-    .join("circle")
-      .attr("r", 5)
-      .attr("fill", (d, i) => colors(i))
-      .call(drag(simulation));
+  const nodes = node.data(nodesData).join("circle")
+    .attr("r", 5)
+    .attr("fill", (d, i) => colors(i))
+    .call(drag(simulation));
 
-  link.data(linksData)
-    .join("line")
-      .attr("stroke", "#999")
-      .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", d => Math.sqrt(d.value));
+  const links = link.data(linksData).join("line")
+    .attr("stroke", "#999")
+    .attr("stroke-opacity", 0.6)
+    .attr("stroke-width", d => Math.sqrt(d.value));
+  
+  simulation.on("tick", () => {
+    nodes.attr("cx", d => d.x)
+         .attr("cy", d => d.y);
+
+    links.attr("x1", d => d.source.x)
+         .attr("y1", d => d.source.y)
+         .attr("x2", d => d.target.x)
+         .attr("y2", d => d.target.y);
+  });
 }
 
 // Fonction pour gérer le mouvement des nœuds
@@ -63,9 +70,10 @@ function ticked() {
       .attr("cy", d => d.y);
 
   link.attr("x1", d => d.source.x)
-      .attr("y1", d => d.source.y)
-      .attr("x2", d => d.target.x)
-      .attr("y2", d => d.target.y);
+    .attr("y1", d => d.source.y)
+    .attr("x2", d => d.target.x)
+    .attr("y2", d => d.target.y);
+  updateGraph();
 }
 
 // Drag behavior
@@ -97,47 +105,104 @@ const drag = simulation => {
 function importGraph(jsonData) {
   nodesData = jsonData.nodes;
   linksData = jsonData.links;
+  
 
-  forceSimulation.nodes(nodesData);
-  forceSimulation.force("link").links(linksData);
+  // Créez un index des nœuds par ID pour faciliter la recherche
+  const nodeById = new Map(nodesData.map(d => [d.id, d]));
 
-  updateGraph();
-}
+  // Initialisez les positions x et y des nœuds
+  nodesData.forEach(node => {
+    node.x = Math.random() * width;
+    node.y = Math.random() * height;
+  });
 
-// Exporter un graph JSON
-function exportGraph() {
-  const jsonData = {
-    nodes: nodesData,
-    links: linksData
-  };
+  // Mettez à jour les liens pour utiliser les objets de nœuds
+  linksData = linksData.filter(link => {
+    link.source = nodeById.get(link.source);
+    link.target = nodeById.get(link.target);
 
-  return JSON.stringify(jsonData);
-}
-
-// Gestion du menu de configuration
-forceFieldCheckbox.on("change", function () {
-  if (this.checked) {
-    forceSimulation.force("charge", d3.forceManyBody());
-  } else {
-    forceSimulation.force("charge", null);
-  }
-  forceSimulation.alpha(0.3).restart();
+  // Filtrer les liens avec des nœuds source et cible valides
+  return link.source !== undefined && link.target !== undefined;
 });
 
-// Exemple de données pour tester
-const exampleData = {
+
+  simulation.nodes(nodesData);
+  simulation.force("link").links(linksData);
+
+  updateGraph();
+
+  // Redémarrez la simulation avec les nouvelles données et réinitialisez l'alpha
+  simulation.alpha(1).restart();
+}
+  // Exporter un graph JSON
+  function exportGraph() {
+  const jsonData = {
+  nodes: nodesData,
+  links: linksData
+  };
+  
+  return JSON.stringify(jsonData);
+  }
+  
+  // Gestion du menu de configuration (je pense non)
+  forceFieldCheckbox.on("change", function () {
+  if (this.checked) {
+  simulation.force("charge", d3.forceManyBody());
+  } else {
+  simulation.force("charge", null);
+  }
+  simulation.alpha(0.3).restart();
+  });
+  
+
+// ####################### IMPORT #######################
+// Importer un graph JSON à partir d'un fichier
+
+/*
+function importGraphFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const jsonData = JSON.parse(event.target.result);
+    importGraph(jsonData);
+  };
+  reader.readAsText(file);
+}
+
+// Exporter un graph JSON dans un fichier
+function exportGraphToFile() {
+  const jsonData = exportGraph();
+  const blob = new Blob([jsonData], {type: "application/json;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "graph.json";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+// Liez les boutons d'importation et d'exportation aux fonctions
+const importButton = d3.select("#importButton");
+const importFile = d3.select("#importFile");
+const exportButton = d3.select("#exportButton");
+
+importButton.on("click", () => importFile.node().click());
+importFile.on("change", () => importGraphFromFile(importFile.node().files[0]));
+exportButton.on("click", exportGraphToFile);
+
+*/
+// ####################### IMPORT - END #######################
+
+  // Exemple de données pour tester
+  const exampleData = {
   nodes: [
-    {id: 1, "node name": "Node 1", description: "This is node 1"},
-    {id: 2, "node name": "Node 2", description: "This is node 2"},
-    {id: 3, "node name": "Node 3", description: "This is node 3"}
+  {id: 1, "node name": "Node 1", description: "This is node 1"},
+  {id: 2, "node name": "Node 2", description: "This is node 2"},
+  {id: 3, "node name": "Node 3", description: "This is node 3"}
   ],
   links: [
-    {id: 1, source: 1, target: 2, "edge name": "Edge 1", description: "This is edge 1"},
-    {id: 2, source: 2, target: 3, "edge name": "Edge 2", description: "This is edge 2"}
+  {id: 1, source: 1, target: 2, "edge name": "Edge 1", description: "This is edge 1"},
+ 
   ]
-};
-
-importGraph(exampleData);
-
-
-
+  };
+  
+  importGraph(exampleData);
