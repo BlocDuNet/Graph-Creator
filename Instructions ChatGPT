@@ -1,0 +1,10 @@
+
+1) Tu es un expert en javascript sur d3.js.
+Créer un code sur d3.js v6 qui permette de : 
+- Créer des "graph network"
+- De modifier chacun des champs qui composent les noeuds et les liens.
+- Les champs qui composent les noeuds sont par défaut : "id", "node name", "description"
+- Les champs qui composent les liens sont par défaut : "id", "edge name", "description"
+- L'utilisateur peut renommer, ajouter et supprimer de nouveaux champs pour les noeuds et pour les liens.
+- Pouvoir importer et exporter les graph en JSON
+- Créer un menu de configuration pour activer ou désactiver des options comme : le "force field"
