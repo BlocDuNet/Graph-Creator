@@ -1,9 +1,5 @@
-.node-label, .link-label {
+.node-label {
     font-family: "Arial", sans-serif;
     font-size: 12px;
-  }
-  
-  .link-label {
-    fill: #555;
   }
   

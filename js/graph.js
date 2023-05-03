@@ -62,6 +62,22 @@ function updateGraph() {
          .attr("x2", d => d.target.x)
          .attr("y2", d => d.target.y);
   });
+
+  // Node labels
+const nodeLabels = svg.select(".node-labels")
+.selectAll("text")
+.data(graph.nodes, d => d.id);
+
+nodeLabels.exit().remove();
+
+nodeLabels.enter()
+.append("text")
+.attr("class", "node-label")
+.attr("dx", 12)
+.attr("dy", ".35em")
+.text(d => d["node name"])
+.merge(nodeLabels);
+
 }
 
 // Fonction pour gérer le mouvement des nœuds
@@ -73,7 +89,11 @@ function ticked() {
     .attr("y1", d => d.source.y)
     .attr("x2", d => d.target.x)
     .attr("y2", d => d.target.y);
+    nodeLabels.attr("x", d => d.x)
+    .attr("y", d => d.y);
+
   updateGraph();
+  
 }
 
 // Drag behavior
