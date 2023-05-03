@@ -62,6 +62,7 @@ function updateGraph() {
          .attr("x2", d => d.target.x)
          .attr("y2", d => d.target.y);
   });
+  createLabels();
 }
 
 // Fonction pour gérer le mouvement des nœuds
@@ -69,12 +70,20 @@ function ticked() {
   node.attr("cx", d => d.x)
       .attr("cy", d => d.y);
 
+  node.selectAll(".node-label")
+      .attr("x", d => d.x)
+      .attr("y", d => d.y);
+
   link.attr("x1", d => d.source.x)
-    .attr("y1", d => d.source.y)
-    .attr("x2", d => d.target.x)
-    .attr("y2", d => d.target.y);
-  updateGraph();
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+
+  link.selectAll(".link-label")
+      .attr("x", d => (d.source.x + d.target.x) / 2)
+      .attr("y", d => (d.source.y + d.target.y) / 2);
 }
+
 
 // Drag behavior
 const drag = simulation => {
@@ -135,8 +144,6 @@ function importGraph(jsonData) {
   simulation.alpha(1).restart();
 }
 
-
-  
   // Exporter un graph JSON
   function exportGraph() {
   const jsonData = {
@@ -147,7 +154,7 @@ function importGraph(jsonData) {
   return JSON.stringify(jsonData);
   }
   
-  // Gestion du menu de configuration
+  // Gestion du menu de configuration (je pense non)
   forceFieldCheckbox.on("change", function () {
   if (this.checked) {
   simulation.force("charge", d3.forceManyBody());
@@ -156,8 +163,24 @@ function importGraph(jsonData) {
   }
   simulation.alpha(0.3).restart();
   });
-  
 
+  function createLabels() {
+    // Création des labels pour les nœuds
+    node.append("text")
+      .attr("class", "node-label")
+      .attr("dx", 10)
+      .attr("dy", ".35em")
+      .text(d => d.id);
+  
+    // Création des labels pour les liens
+    link.append("text")
+      .attr("class", "link-label")
+      .attr("dy", ".35em")
+      .attr("text-anchor", "middle")
+      .text(d => d.id);
+  }
+
+  
 // ####################### IMPORT #######################
 // Importer un graph JSON à partir d'un fichier
 
