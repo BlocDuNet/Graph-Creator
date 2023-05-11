@@ -7,6 +7,7 @@
   <style>
     .link {
       stroke: #aaa;
+      stroke-width:10;
     }
 
     .node {
@@ -38,6 +39,7 @@
   <button id="export-json">Exporter JSON</button>
   <button id="import-json">Importer JSON</button>
   <input type="file" id="json-file" accept=".json" class="hidden">
+  <button id="update">update</button>
   <script>
     // Modifiez ces variables pour initialiser le graph avec vos données
     const initialNodes = [
@@ -122,6 +124,7 @@ function updateGraph() {
       .attr('cx', d => d.x)
       .attr('cy', d => d.y);
   }
+    updateGraph();
 }
 
 function drag(simulation) {
@@ -250,15 +253,19 @@ d3.select('#json-file').on('change', function() {
   }
 });
 
+//pour debug
+d3.select('#update').on('click', function() {
+  updateGraph();
+});
+
 //Créer noeud en double cliquant dans la zone SVG
 svg.on('dblclick', (event) => {
   createNode(event.clientX, event.clientY);
 });
 
-
 // Initialise le graph
 updateGraph();
+
 </script>
 </body>
 </html>
-```
