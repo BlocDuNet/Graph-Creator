@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Graph Network avec D3.js v6</title>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <style>
+    .link {
+      stroke: #aaa;
+    }
+
+    .node {
+      stroke: #fff;
+      stroke-width: 2px;
+    }
+
+    .selected {
+      stroke: #f00;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <svg width="800" height="600"></svg>
+  <div class="hidden" id="node-form">
+    <label for="node-id">ID: <input type="text" id="node-id" disabled></label>
+    <label for="node-nom">Nom: <input type="text" id="node-nom"></label>
+    <label for="node-description">Description: <input type="text" id="node-description"></label>
+  </div>
+  <div class="hidden" id="link-form">
+    <label for="link-id">ID: <input type="text" id="link-id" disabled></label>
+    <label for="link-nom">Nom: <input type="text" id="link-nom"></label>
+    <label for="link-description">Description: <input type="text" id="link-description"></label>
+  </div>
+  <button id="export-json">Exporter JSON</button>
+  <button id="import-json">Importer JSON</button>
+  <input type="file" id="json-file" accept=".json" class="hidden">
+  <script>
+    // Modifiez ces variables pour initialiser le graph avec vos données
+    const initialNodes = [
+      {id: '1', nom: 'Node 1', description: 'Description 1'},
+      {id: '2', nom: 'Node 2', description: 'Description 2'},
+      {id: '3', nom: 'Node 3', description: 'Description 3'},
+    ];
+
+    const initialLinks = [
+      {id: '1', nom: 'Link 1', description: 'Description 1', source: '1', target: '2'},
+      {id: '2', nom: 'Link 2', description: 'Description 2', source: '2', target: '3'},
+    ];
+
+    // Code principal
+    const svg = d3.select('svg');
+    const width = +svg.attr('width');
+    const height = +svg.attr('height');
+
+    const nodeForm = d3.select('#node-form');
+    const nodeInputs = {
+      id: nodeForm.select('#node-id'),
+      nom: nodeForm.select('#node-nom'),
+      description: nodeForm.select('#node-description'),
+    };
+
+    const linkForm = d3.select('#link-form');
+    const linkInputs = {
+      id: linkForm.select('#link-id'),
+      nom: linkForm.select('#link-nom'),
+      description: linkForm.select('#link-description'),
+    };
+
+    let selectedNode = null;
+    let selectedLink = null;
+
+    const simulation = d3.forceSimulation()
+      .force('link', d3.forceLink().id(d => d.id).distance(100))
+      .force('charge', d3.forceManyBody().strength(-10))
+      .force('center', d3.forceCenter(width / 2, height/ 2));
+      let nodes = [...initialNodes];
+      let links = [...initialLinks];
+    
+function updateGraph() {
+  // Links
+  const link = svg.selectAll('.link')
+    .data(links, d => d.id);
+
+  link.enter().append('line')
+    .attr('class', 'link')
+    .on('click', selectLink)
+    .merge(link)
+    .classed('selected', d => d === selectedLink);
+
+  link.exit().remove();
+
+  // Nodes
+  const node = svg.selectAll('.node')
+    .data(nodes, d => d.id);
+
+  node.enter().append('circle')
+    .attr('class', 'node')
+    .attr('r', 30)
+    .call(drag(simulation))
+    .on('click', selectNode)
+    .merge(node)
+    .classed('selected', d => d === selectedNode);
+
+  node.exit().remove();
+
+  simulation.nodes(nodes).on('tick', ticked);
+  simulation.force('link').links(links);
+  simulation.alpha(1).restart();
+
+  function ticked() {
+    link
+      .attr('x1', d => d.source.x)
+      .attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x)
+      .attr('y2', d => d.target.y);
+
+    node
+      .attr('cx', d => d.x)
+      .attr('cy', d => d.y);
+  }
+}
+
+function drag(simulation) {
+  function dragStarted(event) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    event.subject.fx = event.subject.x;
+    event.subject.fy = event.subject.y;
+  }
+
+  function dragged(event) {
+    event.subject.fx = event.x;
+    event.subject.fy = event.y;
+  }
+
+  function dragEnded(event) {
+    if (!event.active) simulation.alphaTarget(0);
+    event.subject.fx = null;
+    event.subject.fy = null;
+  }
+
+  return d3.drag()
+    .on('start', dragStarted)
+    .on('drag', dragged)
+    .on('end', dragEnded);
+}
+
+function selectNode(event, d) {
+  if (event.ctrlKey && selectedNode) {
+    createLink(selectedNode, d);
+    return;
+  }
+
+  if (selectedNode === d) {
+    nodeForm.classed('hidden', true);
+    selectedNode = null;
+  } else {
+    selectedNode = d;
+    selectedLink = null;
+    linkForm.classed('hidden', true);
+    nodeForm.classed('hidden', false);
+    updateForm(nodeInputs, d);
+  }
+
+  updateGraph();
+}
+
+function selectLink(event, d) {
+  if (selectedLink === d) {
+    linkForm.classed('hidden', true);
+    selectedLink = null;
+  } else {
+    selectedLink = d;
+    selectedNode = null;
+    nodeForm.classed('hidden', true);
+    linkForm.classed('hidden', false);
+    updateForm(linkInputs, d);
+  }
+
+  updateGraph();
+}
+
+function createNode(x, y) {
+  const id = Date.now().toString();
+  const newNode = {id, nom: `Node ${id}`, description: `Description ${id}`, x, y};
+  nodes.push(newNode);
+  updateGraph();
+}
+
+
+function createLink(source, target) {
+  const id = Date.now().toString();
+  const newLink = {id, nom: `Link ${id}`, description: `Description ${id}`, source: source.id, target: target.id};
+  links.push(newLink);
+  updateGraph();
+}
+
+function updateForm(inputs, data) {
+  for (const key in inputs) {
+    inputs[key].property('value', data[key] || '');
+  }
+}
+
+// Listener pour les changements dans les champs du formulaire
+for (const key in nodeInputs) {
+  nodeInputs[key].on('input', function() {
+    if (selectedNode) {
+      selectedNode[key] = this.value;
+    }
+  });
+}
+
+for (const key in linkInputs) {
+  linkInputs[key].on('input', function() {
+    if (selectedLink) {
+      selectedLink[key] = this.value;
+    }
+  });
+}
+
+// Exporter et importer JSON
+d3.select('#export-json').on('click', function() {
+  const json = JSON.stringify({nodes, links});
+  const blob = new Blob([json], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'graph.json';
+  a.click();
+});
+
+d3.select('#import-json').on('click', function() {
+  d3.select('#json-file').node().click();
+});
+
+d3.select('#json-file').on('change', function() {
+  const file = this.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const jsonData = JSON.parse(event.target.result);
+      nodes = jsonData.nodes;
+      links = jsonData.links;
+      updateGraph();
+    };
+    reader.readAsText(file);
+  }
+});
+
+//Créer noeud en double cliquant dans la zone SVG
+svg.on('dblclick', (event) => {
+  createNode(event.clientX, event.clientY);
+});
+
+
+// Initialise le graph
+updateGraph();
+</script>
+</body>
+</html>
+```
