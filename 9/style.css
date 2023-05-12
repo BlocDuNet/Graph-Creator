@@ -1,0 +1,104 @@
+
+/* Graph */
+.link {
+    stroke: #aaa;
+    stroke-width:10;
+  }
+
+  .node {
+    stroke: #fff;
+    stroke-width: 2px;
+  }
+
+  .selected {
+    stroke: #f00;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+/* Graph end */
+
+/* Panel */
+#bottom-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 300px; /* Taille fixe */
+
+    transition: all 0.3s ease;
+}
+
+#bottom-panel.collapsed {
+    height: 20px;
+    overflow-y: hidden;
+}
+
+.card-body{
+    overflow-y: auto;
+}
+
+  .card-header {
+    cursor: pointer;
+  }
+
+  .tab-content {
+    overflow-y: auto;
+  }
+
+  #bottom-panel.collapsed {
+    height: 60px;
+    overflow: hidden;
+  }
+
+  .arrow {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    margin-left: 5px;
+    margin-bottom: 2px;
+    vertical-align: middle;
+    border-right: 4px solid transparent;
+    border-left: 4px solid transparent;
+  }
+  
+  .arrow-up {
+    border-bottom: 4px solid currentColor;
+  }
+  
+  .arrow-down {
+    border-top: 4px solid currentColor;
+  }
+  
+  .header-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  
+/* Panel end */
+
+/* Tableur */
+.table-container {
+    max-width: 650px; /* Définir la largeur maximale du conteneur du tableau */
+    margin: 0 auto; /* Centrer le conteneur horizontalement */
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  th, td {
+    border: 1px solid black;
+    padding: 8px;
+    text-align: left;
+  }
+/* Tableur end */
+
+
+
+
