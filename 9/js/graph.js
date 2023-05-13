@@ -1,75 +1,81 @@
-    // Modifiez ces variables pour initialiser le graph avec vos données
-    const initialNodes = [
-        {id: '1', nom: 'Node 1', description: 'Description 1'},
-        {id: '2', nom: 'Node 2', description: 'Description 2'},
-        {id: '3', nom: 'Node 3', description: 'Description 3'},
-    ];
-    
-    const initialLinks = [
-        {id: '1', nom: 'Link 1', description: 'Description 1', source: '1', target: '2'},
-        {id: '2', nom: 'Link 2', description: 'Description 2', source: '2', target: '3'},
-    ];
-    
-    // Code principal
-    const svg = d3.select('svg');
-    const width = +svg.attr('width');
-    const height = +svg.attr('height');
-    const g = svg.append('g'); //Ajout pour déplacer graph
-    
-    const nodeForm = d3.select('#node-form');
-    const nodeInputs = {};
-    
-    const linkForm = d3.select('#link-form');
-    const linkInputs = {};
-    
-    createFormInputs(initialNodes, nodeForm, nodeInputs);
-    createFormInputs(initialLinks, linkForm, linkInputs);
-    
-    let selectedNode = null;
-    let selectedLink = null;
 
-    const simulation = d3.forceSimulation()
-    .force('link', d3.forceLink().id(d => d.id).distance(100))
-    .force('charge', d3.forceManyBody().strength(-10))
-    .force('center', d3.forceCenter(width / 2, height / 2));
+// Modifiez ces variables pour initialiser le graph avec vos données
+const initialNodes = [
+    {id: '1', nom: 'Node 1', description: 'Description 1', "x": 100, "y": 100},
+    {id: '2', nom: 'Node 2', description: 'Description 2', "x": 200, "y": 200},
+    {id: '3', nom: 'Node 3', description: 'Description 3', "x": 300, "y": 300},
+];
 
-    let nodes = [...initialNodes];
-    let links = [...initialLinks];
+const initialLinks = [
+    {id: '1', nom: 'Link 1', description: 'Description 1', source: '1', target: '2'},
+    {id: '2', nom: 'Link 2', description: 'Description 2', source: '2', target: '3'},
+];
 
-    function createFormInputs(data, formElement, inputObject) {
-        // Supprime les anciens champs d'input et labels
-        formElement.selectAll('input').remove();
-        formElement.selectAll('label').remove();
-        
-        // Crée les nouveaux champs d'input et labels
-        for (const key in data[0]) {
-          const label = formElement.append('label')
-            .attr('for', `${formElement.attr('id')}-${key}`)
-            .text(`${key}: `);
-      
-          const input = formElement.append('input')
-            .attr('type', 'text')
-            .attr('id', `${formElement.attr('id')}-${key}`)
-            .attr('name', key)
-            .on('input', function() {
-              if (key === 'source' || key === 'target') {
-                const selected = key === 'source' ? selectedLink.source : selectedLink.target;
-                const nodeId = this.value;
-                const node = nodes.find(node => node.id === nodeId);
-                if (node) {
-                  selected[key] = node;
-                }
-              } else {
-                if (selectedLink) {
-                  selectedLink[key] = this.value;
-                }
-              }
-            });
-      
-          inputObject[key] = input;
-        }
-      }
-      
+
+// Code principal
+const svg = d3.select('svg');
+const width = +svg.attr('width');
+const height = +svg.attr('height');
+const g = svg.append('g'); //Ajout pour déplacer graph
+
+const simulation = d3.forceSimulation()
+.force('link', d3.forceLink().id(d => d.id).distance(100))
+//.force('charge', d3.forceManyBody().strength(-50))
+//.force('center', d3.forceCenter(width / 2, height / 2));
+
+const nodeForm = d3.select('#node-form');
+const nodeInputs = {};
+
+const linkForm = d3.select('#link-form');
+const linkInputs = {};
+
+createFormInputs(initialNodes, nodeForm, nodeInputs);
+createFormInputs(initialLinks, linkForm, linkInputs);
+
+let selectedNode = null;
+let selectedLink = null;
+
+let nodes = [...initialNodes];
+let links = [...initialLinks];
+
+//Pour incrémenter id des noeuds et liens
+let nextNodeId = initialNodes.length + 1;
+let nextLinkId = initialLinks.length + 1;
+
+function createFormInputs(data, formElement, inputObject) {
+    // Supprime les anciens champs d'input et labels
+    formElement.selectAll('input').remove();
+    formElement.selectAll('label').remove();
+    
+    // Crée les nouveaux champs d'input et labels
+    for (const key in data[0]) {
+      const label = formElement.append('label')
+        .attr('for', `${formElement.attr('id')}-${key}`)
+        .text(`${key}: `);
+  
+      const input = formElement.append('input')
+        .attr('type', 'text')
+        .attr('id', `${formElement.attr('id')}-${key}`)
+        .attr('name', key)
+        .on('input', function() {
+          if (key === 'source' || key === 'target') {
+            const selected = key === 'source' ? selectedLink.source : selectedLink.target;
+            const nodeId = this.value;
+            const node = nodes.find(node => node.id === nodeId);
+            if (node) {
+              selected[key] = node;
+            }
+          } else {
+            if (selectedLink) {
+              selectedLink[key] = this.value;
+            }
+          }
+        });
+  
+      inputObject[key] = input;
+    }
+  }
+  
 
 function updateGraph() {
   // Links
@@ -107,16 +113,41 @@ function updateGraph() {
 
   function ticked() {
     link
-      .attr('x1', d => d.source.x)
-      .attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x)
-      .attr('y2', d => d.target.y);
+        .attr('x1', d => {
+            const dx = d.target.x - d.source.x;
+            const dy = d.target.y - d.source.y;
+            const angle = Math.atan2(dy, dx);
+            const radius = d.source.r || 30;  // Assume a default radius of 30 if none is defined
+            return d.source.x + Math.cos(angle) * radius;
+        })
+        .attr('y1', d => {
+            const dx = d.target.x - d.source.x;
+            const dy = d.target.y - d.source.y;
+            const angle = Math.atan2(dy, dx);
+            const radius = d.source.r || 30;  // Assume a default radius of 30 if none is defined
+            return d.source.y + Math.sin(angle) * radius;
+        })
+        .attr('x2', d => {
+            const dx = d.target.x - d.source.x;
+            const dy = d.target.y - d.source.y;
+            const angle = Math.atan2(dy, dx);
+            const radius = d.target.r || 30;  // Assume a default radius of 30 if none is defined
+            return d.target.x - Math.cos(angle) * radius;
+        })
+        .attr('y2', d => {
+            const dx = d.target.x - d.source.x;
+            const dy = d.target.y - d.source.y;
+            const angle = Math.atan2(dy, dx);
+            const radius = d.target.r || 30;  // Assume a default radius of 30 if none is defined
+            return d.target.y - Math.sin(angle) * radius;
+        });
 
     node
-      .attr('cx', d => d.x)
-      .attr('cy', d => d.y);
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y);
+
+  updateGraph();  
   }
-  updateGraph();
 }
 
 // Fonction de zoom et de déplacement
@@ -142,8 +173,8 @@ svg.on('contextmenu', event => event.preventDefault()); // Empêche l'affichage 
 function drag(simulation) {
   function dragStarted(event) {
     if (!event.active) simulation.alphaTarget(0.3).restart();
-    event.subject.fx = event.subject.x;
-    event.subject.fy = event.subject.y;
+    event.subject.x = event.subject.x;
+    event.subject.y = event.subject.y;
   }
 
   function dragged(event) {
@@ -165,23 +196,14 @@ function drag(simulation) {
 
 function selectNode(event, d) {
   if (event.ctrlKey && selectedNode) {
-    // Crée un lien directionnel entre les deux nœuds
-    const newLink = {
-      id: Date.now().toString(),
-      nom: "Lien",
-      description: "",
-      source: selectedNode.id,
-      target: d.id,
-      type: "sortant" // Le lien est par défaut sortant
-    };
+    // Crée un lien directionnel entre les deux nœuds en utilisant la fonction createLink
+    const newLink = createLink(selectedNode, d);
     // Vérifie si le lien existe déjà
     const existingLinkIndex = links.findIndex(l => l.source === newLink.source && l.target === newLink.target);
     if (existingLinkIndex >= 0) {
       // Si le lien existe déjà, change simplement sa direction
       links[existingLinkIndex].type = "bidirectionnel";
     } else {
-      // Sinon, ajoute le nouveau lien
-      links.push(newLink);
     }
     // Réinitialise les nœuds sélectionnés
     selectedNode = null;
@@ -207,7 +229,6 @@ function selectNode(event, d) {
   updateGraph();
 }
 
-
 function selectLink(event, d) {
   if (selectedLink === d) {
     linkForm.classed('hidden', true);
@@ -224,15 +245,16 @@ function selectLink(event, d) {
 }
 
 function createNode(x, y) {
-  const id = Date.now().toString();
+  const id = nextNodeId.toString();
+  nextNodeId++;
   const newNode = {id, nom: `Node ${id}`, description: `Description ${id}`, x, y};
   nodes.push(newNode);
   updateGraph();
 }
 
-
 function createLink(source, target) {
-  const id = Date.now().toString();
+  const id = nextLinkId.toString();
+  nextLinkId++;
   const newLink = {id, nom: `Link ${id}`, description: `Description ${id}`, source: source.id, target: target.id};
   links.push(newLink);
   updateGraph();
@@ -266,6 +288,24 @@ function updateForm(inputs, data) {
   }
 }
 
+// Supprime noeud et lien sélectionné lors de l'appuis sur la touche "Delete" ou "Backspace"
+window.addEventListener('keyup', function(event) {
+  if (['Delete', 'Backspace'].includes(event.key)) {
+    if (selectedNode) {
+      nodes = nodes.filter(node => node !== selectedNode);
+      links = links.filter(link => link.source !== selectedNode && link.target !== selectedNode);
+      selectedNode = null;
+      nodeForm.classed('hidden', true);
+    }
+    if (selectedLink) {
+      links = links.filter(link => link !== selectedLink);
+      selectedLink = null;
+      linkForm.classed('hidden', true);
+    }
+    updateGraph();
+  }
+});
+
 
 // Listener pour les changements dans les champs du formulaire
 for (const key in nodeInputs) {
@@ -284,18 +324,19 @@ for (const key in nodeInputs) {
     });
   }
 
-// Exporter et importer JSON
+// Exporter JSON
 d3.select('#export-json').on('click', function() {
   const filteredNodes = nodes.map(node => {
-    const {fx, fy, ...rest} = node;
+    const {vx, vy, fx, fy, index, ...rest} = node;
     return rest;
   });
 
   const filteredLinks = links.map(link => {
-    return { source: link.source.id, target: link.target.id };
+    const { id, source, target, ...rest } = link;
+    return { id, source: source.id, target: target.id, ...rest };
   });
 
-  const json = JSON.stringify({nodes: filteredNodes, links: filteredLinks});
+  const json = JSON.stringify({nodes: filteredNodes, links: filteredLinks}, null, 2); // Utilisation du paramètre null et 2 pour l'indentation
   const blob = new Blob([json], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -304,7 +345,7 @@ d3.select('#export-json').on('click', function() {
   a.click();
 });
 
-
+// Importer JSON
 d3.select('#import-json').on('click', function() {
   d3.select('#json-file').node().click();
 });
@@ -315,17 +356,26 @@ d3.select('#json-file').on('change', function() {
     const reader = new FileReader();
     reader.onload = function(event) {
       const jsonData = JSON.parse(event.target.result);
-      nodes = jsonData.nodes;
-      links = jsonData.links.map(link => ({
+
+      // Obtenir les clés de l'objet JSON
+      const keys = Object.keys(jsonData);
+
+      // Utiliser la première clé pour les noeuds et la deuxième pour les liens. Permet de nommer les choses différemment.
+      const nodeKey = keys[0];
+      const linkKey = keys[1];
+
+      // Utiliser les clés pour charger les noeuds et les liens
+      nodes = jsonData[nodeKey];
+      links = jsonData[linkKey].map(link => ({
         ...link,
         source: nodes.find(node => node.id === link.source),
         target: nodes.find(node => node.id === link.target)
       }));
-      
-      // Crée les champs d'input pour les nœuds et les liens importés
+
+      // Crée les champs d'input pour les noeuds et les liens importés
       createFormInputs(nodes, nodeForm, nodeInputs);
       createFormInputs(links, linkForm, linkInputs);
-      
+
       updateGraph();
     };
     reader.readAsText(file);
@@ -342,8 +392,6 @@ d3.select('#update').on('click', function() {
 svg.on('dblclick', (event) => {
   createNode(event.clientX, event.clientY);
 });
-
-
 
 // Initialise le graph
 updateGraph();

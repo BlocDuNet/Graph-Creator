@@ -8,6 +8,7 @@
   .node {
     stroke: #fff;
     stroke-width: 2px;
+    fill: #000000bb;
   }
 
   .selected {
@@ -42,6 +43,7 @@
 
   .card-header {
     cursor: pointer;
+    padding-top: 0px;
   }
 
   .tab-content {

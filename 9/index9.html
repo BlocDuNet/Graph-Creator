@@ -4,15 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Graph Network avec D3.js v6</title>
-  <script src="https://d3js.org/d3.v6.min.js"></script>
-  <link rel="stylesheet" href="style.css" />
-  <script src="js/script.js"></script>
 
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-  
+
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <script src="js/script.js"></script>
+
   <style>
 
   </style>
@@ -31,6 +32,7 @@
             <li class="nav-item"><a class="nav-link active" href="#tab1" data-toggle="tab">Actions</a></li>
             <li class="nav-item"><a class="nav-link" href="#tab2" data-toggle="tab">Valeurs</a></li>
             <li class="nav-item"><a class="nav-link" href="#tab3" data-toggle="tab">Config graph</a></li>
+            <li class="nav-item"><a class="nav-link" href="#tab4" data-toggle="tab">AI Request</a></li>
           </ul>
           <span class="arrow arrow-down"></span>
         </div>
@@ -54,7 +56,7 @@
                 </tr>
                 <tr>
                   <td><b>Delete</b> (node/edge)</td>
-                  <td></td>
+                  <td><b>Select a node/edge</b> and press <b>Delete</b> or <b>Backspace</b></td>
                 </tr>
                 <tr>
                   <td><b>Change name</b> (node/edge)</td>
@@ -90,14 +92,21 @@
             </p>
           </div>
           <div class="tab-pane fade" id="tab3">
-            <p></p>
+            <p>
+              
+            </p>
+          </div>
+          <div class="tab-pane fade" id="tab4">
+            <p>
+              A venir
+            </p>
           </div>
         </div>
       </div>
     </div>
   </div>
-  
 </body>
+<!-- Semble fortmeent compatible v7 -->
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <!-- Important, insérer le script après le body pour que ça marche -->
 <script src="js/graph.js"></script>
