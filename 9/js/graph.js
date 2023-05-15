@@ -131,14 +131,14 @@ function updateGraph() {
             const dx = d.target.x - d.source.x;
             const dy = d.target.y - d.source.y;
             const angle = Math.atan2(dy, dx);
-            const radius = d.target.r || 30;  // Assume a default radius of 30 if none is defined
+            const radius = d.target.r || 40;  // Assume a default radius of 30 if none is defined
             return d.target.x - Math.cos(angle) * radius;
         })
         .attr('y2', d => {
             const dx = d.target.x - d.source.x;
             const dy = d.target.y - d.source.y;
             const angle = Math.atan2(dy, dx);
-            const radius = d.target.r || 30;  // Assume a default radius of 30 if none is defined
+            const radius = d.target.r || 40;  // Assume a default radius of 30 if none is defined
             return d.target.y - Math.sin(angle) * radius;
         });
 
