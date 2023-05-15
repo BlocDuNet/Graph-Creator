@@ -204,9 +204,12 @@ function selectNode(event, d) {
       // Si le lien existe déjà, change simplement sa direction
       links[existingLinkIndex].type = "bidirectionnel";
     } else {
+      // Ajoute le nouveau lien à la liste des liens
+      links.push(newLink);
     }
-    // Réinitialise les nœuds sélectionnés
-    selectedNode = null;
+
+    // Ne réinitialisez pas le nœud sélectionné
+    // selectedNode = null;
     selectedLink = null;
     nodeForm.classed('hidden', true);
     linkForm.classed('hidden', true);
@@ -225,7 +228,7 @@ function selectNode(event, d) {
     nodeForm.classed('hidden', false);
     updateForm(nodeInputs, d);
   }
-
+  selectedNode = d;
   updateGraph();
 }
 
@@ -250,6 +253,7 @@ function createNode(x, y) {
   const newNode = {id, nom: `Node ${id}`, description: `Description ${id}`, x, y};
   nodes.push(newNode);
   updateGraph();
+  return newNode;  // Retourne le nouveau noeud
 }
 
 function createLink(source, target) {
@@ -258,7 +262,9 @@ function createLink(source, target) {
   const newLink = {id, nom: `Link ${id}`, description: `Description ${id}`, source: source.id, target: target.id};
   links.push(newLink);
   updateGraph();
+  return newLink;  // Retourne le nouveau lien
 }
+
 
 function updateForm(inputs, data) {
   for (const key in inputs) {
@@ -305,7 +311,6 @@ window.addEventListener('keyup', function(event) {
     updateGraph();
   }
 });
-
 
 // Listener pour les changements dans les champs du formulaire
 for (const key in nodeInputs) {
@@ -388,9 +393,49 @@ d3.select('#update').on('click', function() {
   updateGraph();
 });
 
-//Créer noeud en double cliquant dans la zone SVG
+//Créer noeud en double cliquant dans la zone SVG en adaptant les coordonnées au zoom
 svg.on('dblclick', (event) => {
-  createNode(event.clientX, event.clientY);
+    const transform = d3.zoomTransform(svg.node());
+    const point = transform.invert([event.clientX, event.clientY]);
+    createNode(point[0], point[1]);
+});
+
+// Créez un nouveau nœud et un lien lors d'un ctrl + clic sur le SVG
+svg.on('mousedown', (event) => {
+  if (event.ctrlKey && selectedNode) {
+      // Obtenez les coordonnées du point de clic adapté au zoom
+      const transform = d3.zoomTransform(svg.node());
+      const point = transform.invert(d3.pointer(event));
+      nodeRadius = 30; // Code temporaire. Node radius définis par défault à valeur fixe 30, en attendant d'avoir un code pour récupérer le rayon réel du noeud.
+      const existingNode = nodes.find(node => Math.hypot(point[0] - node.x, point[1] - node.y) < nodeRadius);
+       // Si un nœud existant est présent, créez seulement un lien
+      if (existingNode) {
+          createLink(selectedNode, existingNode);
+      } else {
+          // Si aucun nœud existant n'est présent, créez un nouveau nœud et un lien
+          const newNode = createNode(point[0], point[1]);
+          createLink(selectedNode, newNode);
+          // Si ctrl + shift + clic est pressé, sélectionnez automatiquement le nouveau nœud créé
+          if (event.shiftKey) {
+              selectedNode = newNode;
+          }
+      }
+  }
+});
+
+// Désélectionne le nœud et le lien sélectionné lors de l'appui sur la touche "Échap"
+window.addEventListener('keyup', function(event) {
+  if (event.key === 'Escape') {
+    if (selectedNode) {
+      selectedNode = null;
+      nodeForm.classed('hidden', true);
+    }
+    if (selectedLink) {
+      selectedLink = null;
+      linkForm.classed('hidden', true);
+    }
+    updateGraph();
+  }
 });
 
 // Initialise le graph

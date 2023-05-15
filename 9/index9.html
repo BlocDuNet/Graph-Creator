@@ -13,21 +13,24 @@
   <script src="https://d3js.org/d3.v6.min.js"></script>
   <link rel="stylesheet" href="style.css" />
   <script src="js/script.js"></script>
-
-  <style>
-
-  </style>
 </head>
 <body>
-  <svg width="800" height="600"></svg>
+  <svg width="800" height="600">
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+      refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" />
+      </marker>
+  </defs>
+  </svg>
   <!-- Volet -->
   <div class="container-fluid">
     <div id="bottom-panel" class="card">
       <div class="card-header" id="bottom-panel-header">
         <div class="header-toggle">
           <ul class="nav nav-tabs card-header-tabs">
-            <!-- Ajout d'onglet vide pour éviter la sélection de texte lors d'un double clic pour créer des noeuds sur le graph -->
-            <li class="nav-item"><a class="nav-link" href="#tabempty" data-toggle="tab"></a></li>
+            <!-- Ajout d'onglet vide pour éviter la sélection de texte lors d'un double clic pour créer des noeuds sur le graph - enlevé au profit de "user-select" par CSS -->
+            <!-- <li class="nav-item"><a class="nav-link" href="#tabempty" data-toggle="tab"></a></li> -->
             <li class="nav-item"><a class="nav-link" href="#tab_help" data-toggle="tab">?</a></li>
             <li class="nav-item"><a class="nav-link active" href="#tab1" data-toggle="tab">Actions</a></li>
             <li class="nav-item"><a class="nav-link" href="#tab2" data-toggle="tab">Valeurs</a></li>
@@ -55,8 +58,16 @@
                   <td><b>Click on a node</b> then <b>CTRL + Click on the target</b> node</td>
                 </tr>
                 <tr>
+                  <td><b>Create a node with edge</b></td>
+                  <td><b>Click on a node</b> then <b>CTRL + Click on empty space</b> (Add Shift for focus select on the new node)</td>
+                </tr>
+                <tr>
                   <td><b>Delete</b> (node/edge)</td>
                   <td><b>Select a node/edge</b> and press <b>Delete</b> or <b>Backspace</b></td>
+                </tr>
+                <tr>
+                  <td><b>Unselect</b> (node/edge)</td>
+                  <td>Press <b>Echap</b></td>
                 </tr>
                 <tr>
                   <td><b>Change name</b> (node/edge)</td>

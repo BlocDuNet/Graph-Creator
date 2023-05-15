@@ -1,24 +1,35 @@
 
 /* Graph */
 .link {
-    stroke: #aaa;
-    stroke-width:10;
-  }
+  stroke: #aaa;
+  stroke-width:2;
+  marker-end: url(#arrowhead);
+}
 
-  .node {
-    stroke: #fff;
-    stroke-width: 2px;
-    fill: #000000bb;
-  }
+.node {
+  stroke: #ffffff00;
+  stroke-width: 2px;
+  fill: #000000bb;
+}
 
-  .selected {
-    stroke: #f00;
-  }
+.selected {
+  stroke: #f00;
+}
 
-  .hidden {
-    display: none;
-  }
+.hidden {
+  display: none;
+}
 
+/* Empêche l'auto-sélection du texte par double clic */
+svg {
+  background-color: #FFF;
+  cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
 /* Graph end */
 
 /* Panel */
@@ -41,46 +52,43 @@
     overflow-y: auto;
 }
 
-  .card-header {
-    cursor: pointer;
-    padding-top: 0px;
-  }
+.card-header {
+  cursor: pointer;
+  padding-top: 0px;
+}
 
-  .tab-content {
-    overflow-y: auto;
-  }
 
-  #bottom-panel.collapsed {
-    height: 60px;
-    overflow: hidden;
-  }
+#bottom-panel.collapsed {
+  height: 60px;
+  overflow: hidden;
+}
 
-  .arrow {
-    display: inline-block;
-    width: 0;
-    height: 0;
-    margin-left: 5px;
-    margin-bottom: 2px;
-    vertical-align: middle;
-    border-right: 4px solid transparent;
-    border-left: 4px solid transparent;
-  }
-  
-  .arrow-up {
-    border-bottom: 4px solid currentColor;
-  }
-  
-  .arrow-down {
-    border-top: 4px solid currentColor;
-  }
-  
-  .header-toggle {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-  }
-  
+.arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 5px;
+  margin-bottom: -10px;
+  vertical-align: middle;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+.arrow-up {
+  border-bottom: 4px solid currentColor;
+}
+
+.arrow-down {
+  border-top: 4px solid currentColor;
+}
+
+.header-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 /* Panel end */
 
 /* Tableur */
