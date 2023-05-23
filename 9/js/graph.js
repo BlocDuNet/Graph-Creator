@@ -76,6 +76,19 @@ function createFormInputs(data, formElement, inputObject) {
     }
   }
   
+  function addField(fieldName) {
+    // Pour chaque formulaire (noeud et lien), créez un nouvel input et ajoutez-le au formulaire
+    [nodeInputs, linkInputs].forEach(inputs => {
+      // Créez un nouvel élément input
+      const newInput = document.createElement('input');
+      newInput.name = fieldName;
+      newInput.placeholder = fieldName;
+  
+      // Ajoutez le nouvel input au formulaire
+      inputs.appendChild(newInput);
+    });
+  }
+
   function updateGraph() {
     // Links
     const link = g.selectAll('.link')
@@ -419,6 +432,12 @@ d3.select('#json-file').on('change', function() {
   }
 });
 
+document.querySelector('#add-field-button').addEventListener('click', function() {
+  const fieldName = prompt('Nom du nouveau champ :');
+  if (fieldName) {
+    addField(fieldName);
+  }
+});
 
 //pour debug, update graph
 d3.select('#update').on('click', function() {
