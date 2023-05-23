@@ -432,13 +432,6 @@ d3.select('#json-file').on('change', function() {
   }
 });
 
-document.querySelector('#add-field-button').addEventListener('click', function() {
-  const fieldName = prompt('Nom du nouveau champ :');
-  if (fieldName) {
-    addField(fieldName);
-  }
-});
-
 //pour debug, update graph
 d3.select('#update').on('click', function() {
   updateGraph();
