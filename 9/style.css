@@ -1,7 +1,7 @@
 
 /* Graph */
 .link {
-  stroke: #aaa;
+  stroke: #000000;
   stroke-width:5;
   marker-end: url(#arrowhead);
 }
@@ -12,8 +12,18 @@
   fill: #000000bb;
 }
 
-.selected {
+.selected{
   stroke: #f00;
+}
+
+.selected text{
+  font-size: 2em;
+  fill:#f00;
+}
+
+.selected .link-label{
+  font-size: 2em;
+  fill:#f00;
 }
 
 .hidden {

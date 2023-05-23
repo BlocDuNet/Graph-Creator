@@ -19,7 +19,7 @@ const height = +svg.attr('height');
 const g = svg.append('g'); //Ajout pour déplacer graph
 
 const simulation = d3.forceSimulation()
-.force('link', d3.forceLink().id(d => d.id).distance(100))
+.force('link', d3.forceLink().id(d => d.id).distance(150))
 //.force('charge', d3.forceManyBody().strength(-50))
 //.force('center', d3.forceCenter(width / 2, height / 2));
 
@@ -76,79 +76,108 @@ function createFormInputs(data, formElement, inputObject) {
     }
   }
   
+  function updateGraph() {
+    // Links
+    const link = g.selectAll('.link')
+        .data(links, d => `${d.source.id}-${d.target.id}`);
 
-function updateGraph() {
-  // Links
-  const link = g.selectAll('.link')
-    .data(links, d => `${d.source.id}-${d.target.id}`);
+    link.enter().append('line')
+        .attr('class', 'link')
+        .attr('marker-end', 'url(#arrowhead)')
+        .on('click', selectLink)
+        .on('dblclick', event => event.stopPropagation()) // Pour empêcher la propagation du double clic sur le lien vers le SVG parent
+        .merge(link)
+        .classed('selected', d => d === selectedLink);
 
-  link.enter().append('line')
-    .attr('class', 'link')
-    .attr('marker-end', 'url(#arrowhead)')
-    .on('click', selectLink)
-    .on('dblclick', event => event.stopPropagation()) // Pour que le double clic sur SVG ne propage pas son action sur les enfants de SVG (liens)
-    .merge(link)
-    .classed('selected', d => d === selectedLink);
+    link.exit().remove();
 
-  link.exit().remove();
+    // Link labels
+    const linkLabel = g.selectAll('.link-label')
+      .data(links, d => `${d.source.id}-${d.target.id}`);
 
-  // Nodes
-  const node = g.selectAll('.node')
-    .data(nodes, d => d.id);
+    linkLabel.enter().append('text')
+      .attr('class', 'link-label')
+      .attr('dx', 10) 
+      .text(d => d.nom)
+      .on('click', selectLink);  // Ajout de l'événement click pour le texte du lien
 
-  node.enter().append('circle')
-    .attr('class', 'node')
-    .attr('r', 30)
-    .call(drag(simulation))
-    .on('click', selectNode)
-    .on('dblclick', event => event.stopPropagation()) // Pour que le double clic sur SVG ne propage pas son action sur les enfant de SVG (noeuds)
-    .merge(node)
-    .classed('selected', d => d === selectedNode);
+    linkLabel.merge(link)
+      .classed('selected', d => d === selectedLink);
 
-  node.exit().remove();
+    linkLabel.exit().remove();
+        linkLabel.text(d => d.nom);
+  
+    // Nodes
+    const node = g.selectAll('.node')
+        .data(nodes, d => d.id);
+  
+    // On utilise un groupe pour chaque noeud afin de pouvoir y ajouter à la fois un cercle et du texte
+    const nodeLabel = node.enter().append('g')
+        .attr('class', 'node')
+        .attr('transform', d => `translate(${d.x}, ${d.y})`) // Initialise le groupe entier (cercle et texte) à la position désirée
+        .call(drag(simulation))
+        .on('click', selectNode)
+        .on('dblclick', event => event.stopPropagation()); // Pour empêcher la propagation du double clic sur le noeud vers le SVG parent
+  
+    nodeLabel.append('circle')
+        .attr('r', 30);
+  
+    nodeLabel.append('text')
+        .attr('dx', 35)   // déplace le texte de 35 pixels à droite du centre du noeud
+        .text(d => d.nom);  // utilise le champ 'nom' de chaque noeud comme texte
+  
+    nodeLabel.merge(node)
+        .classed('selected', d => d === selectedNode);
+  
+    node.exit().remove();
+  
+    simulation.nodes(nodes).on('tick', ticked);
+    simulation.force('link').links(links);
+    simulation.alpha(1).restart();
+  
+    function ticked() {
+        link
+            .attr('x1', d => {
+                const dx = d.target.x - d.source.x;
+                const dy = d.target.y - d.source.y;
+                const angle = Math.atan2(dy, dx);
+                const radius = d.source.r || 30;  // Assume a default radius of 30 if none is defined
+                return d.source.x + Math.cos(angle) * radius;
+            })
+            .attr('y1', d => {
+                const dx = d.target.x - d.source.x;
+                const dy = d.target.y - d.source.y;
+                const angle = Math.atan2(dy, dx);
+                const radius = d.source.r || 30;  // Assume a default radius of 30 if none is defined
+                return d.source.y + Math.sin(angle) * radius;
+            })
+            .attr('x2', d => {
+                const dx = d.target.x - d.source.x;
+                const dy = d.target.y - d.source.y;
+                const angle = Math.atan2(dy, dx);
+                const radius = d.target.r || 40;  // Assume a default radius of 30 if none is defined
+                return d.target.x - Math.cos(angle) * radius;
+            })
+            .attr('y2', d => {
+              const dx = d.target.x - d.source.x;
+              const dy = d.target.y - d.source.y;
+              const angle = Math.atan2(dy, dx);
+              const radius = d.target.r || 40;  // Suppose un rayon par défaut de 40 si aucun n'est défini
+              return d.target.y - Math.sin(angle) * radius;
+          });
 
-  simulation.nodes(nodes).on('tick', ticked);
-  simulation.force('link').links(links);
-  simulation.alpha(1).restart();
+      node
+          .attr('transform', d => `translate(${d.x}, ${d.y})`); // Déplace le groupe entier (cercle et texte) en utilisant les coordonnées x et y du noeud
+      
+      linkLabel
+        .attr('x', d => (d.source.x + d.target.x) / 2)
+        .attr('y', d => (d.source.y + d.target.y) / 2);
 
-  function ticked() {
-    link
-        .attr('x1', d => {
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
-            const angle = Math.atan2(dy, dx);
-            const radius = d.source.r || 30;  // Assume a default radius of 30 if none is defined
-            return d.source.x + Math.cos(angle) * radius;
-        })
-        .attr('y1', d => {
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
-            const angle = Math.atan2(dy, dx);
-            const radius = d.source.r || 30;  // Assume a default radius of 30 if none is defined
-            return d.source.y + Math.sin(angle) * radius;
-        })
-        .attr('x2', d => {
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
-            const angle = Math.atan2(dy, dx);
-            const radius = d.target.r || 40;  // Assume a default radius of 30 if none is defined
-            return d.target.x - Math.cos(angle) * radius;
-        })
-        .attr('y2', d => {
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
-            const angle = Math.atan2(dy, dx);
-            const radius = d.target.r || 40;  // Assume a default radius of 30 if none is defined
-            return d.target.y - Math.sin(angle) * radius;
-        });
-
-    node
-        .attr('cx', d => d.x)
-        .attr('cy', d => d.y);
-
-  updateGraph();  
-  }
+      updateGraph();  
+      }
 }
+
+  
 
 // Fonction de zoom et de déplacement
 function zoomed(event) {
@@ -226,11 +255,12 @@ function selectNode(event, d) {
     selectedLink = null;
     linkForm.classed('hidden', true);
     nodeForm.classed('hidden', false);
+    document.getElementById("node-form-nom").focus();  // Focus on "nom" input
     updateForm(nodeInputs, d);
   }
-  selectedNode = d;
   updateGraph();
 }
+
 
 function selectLink(event, d) {
   if (selectedLink === d) {
@@ -241,6 +271,7 @@ function selectLink(event, d) {
     selectedNode = null;
     nodeForm.classed('hidden', true);
     linkForm.classed('hidden', false);
+    document.getElementById("link-form-nom").focus();  // Focus on "nom" input
     updateForm(linkInputs, d);
   }
 
@@ -250,7 +281,8 @@ function selectLink(event, d) {
 function createNode(x, y) {
   const id = nextNodeId.toString();
   nextNodeId++;
-  const newNode = {id, nom: `Node ${id}`, description: `Description ${id}`, x, y};
+  const newNode = {id, nom: ``, description: ``, x, y};
+  //const newNode = {id, nom: `Node ${id}`, description: `Description ${id}`, x, y};
   nodes.push(newNode);
   updateGraph();
   return newNode;  // Retourne le nouveau noeud
