@@ -76,19 +76,41 @@ function createFormInputs(data, formElement, inputObject) {
     }
   }
   
-  function addField(fieldName) {
-    // Pour chaque formulaire (noeud et lien), créez un nouvel input et ajoutez-le au formulaire
-    [nodeInputs, linkInputs].forEach(inputs => {
-      // Créez un nouvel élément input
-      const newInput = document.createElement('input');
-      newInput.name = fieldName;
-      newInput.placeholder = fieldName;
+  function addField(fieldName, formElement, inputObject, data) {
+    // Create new input as a D3 selection
+    const newInput = formElement.append('input')
+      .attr('name', fieldName)
+      .attr('placeholder', fieldName);
   
-      // Ajoutez le nouvel input au formulaire
-      inputs.appendChild(newInput);
+    // Add the new field with an empty initial value to each data item
+    data.forEach(item => item[fieldName] = '');
+  
+    // Add event listener to the new input
+    newInput.on('input', function() {
+      // Update the field in the selected data item
+      if (selectedNode) {
+        selectedNode[fieldName] = this.value;
+      }
+      if (selectedLink) {
+        selectedLink[fieldName] = this.value;
+      }
     });
+  
+    // Add the new input to the inputObject
+    inputObject[fieldName] = newInput;
   }
-
+  
+  d3.select("#addNodeField").on("click", function() {
+    const fieldName = prompt("Enter field name");
+    addField(fieldName, nodeForm, nodeInputs, nodes);
+  });
+  
+  d3.select("#addLinkField").on("click", function() {
+    const fieldName = prompt("Enter field name");
+    addField(fieldName, linkForm, linkInputs, links);
+  });
+  
+  
   function updateGraph() {
     // Links
     const link = g.selectAll('.link')
