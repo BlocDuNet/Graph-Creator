@@ -48,7 +48,7 @@ svg {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 300px; /* Taille fixe */
+    height: 450px; /* Taille fixe */
 
     transition: all 0.3s ease;
 }

@@ -42,64 +42,74 @@ let links = [...initialLinks];
 let nextNodeId = initialNodes.length + 1;
 let nextLinkId = initialLinks.length + 1;
 
-function createFormInputs(data, formElement, inputObject) {
-    // Supprime les anciens champs d'input et labels
-    formElement.selectAll('input').remove();
-    formElement.selectAll('label').remove();
-    
-    // Crée les nouveaux champs d'input et labels
-    for (const key in data[0]) {
-      const label = formElement.append('label')
-        .attr('for', `${formElement.attr('id')}-${key}`)
-        .text(`${key}: `);
-  
-      const input = formElement.append('input')
-        .attr('type', 'text')
-        .attr('id', `${formElement.attr('id')}-${key}`)
-        .attr('name', key)
-        .on('input', function() {
-          if (key === 'source' || key === 'target') {
-            const selected = key === 'source' ? selectedLink.source : selectedLink.target;
-            const nodeId = this.value;
-            const node = nodes.find(node => node.id === nodeId);
-            if (node) {
-              selected[key] = node;
-            }
-          } else {
-            if (selectedLink) {
-              selectedLink[key] = this.value;
-            }
-          }
-        });
-  
-      inputObject[key] = input;
-    }
-  }
-  
-  function addField(fieldName, formElement, inputObject, data) {
-    // Create new input as a D3 selection
-    const newInput = formElement.append('input')
-      .attr('name', fieldName)
-      .attr('placeholder', fieldName);
-  
-    // Add the new field with an empty initial value to each data item
-    data.forEach(item => item[fieldName] = '');
-  
-    // Add event listener to the new input
-    newInput.on('input', function() {
-      // Update the field in the selected data item
-      if (selectedNode) {
-        selectedNode[fieldName] = this.value;
-      }
-      if (selectedLink) {
-        selectedLink[fieldName] = this.value;
+
+function createField(fieldName, formElement, inputObject, data, isDeleteButtonNeeded = false) {
+  const fieldDiv = formElement.append('div');
+
+  const label = fieldDiv.append('label')
+    .attr('for', `${formElement.attr('id')}-${fieldName}`)
+    .text(`${fieldName}: `);
+
+    const input = fieldDiv.append('input')
+    .attr('type', 'text')
+    .attr('id', `${formElement.attr('id')}-${fieldName}`)
+    .attr('name', fieldName)
+    .on('input', function() {
+      if (fieldName === 'source' || fieldName === 'target') {
+        const selected = fieldName === 'source' ? selectedLink.source : selectedLink.target;
+        const nodeId = this.value;
+        const node = nodes.find(node => node.id === nodeId);
+        if (node) {
+          selected[fieldName] = node;
+        }
+      } else {
+        if (selectedLink) {
+          selectedLink[fieldName] = this.value;
+          nodes.forEach(node => node[fieldName] = this.value); // update nodes
+          links.forEach(link => link[fieldName] = this.value); // update links
+        }
       }
     });
-  
-    // Add the new input to the inputObject
-    inputObject[fieldName] = newInput;
+
+  if (isDeleteButtonNeeded) {
+    const deleteButton = fieldDiv.append('button')
+      .text('x')
+      .on('click', function() {
+        data.forEach(item => delete item[fieldName]);
+        fieldDiv.remove();
+        delete inputObject[fieldName];
+      });
+
+    inputObject[fieldName] = { input: input, deleteButton: deleteButton };
+  } else {
+    inputObject[fieldName] = input;
   }
-  
+
+  fieldDiv.append('br');
+}
+
+function createFormInputs(data, formElement, inputObject) {
+  formElement.selectAll('input').remove();
+  formElement.selectAll('label').remove();
+
+  for (const key in data[0]) {
+    createField(key, formElement, inputObject, data);
+  }
+}
+
+function addField(fieldName, formElement, inputObject, data) {
+  if (fieldName.trim() === '') {
+    return;
+  }
+
+  const isFieldNameExist = Object.keys(inputObject).includes(fieldName);
+  if (isFieldNameExist) {
+    return;
+  }
+
+  createField(fieldName, formElement, inputObject, data, true);
+}
+
   d3.select("#addNodeFieldButton").on("click", function() {
     const fieldName = document.getElementById("addNodeFieldInput").value;
     addField(fieldName, nodeForm, nodeInputs, nodes);
@@ -110,7 +120,7 @@ function createFormInputs(data, formElement, inputObject) {
     addField(fieldName, linkForm, linkInputs, links);
   });
   
-  
+
   function updateGraph() {
     // Links
     const link = g.selectAll('.link')
