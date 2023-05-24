@@ -100,13 +100,13 @@ function createFormInputs(data, formElement, inputObject) {
     inputObject[fieldName] = newInput;
   }
   
-  d3.select("#addNodeField").on("click", function() {
-    const fieldName = prompt("Enter field name");
+  d3.select("#addNodeFieldButton").on("click", function() {
+    const fieldName = document.getElementById("addNodeFieldInput").value;
     addField(fieldName, nodeForm, nodeInputs, nodes);
   });
   
-  d3.select("#addLinkField").on("click", function() {
-    const fieldName = prompt("Enter field name");
+  d3.select("#addLinkFieldButton").on("click", function() {
+    const fieldName = document.getElementById("addLinkFieldInput").value;
     addField(fieldName, linkForm, linkInputs, links);
   });
   
