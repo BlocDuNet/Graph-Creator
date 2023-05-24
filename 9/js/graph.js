@@ -19,7 +19,7 @@ const height = +svg.attr('height');
 const g = svg.append('g'); //Ajout pour déplacer graph
 
 const simulation = d3.forceSimulation()
-.force('link', d3.forceLink().id(d => d.id).distance(150))
+.force('link', d3.forceLink().id(d => d.id).distance(200))
 //.force('charge', d3.forceManyBody().strength(-50))
 //.force('center', d3.forceCenter(width / 2, height / 2));
 
@@ -475,6 +475,17 @@ d3.select('#json-file').on('change', function() {
 d3.select('#update').on('click', function() {
   updateGraph();
 });
+
+//Force-field
+d3.select('#force-field').on('change', function() {
+    if (this.checked) {
+        simulation.force("link").strength(1);
+    } else {
+        simulation.force("link").strength(0);
+    }
+    simulation.alpha(1).restart();
+});
+
 
 //Créer noeud en double cliquant dans la zone SVG en adaptant les coordonnées au zoom
 svg.on('dblclick', (event) => {
