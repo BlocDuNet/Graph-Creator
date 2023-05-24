@@ -65,11 +65,13 @@ function createField(fieldName, formElement, inputObject, data, isDeleteButtonNe
       } else {
         if (selectedLink) {
           selectedLink[fieldName] = this.value;
-          nodes.forEach(node => node[fieldName] = this.value); // update nodes
-          links.forEach(link => link[fieldName] = this.value); // update links
+        }
+        if (selectedNode) {
+          selectedNode[fieldName] = this.value;
         }
       }
     });
+    
 
   if (isDeleteButtonNeeded) {
     const deleteButton = fieldDiv.append('button')
@@ -86,6 +88,7 @@ function createField(fieldName, formElement, inputObject, data, isDeleteButtonNe
   }
 
   fieldDiv.append('br');
+  
 }
 
 function createFormInputs(data, formElement, inputObject) {
@@ -107,8 +110,12 @@ function addField(fieldName, formElement, inputObject, data) {
     return;
   }
 
+  // Ajoutez le nouveau champ à tous les objets existants
+  data.forEach(item => item[fieldName] = '');
+
   createField(fieldName, formElement, inputObject, data, true);
 }
+
 
   d3.select("#addNodeFieldButton").on("click", function() {
     const fieldName = document.getElementById("addNodeFieldInput").value;
