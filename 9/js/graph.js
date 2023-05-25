@@ -1,3 +1,16 @@
+// Import de config_graph.js
+import { getForceConfiguration } from './config_graph.js';
+
+const forceConfig = getForceConfiguration();
+
+const simulation = d3.forceSimulation()
+    .force('link', forceConfig.link)
+    .force('charge', forceConfig.charge)
+    .force('center', forceConfig.center);
+
+
+// Import de config_graph.js END
+
 
 // Modifiez ces variables pour initialiser le graph avec vos données
 const initialNodes = [
@@ -11,15 +24,16 @@ const initialLinks = [
     {id: '2', nom: 'Link 2', description: 'Description 2', source: '2', target: '3'},
 ];
 
-
 // Code principal
 const svg = d3.select('svg');
 const width = +svg.attr('width');
 const height = +svg.attr('height');
 const g = svg.append('g'); //Ajout pour déplacer graph
 
-const simulation = d3.forceSimulation()
-.force('link', d3.forceLink().id(d => d.id).distance(200))
+// Importé depuis config_graph.js
+//const simulation = d3.forceSimulation()
+//    .force('link', d3.forceLink().id(d => d.id).distance(200).strength(0));
+
 //.force('charge', d3.forceManyBody().strength(-50))
 //.force('center', d3.forceCenter(width / 2, height / 2));
 
@@ -476,7 +490,9 @@ d3.select('#update').on('click', function() {
   updateGraph();
 });
 
-//Force-field
+
+// Essayer de mettre avec pleins d'autres élements de force dont curseur de valeur pour chaque variables dans autre fichier js
+// Force-field
 d3.select('#force-field').on('change', function() {
     if (this.checked) {
         simulation.force("link").strength(1);

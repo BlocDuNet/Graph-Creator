@@ -13,6 +13,7 @@
   <script src="https://d3js.org/d3.v6.min.js"></script>
   <link rel="stylesheet" href="style.css" />
   <script src="js/script.js"></script>
+  <script type="module" src="js/config_graph.js"></script> <!-- Semble inutile vu qu'importé depuis graph.js -->
 </head>
 <body>
   <svg width="800" height="600">
@@ -67,11 +68,11 @@
                 </tr>
                 <tr>
                   <td><b>Unselect</b> (node/edge)</td>
-                  <td>Press <b>Echap</b></td>
+                  <td>Press <b>Echap</b> or <b>Clic again on same node/edge</b></td>
                 </tr>
                 <tr>
                   <td><b>Change name</b> (node/edge)</td>
-                  <td></td>
+                  <td><b>Select item </b>then change value in <b>value tab</b></td>
                 </tr>
                 <tr>
                   <td><b>Zoom</b></td>
@@ -111,6 +112,10 @@
           </div>
           <div class="tab-pane fade" id="tab3">
             <p>
+              (A faire) Ajouter une liste déroulante avec des JSON ayant des config pré-définie + possibilité d'import/export JSON config personnalisé
+              Et pouvoir faire passer les modèles dans l'URL
+            </p>
+            <p>
               <input type="checkbox" id="force-field" name="force-field">
               <label for="force-field">Force-field</label>
             </p>
@@ -128,5 +133,5 @@
 <!-- Semble fortmeent compatible v7 -->
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <!-- Important, insérer le script après le body pour que ça marche -->
-<script src="js/graph.js"></script>
+<script type="module" src="js/graph.js"></script>
 </html>
