@@ -8,9 +8,7 @@ const simulation = d3.forceSimulation()
     .force('charge', forceConfig.charge)
     .force('center', forceConfig.center);
 
-
 // Import de config_graph.js END
-
 
 // Modifiez ces variables pour initialiser le graph avec vos données
 const initialNodes = [
@@ -488,18 +486,6 @@ d3.select('#json-file').on('change', function() {
 //pour debug, update graph
 d3.select('#update').on('click', function() {
   updateGraph();
-});
-
-
-// Essayer de mettre avec pleins d'autres élements de force dont curseur de valeur pour chaque variables dans autre fichier js
-// Force-field
-d3.select('#force-field').on('change', function() {
-    if (this.checked) {
-        simulation.force("link").strength(1);
-    } else {
-        simulation.force("link").strength(0);
-    }
-    simulation.alpha(1).restart();
 });
 
 

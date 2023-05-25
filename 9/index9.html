@@ -112,14 +112,33 @@
           </div>
           <div class="tab-pane fade" id="tab3">
             <p>
-              (A faire) Ajouter une liste déroulante avec des JSON ayant des config pré-définie + possibilité d'import/export JSON config personnalisé
-              Et pouvoir faire passer les modèles dans l'URL
+              <span id="import-config-json"></span>
+              <br>
+              <label for="export-config">Export config :</label>
+              <button id="export-config">Export config</button>
+              <br>
+              <label for="import-config">Import config :</label>
+              <input type="file" id="import-config" accept=".json">
+              <br>
+              (A faire) Pouvoir faire passer le JSON par défaut dans l'URL
             </p>
             <p>
-              <input type="checkbox" id="force-field" name="force-field">
-              <label for="force-field">Force-field</label>
+              <input type="checkbox" id="link-force" name="link-force">
+              <label for="link-force">Link force</label>
+              <br>
+              <label for="link-distance">Link distance</label>
+              <input type="number" id="link-distance" name="link-distance">
+            </p>
+            <p>
+              <label for="charge-strength">Charge strength</label>
+              <input type="number" id="charge-strength" name="charge-strength">
+            </p>
+            <p>
+              <input type="checkbox" id="center-force" name="center-force">
+              <label for="center-force">Center force</label>              
             </p>
           </div>
+          
           <div class="tab-pane fade" id="tab4">
             <p>
               A venir
