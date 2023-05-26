@@ -22,6 +22,8 @@ const initialLinks = [
     {id: '2', nom: 'Link 2', description: 'Description 2', source: '2', target: '3'},
 ];
 
+let nodeRadius = 30; // Code temporaire. Node radius définis par défault à valeur fixe 30, en attendant d'avoir un code pour récupérer le rayon réel du noeud.
+
 // Code principal
 const svg = d3.select('svg');
 const width = +svg.attr('width');
@@ -502,7 +504,6 @@ svg.on('mousedown', (event) => {
       // Obtenez les coordonnées du point de clic adapté au zoom
       const transform = d3.zoomTransform(svg.node());
       const point = transform.invert(d3.pointer(event));
-      nodeRadius = 30; // Code temporaire. Node radius définis par défault à valeur fixe 30, en attendant d'avoir un code pour récupérer le rayon réel du noeud.
       const existingNode = nodes.find(node => Math.hypot(point[0] - node.x, point[1] - node.y) < nodeRadius);
        // Si un nœud existant est présent, créez seulement un lien
       if (existingNode) {
