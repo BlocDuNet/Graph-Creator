@@ -60,35 +60,21 @@ let nextLinkId = initialLinks.length + 1;
 function createField(fieldName, formElement, inputObject, data, isDeleteButtonNeeded = false) {
   const fieldDiv = formElement.append('div');
 
-  const label = fieldDiv.append('label')
+  const label = fieldDiv
+    .append('label')
     .attr('for', `${formElement.attr('id')}-${fieldName}`)
     .text(`${fieldName}: `);
 
-    const input = fieldDiv.append('input')
+  const input = fieldDiv
+    .append('input')
     .attr('type', 'text')
     .attr('id', `${formElement.attr('id')}-${fieldName}`)
     .attr('name', fieldName)
-    .on('input', function() {
-      if (fieldName === 'source' || fieldName === 'target') {
-        const selected = fieldName === 'source' ? selectedLink.source : selectedLink.target;
-        const nodeId = this.value;
-        const node = nodes.find(node => node.id === nodeId);
-        if (node) {
-          selected[fieldName] = node;
-        }
-      } else {
-        if (selectedLink) {
-          selectedLink[fieldName] = this.value;
-        }
-        if (selectedNode) {
-          selectedNode[fieldName] = this.value;
-        }
-      }
-    });
-    
+    .on('input', handleInput);
 
   if (isDeleteButtonNeeded) {
-    const deleteButton = fieldDiv.append('button')
+    const deleteButton = fieldDiv
+      .append('button')
       .text('x')
       .on('click', function() {
         data.forEach(item => delete item[fieldName]);
@@ -102,12 +88,26 @@ function createField(fieldName, formElement, inputObject, data, isDeleteButtonNe
   }
 
   fieldDiv.append('br');
-  
+}
+
+function handleInput() {
+  const selected = fieldName === 'source' ? selectedLink.source : selectedLink.target;
+  const nodeId = this.value;
+  const node = nodes.find(node => node.id === nodeId);
+  if (node) {
+    selected[fieldName] = node;
+  } else {
+    if (selectedLink) {
+      selectedLink[fieldName] = this.value;
+    }
+    if (selectedNode) {
+      selectedNode[fieldName] = this.value;
+    }
+  }
 }
 
 function createFormInputs(data, formElement, inputObject) {
-  formElement.selectAll('input').remove();
-  formElement.selectAll('label').remove();
+  formElement.selectAll('input, label').remove();
 
   for (const key in data[0]) {
     createField(key, formElement, inputObject, data);
@@ -115,21 +115,16 @@ function createFormInputs(data, formElement, inputObject) {
 }
 
 function addField(fieldName, formElement, inputObject, data) {
-  if (fieldName.trim() === '') {
+  if (fieldName.trim() === '' || Object.keys(inputObject).includes(fieldName)) {
     return;
   }
 
-  const isFieldNameExist = Object.keys(inputObject).includes(fieldName);
-  if (isFieldNameExist) {
-    return;
-  }
+  data.forEach(item => (item[fieldName] = ''));
 
-  // Ajoutez le nouveau champ à tous les objets existants
-  data.forEach(item => item[fieldName] = '');
+  createField(fieldName, formElement, inputObject, data);
 
-  createField(fieldName, formElement, inputObject, data, true);
+  updateForm(inputObject, selectedNode || selectedLink);
 }
-
 
   d3.select("#addNodeFieldButton").on("click", function() {
     const fieldName = document.getElementById("addNodeFieldInput").value;
@@ -171,7 +166,7 @@ function addField(fieldName, formElement, inputObject, data) {
       .classed('selected', d => d === selectedLink);
 
     linkLabel.exit().remove();
-        linkLabel.text(d => d.nom);
+    linkLabel.text(d => d.nom);
   
     // Nodes
     const node = g.selectAll('.node')
@@ -191,7 +186,7 @@ function addField(fieldName, formElement, inputObject, data) {
     nodeLabel.append('text')
         .attr('dx', 35)   // déplace le texte de 35 pixels à droite du centre du noeud
         .text(d => d.nom);  // utilise le champ 'nom' de chaque noeud comme texte
-  
+
     nodeLabel.merge(node)
         .classed('selected', d => d === selectedNode);
   

@@ -1,4 +1,4 @@
-// Peut être supprimer ce même code dans graph.js
+// Peut être supprimer ce même code récup SVG dans graph.js et transmettre valeur depuis ici
 let svgElement = d3.select('svg');
 let width = svgElement.node().getBoundingClientRect().width;
 let height = svgElement.node().getBoundingClientRect().height;
