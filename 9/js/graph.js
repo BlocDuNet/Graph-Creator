@@ -500,10 +500,8 @@ svg.on('mousedown', (event) => {
       const transform = d3.zoomTransform(svg.node());
       const point = transform.invert(d3.pointer(event));
       const existingNode = nodes.find(node => Math.hypot(point[0] - node.x, point[1] - node.y) < nodeRadius);
-       // Si un nœud existant est présent, créez seulement un lien
-      if (existingNode) {
-          createLink(selectedNode, existingNode);
-      } else {
+       // Si un nœud existant est présent, ne créez pas de lien ici
+      if (!existingNode) {
           // Si aucun nœud existant n'est présent, créez un nouveau nœud et un lien
           const newNode = createNode(point[0], point[1]);
           createLink(selectedNode, newNode);
@@ -514,6 +512,7 @@ svg.on('mousedown', (event) => {
       }
   }
 });
+
 
 // Désélectionne le nœud et le lien sélectionné lors de l'appui sur la touche "Échap"
 window.addEventListener('keyup', function(event) {
