@@ -13,6 +13,21 @@ document.addEventListener("DOMContentLoaded", function() {
       arrow.classList.toggle("arrow-up");
     }
   });
+
+  // Ajoutez un gestionnaire d'événements pour chaque onglet
+  const tabs = document.querySelectorAll(".nav-item");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", function() {
+      // Si le panneau est fermé, ouvrez-le
+      if (bottomPanel.classList.contains("collapsed")) {
+        bottomPanel.classList.remove("collapsed");
+        arrow.classList.add("arrow-up");
+        arrow.classList.remove("arrow-down");
+      }
+    });
+  });
 });
-// Pour volet, bootstrap -end
+
+
+// Pour volet, bootstrap - END
 
