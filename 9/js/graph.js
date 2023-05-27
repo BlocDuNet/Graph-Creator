@@ -137,8 +137,31 @@ function addField(fieldName, formElement, inputObject, data) {
   });
   
 
-  function updateGraph() {
-    // Links
+  function updateNodes() {
+    const node = g.selectAll('.node')
+        .data(nodes, d => d.id);
+  
+    const nodeLabel = node.enter().append('g')
+        .attr('class', 'node')
+        .attr('transform', d => `translate(${d.x}, ${d.y})`)
+        .call(drag(simulation))
+        .on('click', selectNode)
+        .on('dblclick', event => event.stopPropagation());
+
+    nodeLabel.append('circle')
+        .attr('r', 30);
+  
+    nodeLabel.append('text')
+        .attr('dx', 35)
+        .text(d => d.nom);
+
+    nodeLabel.merge(node)
+        .classed('selected', d => d === selectedNode);
+  
+    node.exit().remove();
+}
+
+function updateLinks() {
     const link = g.selectAll('.link')
         .data(links, d => `${d.source.id}-${d.target.id}`);
 
@@ -146,13 +169,14 @@ function addField(fieldName, formElement, inputObject, data) {
         .attr('class', 'link')
         .attr('marker-end', 'url(#arrowhead)')
         .on('click', selectLink)
-        .on('dblclick', event => event.stopPropagation()) // Pour empêcher la propagation du double clic sur le lien vers le SVG parent
+        .on('dblclick', event => event.stopPropagation())
         .merge(link)
         .classed('selected', d => d === selectedLink);
 
     link.exit().remove();
+}
 
-    // Link labels
+function updateLabels() {
     const linkLabel = g.selectAll('.link-label')
       .data(links, d => `${d.source.id}-${d.target.id}`);
 
@@ -160,85 +184,63 @@ function addField(fieldName, formElement, inputObject, data) {
       .attr('class', 'link-label')
       .attr('dx', 10) 
       .text(d => d.nom)
-      .on('click', selectLink);  // Ajout de l'événement click pour le texte du lien
+      .on('click', selectLink);
 
-    linkLabel.merge(link)
+    linkLabel.merge(linkLabel)
       .classed('selected', d => d === selectedLink);
 
     linkLabel.exit().remove();
     linkLabel.text(d => d.nom);
-  
-    // Nodes
-    const node = g.selectAll('.node')
-        .data(nodes, d => d.id);
-  
-    // On utilise un groupe pour chaque noeud afin de pouvoir y ajouter à la fois un cercle et du texte
-    const nodeLabel = node.enter().append('g')
-        .attr('class', 'node')
-        .attr('transform', d => `translate(${d.x}, ${d.y})`) // Initialise le groupe entier (cercle et texte) à la position désirée
-        .call(drag(simulation))
-        .on('click', selectNode)
-        .on('dblclick', event => event.stopPropagation()); // Pour empêcher la propagation du double clic sur le noeud vers le SVG parent
-  
-    nodeLabel.append('circle')
-        .attr('r', 30);
-  
-    nodeLabel.append('text')
-        .attr('dx', 35)   // déplace le texte de 35 pixels à droite du centre du noeud
-        .text(d => d.nom);  // utilise le champ 'nom' de chaque noeud comme texte
+}
 
-    nodeLabel.merge(node)
-        .classed('selected', d => d === selectedNode);
-  
-    node.exit().remove();
-  
+function updateGraph() {
+    updateNodes();
+    updateLinks();
+    updateLabels();
+
     simulation.nodes(nodes).on('tick', ticked);
     simulation.force('link').links(links);
     simulation.alpha(1).restart();
-  
-    function ticked() {
-        link
-            .attr('x1', d => {
-                const dx = d.target.x - d.source.x;
-                const dy = d.target.y - d.source.y;
-                const angle = Math.atan2(dy, dx);
-                const radius = d.source.r || 30;  // Assume a default radius of 30 if none is defined
-                return d.source.x + Math.cos(angle) * radius;
-            })
-            .attr('y1', d => {
-                const dx = d.target.x - d.source.x;
-                const dy = d.target.y - d.source.y;
-                const angle = Math.atan2(dy, dx);
-                const radius = d.source.r || 30;  // Assume a default radius of 30 if none is defined
-                return d.source.y + Math.sin(angle) * radius;
-            })
-            .attr('x2', d => {
-                const dx = d.target.x - d.source.x;
-                const dy = d.target.y - d.source.y;
-                const angle = Math.atan2(dy, dx);
-                const radius = d.target.r || 40;  // Assume a default radius of 30 if none is defined
-                return d.target.x - Math.cos(angle) * radius;
-            })
-            .attr('y2', d => {
-              const dx = d.target.x - d.source.x;
-              const dy = d.target.y - d.source.y;
-              const angle = Math.atan2(dy, dx);
-              const radius = d.target.r || 40;  // Suppose un rayon par défaut de 40 si aucun n'est défini
-              return d.target.y - Math.sin(angle) * radius;
-          });
-
-      node
-          .attr('transform', d => `translate(${d.x}, ${d.y})`); // Déplace le groupe entier (cercle et texte) en utilisant les coordonnées x et y du noeud
-      
-      linkLabel
-        .attr('x', d => (d.source.x + d.target.x) / 2)
-        .attr('y', d => (d.source.y + d.target.y) / 2);
-
-      updateGraph();  
-      }
 }
 
-  
+function ticked() {
+    g.selectAll('.link')
+        .attr('x1', d => {
+            const dx = d.target.x - d.source.x;
+            const dy = d.target.y - d.source.y;
+            const angle = Math.atan2(dy, dx);
+            const radius = d.source.r || 30; // Assume a default radius of 30 if none is defined
+            return d.source.x + Math.cos(angle) * radius;
+        })
+        .attr('y1', d => {
+            const dx = d.target.x - d.source.x;
+            const dy = d.target.y - d.source.y;
+            const angle = Math.atan2(dy, dx);
+            const radius = d.source.r || 30;
+            return d.source.y + Math.sin(angle) * radius;
+        })
+        .attr('x2', d => {
+            const dx = d.target.x - d.source.x;
+            const dy = d.target.y - d.source.y;
+            const angle = Math.atan2(dy, dx);
+            const radius = d.target.r || 40;
+            return d.target.x - Math.cos(angle) * radius;
+        })
+        .attr('y2', d => {
+            const dx = d.target.x - d.source.x;
+            const dy = d.target.y - d.source.y;
+            const angle = Math.atan2(dy, dx);
+            const radius = d.target.r || 40;
+            return d.target.y - Math.sin(angle) * radius;
+        });
+
+    g.selectAll('.node')
+        .attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+    g.selectAll('.link-label')
+        .attr('x', d => (d.source.x + d.target.x) / 2)
+        .attr('y', d => (d.source.y + d.target.y) / 2);
+}
 
 // Fonction de zoom et de déplacement
 function zoomed(event) {
