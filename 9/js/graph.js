@@ -240,7 +240,9 @@ function ticked() {
     g.selectAll('.link-label')
         .attr('x', d => (d.source.x + d.target.x) / 2)
         .attr('y', d => (d.source.y + d.target.y) / 2);
+updateGraph(); // à désactiver avec variable on/off activable dans config_graph pour mettre en mode light
 }
+
 
 // Fonction de zoom et de déplacement
 function zoomed(event) {
