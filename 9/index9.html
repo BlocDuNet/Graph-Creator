@@ -10,10 +10,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-  <script src="https://d3js.org/d3.v6.min.js"></script>
   <link rel="stylesheet" href="style.css" />
-  <script src="js/script.js"></script>
-  <script type="module" src="js/config_graph.js"></script> <!-- Semble inutile vu qu'importé depuis graph.js -->
 </head>
 <body>
   <svg width="800" height="600">
@@ -97,6 +94,12 @@
               <button id="export-json">Exporter JSON</button>
               <button id="import-json">Importer JSON</button>
               <input type="file" id="json-file" accept=".json" class="hidden">
+            </p>
+            <p><!-- TODO -->
+              <button id="undo-button">Undo</button>
+              <button id="redo-button">Redo</button>
+            </p>
+            <p>
               <button id="update">debug</button>
             </p>
           </div>
@@ -152,6 +155,8 @@
     </div>
   </div>
 </body>
+<script src="js/script.js"></script>
+<script type="module" src="js/undo_redo.js"></script>
 <!-- Semble fortmeent compatible v7 -->
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <!-- Important, insérer le script après le body pour que ça marche -->
