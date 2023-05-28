@@ -1,4 +1,8 @@
 
+body {
+  overflow: hidden; /* Enlève le scroll du HTML */
+}
+
 /* Graph */
 .link {
   stroke: #000000;
