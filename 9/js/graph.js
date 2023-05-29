@@ -106,10 +106,10 @@ function handleInput() {
 
 function createFormInputs(data, formElement, inputObject) {
   formElement.selectAll('input, label').remove();
-
-  for (const key in data[0]) {
-    createField(key, formElement, inputObject, data);
-  }
+  const fieldOptions = getFieldOptions(data);
+  fieldOptions.forEach(fieldName => {
+    createField(fieldName, formElement, inputObject, data);
+  });
 }
 
 function addField(fieldName, formElement, inputObject, data) {
@@ -176,31 +176,27 @@ function updateLinks() {
   link.exit().remove();  
 }
 
+function updateNodeLabels() {
+  const nodeLabel = g.selectAll('.node text')
+    .data(nodes, d => d.id);
+  nodeLabel.enter().append('text')
+    .attr('class', 'node-label')
+    .merge(nodeLabel)
+    .text(d => d[d3.select('#node-label').property('value')] || (d[d3.select('#node-label').property('value')] === "" ? "" : d.name));
+  nodeLabel.exit().remove();
+}
+
 function updateLinkLabels() {
   const linkLabel = g.selectAll('.link-label')
     .data(links, d => `${d.source.id}-${d.target.id}`);
-
   linkLabel.enter().append('text')
     .attr('class', 'link-label')
     .attr('dx', 10)
     .merge(linkLabel)
     .classed('selected', d => d === selectedLink)
-    .text(d => d.name)
+    .text(d => d[d3.select('#link-label').property('value')] || (d[d3.select('#link-label').property('value')] === "" ? "" : d.name))
     .on('click', selectLink);
-
   linkLabel.exit().remove();
-}
-
-function updateNodeLabels() {
-  const nodeLabel = g.selectAll('.node text')
-    .data(nodes, d => d.id);
-
-  nodeLabel.enter().append('text')
-    .attr('class', 'node-label')
-    .merge(nodeLabel)
-    .text(d => d.name);
-
-  nodeLabel.exit().remove();
 }
 
 function updateLabels() {
@@ -208,12 +204,41 @@ function updateLabels() {
   updateNodeLabels();
 }
 
+function updateLabelOptions(data, isNode) {
+  const fieldOptions = getFieldOptions(data);
+
+  const labelOptions = isNode ? d3.select('#node-label') : d3.select('#link-label');
+
+  const options = labelOptions.selectAll('option')
+    .data(fieldOptions);
+
+  options.enter().append('option')
+    .merge(options)
+    .attr('value', d => d)
+    .text(d => d);
+
+  options.exit().remove();
+}
+
+
+function getFieldOptions(data) {
+  const fields = new Set();
+  data.forEach(item => {
+    for (const key in item) {
+      if (key !== "id" && key !== "x" && key !== "y") {
+        fields.add(key);
+      }
+    }
+  });
+  return Array.from(fields);
+}
 
 function updateGraph() {
     updateNodes();
     updateLinks();
     updateLabels();
-
+    updateLabelOptions(nodes, true); // peut être à déplacer
+    updateLabelOptions(links, false); // peut être à déplacer
     simulation.nodes(nodes).on('tick', ticked);
     simulation.force('link').links(links);
     simulation.alpha(1).restart();

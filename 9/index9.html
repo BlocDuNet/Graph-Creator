@@ -91,11 +91,12 @@
           </div>
           <div class="tab-pane fade show active" id="tab1">
             <p>
-              <button id="export-json">Exporter JSON</button>
-              <button id="import-json">Importer JSON</button>
+              <button id="export-json">Export JSON</button>
+              <button id="import-json">Import JSON</button>
               <input type="file" id="json-file" accept=".json" class="hidden">
             </p>
             <p><!-- TODO -->
+              (TODO)
               <button id="undo-button">Undo</button>
               <button id="redo-button">Redo</button>
             </p>
@@ -111,6 +112,14 @@
                 <br>
                 <button id="addLinkFieldButton">Add Link Field</button>
                 <input type="text" id="addLinkFieldInput" placeholder="New link name">                
+              </p>
+              <p>
+                <label for="node-label">Label du nœud:</label>
+                <select id="node-label">
+                </select>
+                <label for="link-label">Label du lien:</label>
+                <select id="link-label">
+                </select>
               </p>
               <hr>
               <form id="node-form" class="hidden"></form>
