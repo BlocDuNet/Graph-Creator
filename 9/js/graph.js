@@ -177,24 +177,21 @@ function updateLinks() {
 }
 
 function updateLabels() {
-  const linkLabel = g.selectAll('.link-label')
-    .data(links, d => `${d.source.id}-${d.target.id}`);
+    const linkLabel = g.selectAll('.link-label')
+      .data(links, d => `${d.source.id}-${d.target.id}`);
 
-  linkLabel.enter().append('text')
-    .attr('class', 'link-label')
-    .attr('dx', 10)
-    .merge(linkLabel)
-    .classed('selected', d => d === selectedLink)
-    .text(d => d.nom);
+    linkLabel.enter().append('text')
+      .attr('class', 'link-label')
+      .attr('dx', 10) 
+      .text(d => d.nom)
+      .on('click', selectLink);
 
-  linkLabel.exit().remove();
+    linkLabel.merge(linkLabel)
+      .classed('selected', d => d === selectedLink);
 
-  // Mettre à jour les labels des nœuds
-  const nodeLabel = g.selectAll('.node')
-    .select('text')
-    .text(d => d.nom);
+    linkLabel.exit().remove();
+    linkLabel.text(d => d.nom);
 }
-
 
 function updateGraph() {
     updateNodes();
