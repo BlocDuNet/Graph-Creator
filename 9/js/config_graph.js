@@ -59,7 +59,7 @@ function updateConfigAndInputs(jsonObj) {
   updateHTMLInputs();
 }
 
-// # Import - Export #
+// # Import/Export config #
 
 d3.select('#export-config').on('click', function() {
   const config = { linkStrength, linkDistance, chargeStrength, centerStrength };
@@ -84,7 +84,7 @@ d3.select('#import-config').on('change', function() {
 // # Import - Export # END
 
 // # Import JSON #
-
+// (A faire) Essayer d'en faire une fonction générale et de la réutiliser plusieurs fois en changeant juste les variables mises dans les paramètres comme le nom du dossier, le nom du fichier par défaut...
 fetch(directoryPath)
   .then(response => response.text())
   .then(text => {
