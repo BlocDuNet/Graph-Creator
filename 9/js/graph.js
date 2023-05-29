@@ -159,20 +159,23 @@ function addField(fieldName, formElement, inputObject, data) {
     node.exit().remove();
 }
 
-function updateLinks() {
-    const link = g.selectAll('.link')
-        .data(links, d => `${d.source.id}-${d.target.id}`);
+function updateLinks() {  
+  const link = g.selectAll('.link')  
+  .data(links, d => `${d.source.id}-${d.target.id}`);  
 
-    link.enter().append('line')
-        .attr('class', 'link')
-        .attr('marker-end', 'url(#arrowhead)')
-        .on('click', selectLink)
-        .on('dblclick', event => event.stopPropagation())
-        .merge(link)
-        .classed('selected', d => d === selectedLink);
+  link.enter().append('path') // Replace 'line' with 'path'
+  .attr('class', 'link')  
+  .attr('fill', 'none')  // Add this line to set the fill color to none
+  .attr('stroke', '#000')  // Add this line to set the stroke color to black (or any color you prefer)
+  .attr('marker-end', 'url(#arrowhead)')  
+  .on('click', selectLink)  
+  .on('dblclick', event => event.stopPropagation())  
+  .merge(link)  
+  .classed('selected', d => d === selectedLink);  
 
-    link.exit().remove();
+  link.exit().remove();  
 }
+
 
 function updateLabels() {
   const linkLabel = g.selectAll('.link-label')
@@ -210,43 +213,30 @@ function updateGraph() {
 }
 
 function ticked() {
-    g.selectAll('.link')
-        .attr('x1', d => {
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
-            const angle = Math.atan2(dy, dx);
-            const radius = d.source.r || 30; // Assume a default radius of 30 if none is defined
-            return d.source.x + Math.cos(angle) * radius;
-        })
-        .attr('y1', d => {
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
-            const angle = Math.atan2(dy, dx);
-            const radius = d.source.r || 30;
-            return d.source.y + Math.sin(angle) * radius;
-        })
-        .attr('x2', d => {
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
-            const angle = Math.atan2(dy, dx);
-            const radius = d.target.r || 40;
-            return d.target.x - Math.cos(angle) * radius;
-        })
-        .attr('y2', d => {
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
-            const angle = Math.atan2(dy, dx);
-            const radius = d.target.r || 40;
-            return d.target.y - Math.sin(angle) * radius;
-        });
+  g.selectAll('.link')
+    .attr('d', d => {
+      const dx = d.target.x - d.source.x;
+      const dy = d.target.y - d.source.y;
+      const angle = Math.atan2(dy, dx);
+      const sourceRadius = d.source.r || 30; // Ajustez ces valeurs en fonction du rayon de vos nœuds
+      const targetRadius = d.target.r || 30+10; // +10 aussi arbitraire pour prendre en compte la taille de la flèche
+      const sourceX = d.source.x + Math.cos(angle) * sourceRadius;
+      const sourceY = d.source.y + Math.sin(angle) * sourceRadius;
+      const targetX = d.target.x - Math.cos(angle) * targetRadius;
+      const targetY = d.target.y - Math.sin(angle) * targetRadius;
+      const dr = Math.sqrt(dx * dx + dy * dy) * 0; // Ajustez le facteur multiplicatif pour augmenter la courbure : 0 = droit. En faire une variable pour fichier de config
+      const sweepFlag = dx > 0 ? 1 : 0; // Inverse le sens de l'arc si dx est négatif
+      return `M${sourceX},${sourceY}A${dr},${dr} 0 0,${sweepFlag} ${targetX},${targetY}`;
+    });
+  
+  g.selectAll('.node')
+      .attr('transform', d => `translate(${d.x}, ${d.y})`);
 
-    g.selectAll('.node')
-        .attr('transform', d => `translate(${d.x}, ${d.y})`);
+  g.selectAll('.link-label')
+      .attr('x', d => (d.source.x + d.target.x) / 2)
+      .attr('y', d => (d.source.y + d.target.y) / 2);
 
-    g.selectAll('.link-label')
-        .attr('x', d => (d.source.x + d.target.x) / 2)
-        .attr('y', d => (d.source.y + d.target.y) / 2);
-updateGraph(); // à désactiver avec variable on/off activable dans config_graph pour mettre en mode light
+  updateGraph(); // à désactiver avec variable on/off activable dans config_graph pour mettre en mode light
 }
 
 
