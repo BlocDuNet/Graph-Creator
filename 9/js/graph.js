@@ -12,14 +12,14 @@ const simulation = d3.forceSimulation()
 
 // Modifiez ces variables pour initialiser le graph avec vos données
 const initialNodes = [
-    {id: '1', nom: 'Node 1', description: 'Description 1', "x": 100, "y": 100},
-    {id: '2', nom: 'Node 2', description: 'Description 2', "x": 200, "y": 200},
-    {id: '3', nom: 'Node 3', description: 'Description 3', "x": 300, "y": 300},
+    {id: '1', name: 'Node 1', description: 'Description 1', "x": 100, "y": 100},
+    {id: '2', name: 'Node 2', description: 'Description 2', "x": 200, "y": 200},
+    {id: '3', name: 'Node 3', description: 'Description 3', "x": 300, "y": 300},
 ];
 
 const initialLinks = [
-    {id: '1', nom: 'Link 1', description: 'Description 1', source: '1', target: '2'},
-    {id: '2', nom: 'Link 2', description: 'Description 2', source: '2', target: '3'},
+    {id: '1', name: 'Link 1', description: 'Description 1', source: '1', target: '2'},
+    {id: '2', name: 'Link 2', description: 'Description 2', source: '2', target: '3'},
 ];
 
 let nodeRadius = 30; // Code temporaire. Node radius définis par défault à valeur fixe 30, en attendant d'avoir un code pour récupérer le rayon réel du noeud.
@@ -151,7 +151,7 @@ function addField(fieldName, formElement, inputObject, data) {
   
     nodeLabel.append('text')
         .attr('dx', 35)
-        .text(d => d.nom);
+        .text(d => d.name);
 
     nodeLabel.merge(node)
         .classed('selected', d => d === selectedNode);
@@ -186,7 +186,7 @@ function updateLabels() {
     .attr('dx', 10)
     .merge(linkLabel)
     .classed('selected', d => d === selectedLink)
-    .text(d => d.nom)
+    .text(d => d.name)
     .on('click', selectLink);
 
   linkLabel.exit().remove();
@@ -197,7 +197,7 @@ function updateLabels() {
   nodeLabel.enter().append('text')
     .attr('class', 'node-label')
     .merge(nodeLabel)
-    .text(d => d.nom);
+    .text(d => d.name);
 
   nodeLabel.exit().remove();
 }
@@ -316,7 +316,7 @@ function selectNode(event, d) {
     selectedLink = null;
     linkForm.classed('hidden', true);
     nodeForm.classed('hidden', false);
-    document.getElementById("node-form-nom").focus();  // Focus on "nom" input
+    document.getElementById("node-form-name").focus();  // Focus on "name" input
     updateForm(nodeInputs, d);
   }
   updateGraph();
@@ -332,7 +332,7 @@ function selectLink(event, d) {
     selectedNode = null;
     nodeForm.classed('hidden', true);
     linkForm.classed('hidden', false);
-    document.getElementById("link-form-nom").focus();  // Focus on "nom" input
+    document.getElementById("link-form-name").focus();  // Focus on "name" input
     updateForm(linkInputs, d);
   }
 
@@ -342,8 +342,8 @@ function selectLink(event, d) {
 function createNode(x, y) {
   const id = nextNodeId.toString();
   nextNodeId++;
-  const newNode = {id, nom: `Node ${id}`, description: `Description ${id}`, x, y};
-  //const newNode = {id, nom: `Node ${id}`, description: `Description ${id}`, x, y};
+  const newNode = {id, name: `Node ${id}`, description: `Description ${id}`, x, y};
+  //const newNode = {id, name: `Node ${id}`, description: `Description ${id}`, x, y};
   nodes.push(newNode);
   updateGraph();
   return newNode;
@@ -352,7 +352,7 @@ function createNode(x, y) {
 function createLink(source, target) {
   const id = nextLinkId.toString();
   nextLinkId++;
-  const newLink = {id, nom: `Link ${id}`, description: `Description ${id}`, source: source.id, target: target.id};
+  const newLink = {id, name: `Link ${id}`, description: `Description ${id}`, source: source.id, target: target.id};
   links.push(newLink);
   updateGraph();
   return newLink;
@@ -458,7 +458,7 @@ d3.select('#json-file').on('change', function() {
       // Obtenir les clés de l'objet JSON
       const keys = Object.keys(jsonData);
 
-      // Utiliser la première clé pour les noeuds et la deuxième pour les liens. Permet de nommer les choses différemment.
+      // Utiliser la première clé pour les noeuds et la deuxième pour les liens. Permet de namemer les choses différemment.
       const nodeKey = keys[0];
       const linkKey = keys[1];
 
