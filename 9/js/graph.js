@@ -63,7 +63,10 @@ function createField(fieldName, formElement, inputObject, data) {
     .attr('id', `${formElement.attr('id')}-${fieldName}`)
     .attr('name', fieldName)
     .on('input', handleInput);
+  
+  inputObject[fieldName] = input;
 
+  // 
   if (fieldName !== "id" && fieldName !== "x" && fieldName !== "y") {
     const deleteButton = fieldDiv
       .append('button')
@@ -78,7 +81,6 @@ function createField(fieldName, formElement, inputObject, data) {
       });
   }
 }
-
 
 function handleInput() {
   const selected = fieldName === 'source' ? selectedLink.source : selectedLink.target;
