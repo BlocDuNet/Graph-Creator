@@ -176,8 +176,7 @@ function updateLinks() {
   link.exit().remove();  
 }
 
-
-function updateLabels() {
+function updateLinkLabels() {
   const linkLabel = g.selectAll('.link-label')
     .data(links, d => `${d.source.id}-${d.target.id}`);
 
@@ -190,7 +189,9 @@ function updateLabels() {
     .on('click', selectLink);
 
   linkLabel.exit().remove();
+}
 
+function updateNodeLabels() {
   const nodeLabel = g.selectAll('.node text')
     .data(nodes, d => d.id);
 
@@ -201,6 +202,12 @@ function updateLabels() {
 
   nodeLabel.exit().remove();
 }
+
+function updateLabels() {
+  updateLinkLabels();
+  updateNodeLabels();
+}
+
 
 function updateGraph() {
     updateNodes();
