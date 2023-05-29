@@ -66,7 +66,7 @@ function createField(fieldName, formElement, inputObject, data) {
   
   inputObject[fieldName] = input;
 
-  // 
+  // Ajout bouton supprimer champs
   if (fieldName !== "id" && fieldName !== "x" && fieldName !== "y") {
     const deleteButton = fieldDiv
       .append('button')
@@ -81,6 +81,12 @@ function createField(fieldName, formElement, inputObject, data) {
       });
   }
 }
+
+// Fonction pour supprimer les champs de formulaire existants
+function clearFormInputs(formElement) {
+  formElement.selectAll('div').remove();
+}
+
 
 function handleInput() {
   const selected = fieldName === 'source' ? selectedLink.source : selectedLink.target;
@@ -446,12 +452,6 @@ d3.select('#export-json').on('click', function() {
   a.download = 'graph.json';
   a.click();
 });
-
-// Importer JSON
-// Fonction pour supprimer les champs de formulaire existants
-function clearFormInputs(formElement) {
-  formElement.selectAll('div').remove();
-}
 
 // Importer JSON
 d3.select('#import-json').on('click', function() {
