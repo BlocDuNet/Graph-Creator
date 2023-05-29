@@ -123,6 +123,13 @@ svg {
   }
 /* Tableur end */
 
+.context-menu {
+  position: absolute;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 8px;
+  list-style: none;
+}
 
 
 

@@ -49,8 +49,7 @@ let links = [...initialLinks];
 let nextNodeId = initialNodes.length + 1;
 let nextLinkId = initialLinks.length + 1;
 
-
-function createField(fieldName, formElement, inputObject, data, isDeleteButtonNeeded = false) {
+function createField(fieldName, formElement, inputObject, data) {
   const fieldDiv = formElement.append('div');
 
   const label = fieldDiv
@@ -65,23 +64,21 @@ function createField(fieldName, formElement, inputObject, data, isDeleteButtonNe
     .attr('name', fieldName)
     .on('input', handleInput);
 
-  if (isDeleteButtonNeeded) {
+  if (fieldName !== "id" && fieldName !== "x" && fieldName !== "y") {
     const deleteButton = fieldDiv
       .append('button')
       .text('x')
       .on('click', function() {
-        data.forEach(item => delete item[fieldName]);
-        fieldDiv.remove();
-        delete inputObject[fieldName];
+        const confirmed = confirm("Êtes-vous sûr de vouloir supprimer ce champ ?");
+        if (confirmed) {
+          data.forEach(item => delete item[fieldName]);
+          fieldDiv.remove();
+          delete inputObject[fieldName];
+        }
       });
-
-    inputObject[fieldName] = { input: input, deleteButton: deleteButton };
-  } else {
-    inputObject[fieldName] = input;
   }
-
-  fieldDiv.append('br');
 }
+
 
 function handleInput() {
   const selected = fieldName === 'source' ? selectedLink.source : selectedLink.target;
@@ -193,8 +190,6 @@ function updateLabels() {
 
   nodeLabel.exit().remove();
 }
-
-  
 
 function updateGraph() {
     updateNodes();
@@ -349,11 +344,11 @@ function selectLink(event, d) {
 function createNode(x, y) {
   const id = nextNodeId.toString();
   nextNodeId++;
-  const newNode = {id, nom: ``, description: ``, x, y};
+  const newNode = {id, nom: `Node ${id}`, description: `Description ${id}`, x, y};
   //const newNode = {id, nom: `Node ${id}`, description: `Description ${id}`, x, y};
   nodes.push(newNode);
   updateGraph();
-  return newNode;  // Retourne le nouveau noeud
+  return newNode;
 }
 
 function createLink(source, target) {
@@ -362,7 +357,7 @@ function createLink(source, target) {
   const newLink = {id, nom: `Link ${id}`, description: `Description ${id}`, source: source.id, target: target.id};
   links.push(newLink);
   updateGraph();
-  return newLink;  // Retourne le nouveau lien
+  return newLink;
 }
 
 
@@ -451,6 +446,12 @@ d3.select('#export-json').on('click', function() {
 });
 
 // Importer JSON
+// Fonction pour supprimer les champs de formulaire existants
+function clearFormInputs(formElement) {
+  formElement.selectAll('div').remove();
+}
+
+// Importer JSON
 d3.select('#import-json').on('click', function() {
   d3.select('#json-file').node().click();
 });
@@ -477,6 +478,9 @@ d3.select('#json-file').on('change', function() {
         target: nodes.find(node => node.id === link.target)
       }));
 
+      clearFormInputs(nodeForm);
+      clearFormInputs(linkForm);
+
       // Crée les champs d'input pour les noeuds et les liens importés
       createFormInputs(nodes, nodeForm, nodeInputs);
       createFormInputs(links, linkForm, linkInputs);
@@ -486,6 +490,7 @@ d3.select('#json-file').on('change', function() {
     reader.readAsText(file);
   }
 });
+
 
 //pour debug, update graph
 d3.select('#update').on('click', function() {

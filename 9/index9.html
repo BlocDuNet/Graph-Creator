@@ -112,6 +112,7 @@
                 <button id="addLinkFieldButton">Add Link Field</button>
                 <input type="text" id="addLinkFieldInput" placeholder="New link name">                
               </p>
+              <hr>
               <form id="node-form" class="hidden"></form>
               <form id="link-form" class="hidden"></form>
             </p>
@@ -125,9 +126,8 @@
               <br>
               <label for="import-config">Import config :</label>
               <input type="file" id="import-config" accept=".json">
-              <br>
-              (A faire) Pouvoir faire passer le JSON par défaut dans l'URL
             </p>
+            <hr>
             <p>
               <input type="checkbox" id="link-force" name="link-force">
               <label for="link-force">Link force</label>
@@ -137,7 +137,7 @@
             </p>
             <p>
               <label for="charge-strength">Charge strength</label>
-              <input type="number" id="charge-strength" name="charge-strength">
+              <input type="number" id="charge-strength" name="charge-strength" title="Use negative value with center force activate is recommanded">
             </p>
             <p>
               <input type="checkbox" id="center-force" name="center-force">
@@ -156,7 +156,7 @@
   </div>
 </body>
 <script src="js/script.js"></script>
-<script type="module" src="js/undo_redo.js"></script>
+<!-- <script type="module" src="js/undo_redo.js"></script> -->
 <!-- Semble fortmeent compatible v7 -->
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <!-- Important, insérer le script après le body pour que ça marche -->
