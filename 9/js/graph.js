@@ -30,13 +30,6 @@ const width = +svg.attr('width');
 const height = +svg.attr('height');
 const g = svg.append('g'); //Ajout pour déplacer graph
 
-// Importé depuis config_graph.js
-//const simulation = d3.forceSimulation()
-//    .force('link', d3.forceLink().id(d => d.id).distance(200).strength(0));
-
-//.force('charge', d3.forceManyBody().strength(-50))
-//.force('center', d3.forceCenter(width / 2, height / 2));
-
 const nodeForm = d3.select('#node-form');
 const nodeInputs = {};
 
@@ -183,15 +176,18 @@ function updateLabels() {
     linkLabel.enter().append('text')
       .attr('class', 'link-label')
       .attr('dx', 10) 
-      .text(d => d.nom)
-      .on('click', selectLink);
-
-    linkLabel.merge(linkLabel)
-      .classed('selected', d => d === selectedLink);
-
+      .merge(linkLabel)
+      .classed('selected', d => d === selectedLink)
+      .text(d => d.nom);
+  
     linkLabel.exit().remove();
-    linkLabel.text(d => d.nom);
-}
+  
+    // Mettre à jour les labels des nœuds
+    const nodeLabel = g.selectAll('.node')
+      .select('text')
+      .text(d => d.nom);
+  }
+  
 
 function updateGraph() {
     updateNodes();
