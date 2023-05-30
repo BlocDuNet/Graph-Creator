@@ -239,12 +239,11 @@ function updateLabelOptions(data, isNode) {
   }
 }
 
-
 function getFieldOptions(data) {
   const fields = new Set();
   data.forEach(item => {
     for (const key in item) {
-      if (key !== "id" && key !== "x" && key !== "y") {
+      if (key !== "x" && key !== "y") {
         fields.add(key);
       }
     }
