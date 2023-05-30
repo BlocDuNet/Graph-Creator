@@ -565,7 +565,6 @@ svg.on('mousedown', (event) => {
   }
 });
 
-
 // Désélectionne le nœud et le lien sélectionné lors de l'appui sur la touche "Échap"
 window.addEventListener('keyup', function(event) {
   if (event.key === 'Escape') {
@@ -579,6 +578,20 @@ window.addEventListener('keyup', function(event) {
     }
     updateGraph();
   }
+});
+
+// Temporaire pour résoudre le problème "name" de la liste déroulante des labels des noeuds
+d3.select("#changeNodeLabelButton").on("click", function() {
+  const selectedValue = "name"; // Valeur que vous souhaitez sélectionner
+
+  // Sélectionnez la liste déroulante des labels des nœuds
+  const labelOptions = d3.select("#node-label");
+
+  // Mettez à jour la valeur sélectionnée de la liste déroulante
+  labelOptions.property("value", selectedValue);
+
+  // Mettez à jour le graphique en fonction de la nouvelle sélection
+  updateGraph();
 });
 
 // Initialise le graph
