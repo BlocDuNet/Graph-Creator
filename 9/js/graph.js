@@ -118,9 +118,7 @@ function addField(fieldName, formElement, inputObject, data) {
   }
 
   data.forEach(item => (item[fieldName] = ''));
-
   createField(fieldName, formElement, inputObject, data);
-
   updateForm(inputObject, selectedNode || selectedLink);
 }
 
@@ -159,30 +157,33 @@ function addField(fieldName, formElement, inputObject, data) {
     node.exit().remove();
 }
 
-function updateLinks() {  
-  const link = g.selectAll('.link')  
-  .data(links, d => `${d.source.id}-${d.target.id}`);  
+function updateLinks() {
+  const link = g.selectAll('.link')
+  .data(links, d => `${d.source.id}-${d.target.id}`);
 
   link.enter().append('path') // Replace 'line' with 'path'
-  .attr('class', 'link')  
-  .attr('fill', 'none')  // Add this line to set the fill color to none
-  .attr('stroke', '#000')  // Add this line to set the stroke color to black (or any color you prefer)
-  .attr('marker-end', 'url(#arrowhead)')  
-  .on('click', selectLink)  
-  .on('dblclick', event => event.stopPropagation())  
-  .merge(link)  
-  .classed('selected', d => d === selectedLink);  
+  .attr('class', 'link')
+  .attr('fill', 'none')
+  .attr('stroke', '#000') 
+  .attr('marker-end', 'url(#arrowhead)')
+  .on('click', selectLink)
+  .on('dblclick', event => event.stopPropagation())
+  .merge(link)
+  .classed('selected', d => d === selectedLink);
 
-  link.exit().remove();  
+  link.exit().remove();
 }
 
 function updateNodeLabels() {
   const nodeLabel = g.selectAll('.node text')
-    .data(nodes, d => d.id);
+  .data(nodes, d => d.id);
   nodeLabel.enter().append('text')
-    .attr('class', 'node-label')
-    .merge(nodeLabel)
-    .text(d => d[d3.select('#node-label').property('value')] || (d[d3.select('#node-label').property('value')] === "" ? "" : d.name));
+  .attr('class', 'node-label')
+  .merge(nodeLabel)
+  .text(d => {
+    const selectedValue = d3.select('#node-label').property('value');
+    return d[selectedValue] || ""; // Utilise la valeur du champ sélectionné ou une chaîne vide si celle-ci n'est pas définie
+  });
   nodeLabel.exit().remove();
 }
 
@@ -194,7 +195,10 @@ function updateLinkLabels() {
     .attr('dx', 10)
     .merge(linkLabel)
     .classed('selected', d => d === selectedLink)
-    .text(d => d[d3.select('#link-label').property('value')] || (d[d3.select('#link-label').property('value')] === "" ? "" : d.name))
+    .text(d => {
+      const selectedValue = d3.select('#link-label').property('value');
+      return selectedValue !== "" ? d[selectedValue] || "" : "";
+    })
     .on('click', selectLink);
   linkLabel.exit().remove();
 }
@@ -202,10 +206,15 @@ function updateLinkLabels() {
 function updateLabels() {
   updateLinkLabels();
   updateNodeLabels();
+  updateLabelOptions(nodes, true);
+  updateLabelOptions(links, false);
 }
 
 function updateLabelOptions(data, isNode) {
-  const fieldOptions = getFieldOptions(data);
+  let fieldOptions = getFieldOptions(data);
+
+  // Ajouter la case vide
+  fieldOptions.unshift("");
 
   const labelOptions = isNode ? d3.select('#node-label') : d3.select('#link-label');
 
@@ -218,6 +227,16 @@ function updateLabelOptions(data, isNode) {
     .text(d => d);
 
   options.exit().remove();
+
+  // Sélection par défaut du champ "name" ou du champ vide
+  const selectedValue = labelOptions.property('value');
+  if (selectedValue === "" || !fieldOptions.includes(selectedValue)) {
+    if (isNode) {
+      labelOptions.property('value', "");
+    } else {
+      labelOptions.property('value', "");
+    }
+  }
 }
 
 
@@ -237,8 +256,6 @@ function updateGraph() {
     updateNodes();
     updateLinks();
     updateLabels();
-    updateLabelOptions(nodes, true); // peut être à déplacer
-    updateLabelOptions(links, false); // peut être à déplacer
     simulation.nodes(nodes).on('tick', ticked);
     simulation.force('link').links(links);
     simulation.alpha(1).restart();
