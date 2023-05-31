@@ -11,8 +11,10 @@ const simulation = d3.forceSimulation()
 // Import de config_graph.js END
 
 // Modifiez ces variables pour initialiser le graph avec vos données
+let nodeRadius = 30; // Code temporaire. Node radius définis par défault à valeur fixe 30, en attendant d'avoir un code pour récupérer le rayon réel du noeud.
+
 const initialNodes = [
-    {id: '1', name: 'Node 1', description: 'Description 1', "x": 100, "y": 100},
+    {id: '1', name: 'Node 1', description: 'Description 1', "x": 100, "y": 300},
     {id: '2', name: 'Node 2', description: 'Description 2', "x": 200, "y": 200},
     {id: '3', name: 'Node 3', description: 'Description 3', "x": 300, "y": 300},
 ];
@@ -21,8 +23,6 @@ const initialLinks = [
     {id: '1', name: 'Link 1', description: 'Description 1', source: '1', target: '2'},
     {id: '2', name: 'Link 2', description: 'Description 2', source: '2', target: '3'},
 ];
-
-let nodeRadius = 30; // Code temporaire. Node radius définis par défault à valeur fixe 30, en attendant d'avoir un code pour récupérer le rayon réel du noeud.
 
 // Code principal
 const svg = d3.select('svg');
@@ -87,7 +87,6 @@ function clearFormInputs(formElement) {
   formElement.selectAll('div').remove();
 }
 
-
 function handleInput() {
   const selected = fieldName === 'source' ? selectedLink.source : selectedLink.target;
   const nodeId = this.value;
@@ -132,29 +131,28 @@ function addField(fieldName, formElement, inputObject, data) {
     addField(fieldName, linkForm, linkInputs, links);
   });
   
+function updateNodes() {
+  const node = g.selectAll('.node')
+      .data(nodes, d => d.id);
 
-  function updateNodes() {
-    const node = g.selectAll('.node')
-        .data(nodes, d => d.id);
-  
-    const nodeLabel = node.enter().append('g')
-        .attr('class', 'node')
-        .attr('transform', d => `translate(${d.x}, ${d.y})`)
-        .call(drag(simulation))
-        .on('click', selectNode)
-        .on('dblclick', event => event.stopPropagation());
+  const nodeLabel = node.enter().append('g')
+      .attr('class', 'node')
+      .attr('transform', d => `translate(${d.x}, ${d.y})`)
+      .call(drag(simulation))
+      .on('click', selectNode)
+      .on('dblclick', event => event.stopPropagation());
 
-    nodeLabel.append('circle')
-        .attr('r', 30);
-  
-    nodeLabel.append('text')
-        .attr('dx', 35)
-        .text(d => d.name);
+  nodeLabel.append('circle')
+      .attr('r', 30);
 
-    nodeLabel.merge(node)
-        .classed('selected', d => d === selectedNode);
-  
-    node.exit().remove();
+  nodeLabel.append('text')
+      .attr('dx', 35)
+      .text(d => d.name);
+
+  nodeLabel.merge(node)
+      .classed('selected', d => d === selectedNode);
+
+  node.exit().remove();
 }
 
 function updateLinks() {
@@ -272,7 +270,7 @@ function ticked() {
       const sourceY = d.source.y + Math.sin(angle) * sourceRadius;
       const targetX = d.target.x - Math.cos(angle) * targetRadius;
       const targetY = d.target.y - Math.sin(angle) * targetRadius;
-      const dr = Math.sqrt(dx * dx + dy * dy) * 0; // Ajustez le facteur multiplicatif pour augmenter la courbure : 0 = droit. En faire une variable pour fichier de config
+      const dr = Math.sqrt(dx * dx + dy * dy) * 0; // Ajustez le facteur multiplicatif pour augmenter la courbure : 0 = droit. En faire une variable pour fichier de config. je pense possible de rendre la courbure progressive pour éviter le changement brutal
       const sweepFlag = dx > 0 ? 1 : 0; // Inverse le sens de l'arc si dx est négatif
       return `M${sourceX},${sourceY}A${dr},${dr} 0 0,${sweepFlag} ${targetX},${targetY}`;
     });
@@ -286,7 +284,6 @@ function ticked() {
 
   updateGraph(); // à désactiver avec variable on/off activable dans config_graph pour mettre en mode light
 }
-
 
 // Fonction de zoom et de déplacement
 function zoomed(event) {
@@ -303,9 +300,8 @@ svg.call(d3.zoom()
   .filter(event => event.button === 2 || event.type === "wheel") //// Permet de déplacer seulement avec le bouton droit de la souris et de zoomer avec la molette
   .on('zoom', zoomed));
 
-svg.on('dblclick.zoom', null); // Désactive le zoom lors d'un double-clic
+svg.on('dblclick.zoom', null);
 svg.on('contextmenu', event => event.preventDefault()); // Empêche l'affichage du menu contextuel lors du clic droit
-
 
 // Drag nodes
 function drag(simulation) {
@@ -334,15 +330,12 @@ function drag(simulation) {
 
 function selectNode(event, d) {
   if (event.ctrlKey && selectedNode) {
-    // Crée un lien directionnel entre les deux nœuds en utilisant la fonction createLink
     const newLink = createLink(selectedNode, d);
     // Vérifie si le lien existe déjà
     const existingLinkIndex = links.findIndex(l => l.source === newLink.source && l.target === newLink.target);
     if (existingLinkIndex >= 0) {
-      // Si le lien existe déjà, change simplement sa direction
-      links[existingLinkIndex].type = "bidirectionnel";
+      links[existingLinkIndex].type = "bidirectionnel"; // A modifier pour le rendre utlisable
     } else {
-      // Ajoute le nouveau lien à la liste des liens
       links.push(newLink);
     }
 
@@ -369,7 +362,6 @@ function selectNode(event, d) {
   }
   updateGraph();
 }
-
 
 function selectLink(event, d) {
   if (selectedLink === d) {
@@ -405,7 +397,6 @@ function createLink(source, target) {
   updateGraph();
   return newLink;
 }
-
 
 function updateForm(inputs, data) {
   for (const key in inputs) {
@@ -531,12 +522,10 @@ d3.select('#json-file').on('change', function() {
   }
 });
 
-
 //pour debug, update graph
 d3.select('#update').on('click', function() {
   updateGraph();
 });
-
 
 //Créer noeud en double cliquant dans la zone SVG en adaptant les coordonnées au zoom
 svg.on('dblclick', (event) => {
@@ -580,7 +569,7 @@ window.addEventListener('keyup', function(event) {
   }
 });
 
-// Temporaire pour résoudre le problème "name" de la liste déroulante des labels des noeuds
+// Temporaire pour résoudre le problème "name" non initialisé de la liste déroulante des labels des noeuds
 d3.select("#changeNodeLabelButton").on("click", function() {
   const selectedValue = "name"; // Valeur que vous souhaitez sélectionner
 
