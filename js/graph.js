@@ -1,208 +1,635 @@
-const graph = d3.select("#graph");
-const width = 200; // 200 pour test. 800
-const height = 300; // 300 pour test. 600
-const colors = d3.scaleOrdinal(d3.schemeCategory10);
+// Import de config_graph.js
+import { getForceConfiguration } from './config_graph.js';
 
-const svg = graph.append("svg")
-  .attr("width", width)
-  .attr("height", height);
+const forceConfig = getForceConfiguration();
 
-// Création du menu de configuration
-const configMenu = d3.select("#config-menu");
-const forceFieldCheckbox = configMenu.append("input")
-  .attr("type", "checkbox")
-  .attr("id", "forceField")
-  .property("checked", true);
-configMenu.append("label")
-  .attr("for", "forceField")
-  .text("Activer le champ de force");
+const simulation = d3.forceSimulation()
+    .force('link', forceConfig.link)
+    .force('charge', forceConfig.charge)
+    .force('center', forceConfig.center);
 
-// Définition des champs par défaut
-const defaultNodeFields = ["id", "node", "description"];
-const defaultLinkFields = ["id", "edge", "description"];
+// Import de config_graph.js END
 
-// Gestion des données
-let nodesData = [];
-let linksData = [];
+let defaultNodeRadius = 30; // Code temporaire. Node radius définis par défault à valeur fixe 30, en attendant d'avoir un code pour récupérer le rayon réel du noeud.
 
-// Force simulation
-const simulation = d3.forceSimulation(nodesData)
-  .force("link", d3.forceLink(linksData).id(d => d.id))
-  .force("charge", d3.forceManyBody())
-  .force("center", d3.forceCenter(width / 2, height / 2))
-  .on("tick", ticked);
+const initialNodes = [
+ {id: '1', name: 'Node 1', description: 'Description 1', "x": 100, "y": 300, size: defaultNodeRadius},
+ {id: '2', name: 'Node 2', description: 'Description 2', "x": 200, "y": 200, size: defaultNodeRadius},
+ {id: '3', name: 'Node 3', description: 'Description 3', "x": 300, "y": 300, size: defaultNodeRadius},
+];
 
-// Ajouter les liens et les nœuds
-const link = svg.append("g")
-  .attr("class", "links")
-  .selectAll("line");
+const initialLinks = [
+    {id: '1', name: 'Link 1', description: 'Description 1', source: '1', target: '2'},
+    {id: '2', name: 'Link 2', description: 'Description 2', source: '2', target: '3'},
+];
 
-const node = svg.append("g")
-  .attr("class", "nodes")
-  .selectAll("circle");
+// Code principal
+const svg = d3.select('svg');
+const width = +svg.attr('width');
+const height = +svg.attr('height');
+const g = svg.append('g'); //Ajout pour déplacer graph
 
-// Fonction pour mettre à jour le graphique
-function updateGraph() {
-  const nodes = node.data(nodesData).join("circle")
-    .attr("r", 5)
-    .attr("fill", (d, i) => colors(i))
-    .call(drag(simulation));
+const nodeForm = d3.select('#node-form');
+const nodeInputs = {};
 
-  const links = link.data(linksData).join("line")
-    .attr("stroke", "#999")
-    .attr("stroke-opacity", 0.6)
-    .attr("stroke-width", d => Math.sqrt(d.value));
+const linkForm = d3.select('#link-form');
+const linkInputs = {};
+
+createFormInputs(initialNodes, nodeForm, nodeInputs);
+createFormInputs(initialLinks, linkForm, linkInputs);
+
+let selectedNode = null;
+let selectedLink = null;
+
+let nodes = [...initialNodes];
+let links = [...initialLinks];
+
+//Pour incrémenter id des noeuds et liens
+let nextNodeId = initialNodes.length + 1;
+let nextLinkId = initialLinks.length + 1;
+
+function createField(fieldName, formElement, inputObject, data) {
+  const fieldDiv = formElement.append('div');
+
+  const label = fieldDiv
+    .append('label')
+    .attr('for', `${formElement.attr('id')}-${fieldName}`)
+    .text(`${fieldName}: `);
+
+  const input = fieldDiv
+    .append('input')
+    .attr('type', 'text')
+    .attr('id', `${formElement.attr('id')}-${fieldName}`)
+    .attr('name', fieldName)
+    .on('input', handleInput);
   
-  simulation.on("tick", () => {
-    nodes.attr("cx", d => d.x)
-         .attr("cy", d => d.y);
+  inputObject[fieldName] = input;
 
-    links.attr("x1", d => d.source.x)
-         .attr("y1", d => d.source.y)
-         .attr("x2", d => d.target.x)
-         .attr("y2", d => d.target.y);
+  // Ajout bouton supprimer champs
+  if (fieldName !== "id" && fieldName !== "x" && fieldName !== "y") {
+    const deleteButton = fieldDiv
+      .append('button')
+      .text('x')
+      .on('click', function() {
+        const confirmed = confirm("Êtes-vous sûr de vouloir supprimer ce champ ?");
+        if (confirmed) {
+          data.forEach(item => delete item[fieldName]);
+          fieldDiv.remove();
+          delete inputObject[fieldName];
+        }
+      });
+  }
+}
+
+// Fonction pour supprimer les champs de formulaire existants
+function clearFormInputs(formElement) {
+  formElement.selectAll('div').remove();
+}
+
+function handleInput() {
+  const selected = fieldName === 'source' ? selectedLink.source : selectedLink.target;
+  const nodeId = this.value;
+  const node = nodes.find(node => node.id === nodeId);
+  if (node) {
+    selected[fieldName] = node;
+  } else {
+    if (selectedLink) {
+      selectedLink[fieldName] = this.value;
+    }
+    if (selectedNode) {
+      selectedNode[fieldName] = this.value;
+    }
+  }
+}
+
+function createFormInputs(data, formElement, inputObject) {
+  formElement.selectAll('input, label').remove();
+  const fieldOptions = getFieldOptions(data);
+  fieldOptions.forEach(fieldName => {
+    createField(fieldName, formElement, inputObject, data);
   });
 }
 
-// Fonction pour gérer le mouvement des nœuds
-function ticked() {
-  node.attr("cx", d => d.x)
-      .attr("cy", d => d.y);
+function addField(fieldName, formElement, inputObject, data) {
+  if (fieldName.trim() === '' || Object.keys(inputObject).includes(fieldName)) {
+    return;
+  }
 
-  link.attr("x1", d => d.source.x)
-    .attr("y1", d => d.source.y)
-    .attr("x2", d => d.target.x)
-    .attr("y2", d => d.target.y);
-  updateGraph();
+  data.forEach(item => (item[fieldName] = ''));
+  createField(fieldName, formElement, inputObject, data);
+  updateForm(inputObject, selectedNode || selectedLink);
 }
 
-// Drag behavior
-const drag = simulation => {
-  function dragstarted(event, d) {
+  d3.select("#addNodeFieldButton").on("click", function() {
+    const fieldName = document.getElementById("addNodeFieldInput").value;
+    addField(fieldName, nodeForm, nodeInputs, nodes);
+  });
+  
+  d3.select("#addLinkFieldButton").on("click", function() {
+    const fieldName = document.getElementById("addLinkFieldInput").value;
+    addField(fieldName, linkForm, linkInputs, links);
+  });
+  
+  function updateNodes() {
+    const node = g.selectAll('.node')
+      .data(nodes, d => d.id);
+      
+    const nodeEnter = node.enter().append('g')
+      .attr('class', 'node')
+      .attr('transform', d => `translate(${d.x}, ${d.y})`)
+      .call(drag(simulation))
+      .on('click', selectNode)
+      .on('dblclick', event => event.stopPropagation());
+      
+    nodeEnter.append('circle')
+      .attr('r', getNodeSize);
+      
+    nodeEnter.append('text')
+      .attr('dx', 35)
+      .text(d => d.name);
+      
+    const nodeUpdate = nodeEnter.merge(node)
+      .classed('selected', d => d === selectedNode);
+      
+    nodeUpdate.select('circle')
+      .attr('r', getNodeSize);
+      
+    node.exit().remove();
+  }
+  
+function getNodeSize(d) {
+  const selectedValue = d3.select('#node-size').property('value');
+  return selectedValue === '' ? defaultNodeRadius : (d[selectedValue] || 0);
+}
+  
+function updateLinks() {
+  const link = g.selectAll('.link')
+  .data(links, d => `${d.source.id}-${d.target.id}`);
+
+  link.enter().append('path') // Replace 'line' with 'path'
+  .attr('class', 'link')
+  .attr('fill', 'none')
+  .attr('stroke', '#000') 
+  .attr('marker-end', 'url(#arrowhead)')
+  .on('click', selectLink)
+  .on('dblclick', event => event.stopPropagation())
+  .merge(link)
+  .classed('selected', d => d === selectedLink);
+
+  link.exit().remove();
+}
+
+function updateNodeLabels() {
+  const nodeLabel = g.selectAll('.node text')
+  .data(nodes, d => d.id);
+  nodeLabel.enter().append('text')
+  .attr('class', 'node-label')
+  .merge(nodeLabel)
+  .text(d => {
+    const selectedValue = d3.select('#node-label').property('value');
+    return d[selectedValue] || ""; // Utilise la valeur du champ sélectionné ou une chaîne vide si celle-ci n'est pas définie
+  });
+  nodeLabel.exit().remove();
+}
+
+function updateLinkLabels() {
+  const linkLabel = g.selectAll('.link-label')
+    .data(links, d => `${d.source.id}-${d.target.id}`);
+  linkLabel.enter().append('text')
+    .attr('class', 'link-label')
+    .attr('dx', 10)
+    .merge(linkLabel)
+    .classed('selected', d => d === selectedLink)
+    .text(d => {
+      const selectedValue = d3.select('#link-label').property('value');
+      return selectedValue !== "" ? d[selectedValue] || "" : "";
+    })
+    .on('click', selectLink);
+  linkLabel.exit().remove();
+}
+
+function updateLabels() {
+  updateLinkLabels();
+  updateNodeLabels();
+  updateLabelOptions(nodes, true);
+  updateLabelOptions(links, false);
+}
+
+function updateLabelOptions(data, isNode) {
+  let fieldOptions = getFieldOptions(data);
+
+  // Ajouter la case vide
+  fieldOptions.unshift("");
+
+  const labelOptions = isNode ? d3.select('#node-label') : d3.select('#link-label');
+
+  const options = labelOptions.selectAll('option')
+    .data(fieldOptions);
+
+  options.enter().append('option')
+    .merge(options)
+    .attr('value', d => d)
+    .text(d => d);
+
+  options.exit().remove();
+
+  // Sélection par défaut du champ "name" ou du champ vide
+  const selectedValue = labelOptions.property('value');
+  if (selectedValue === "" || !fieldOptions.includes(selectedValue)) {
+    if (isNode) {
+      labelOptions.property('value', "");
+    } else {
+      labelOptions.property('value', "");
+    }
+  }
+}
+
+function updateSizeOptions(data) {
+  const fieldOptions = getFieldOptions(data);
+  const sizeOptions = d3.select('#node-size');
+  
+  sizeOptions.selectAll('option').remove(); // Supprimer toutes les options existantes
+  
+  // Ajouter l'option vide en premier
+  sizeOptions.append('option')
+    .attr('value', '')
+    .text('');
+  
+  // Ajouter les autres options
+  sizeOptions.selectAll('option')
+    .data(fieldOptions)
+    .enter()
+    .append('option')
+    .attr('value', d => d)
+    .text(d => d);
+  
+  const defaultSizeOption = getDefaultSizeOption(fieldOptions);
+  sizeOptions.property('value', defaultSizeOption);
+}
+
+function getDefaultSizeOption(fieldOptions) {
+  if (fieldOptions.includes('size')) {
+    return 'size';
+  } else {
+    return '';
+  }
+}
+
+function getFieldOptions(data) {
+  const excludedKeys = ["x", "y", "vx", "vy", "fx", "fy"]; //A terme le rajouter paramètre d'entrée pour généralisation
+  const fields = new Set();
+
+  data.forEach(item => {
+    Object.keys(item).forEach(key => {
+      if (!excludedKeys.includes(key)) {
+        fields.add(key);
+      }
+    });
+  });
+
+  return Array.from(fields);
+}
+
+function updateGraph() {
+    updateNodes();
+    updateLinks();
+    updateLabels();
+    updateSizeOptions(nodes);
+    simulation.nodes(nodes).on('tick', ticked);
+    simulation.force('link').links(links);
+    simulation.alpha(1).restart();
+}
+
+function ticked() {
+  g.selectAll('.link')
+    .attr('d', d => {
+      const dx = d.target.x - d.source.x;
+      const dy = d.target.y - d.source.y;
+      const angle = Math.atan2(dy, dx);
+      const sourceRadius = d.source.r || 30; // Ajustez ces valeurs en fonction du rayon de vos nœuds
+      const targetRadius = d.target.r || 30+10; // +10 aussi arbitraire pour prendre en compte la taille de la flèche
+      const sourceX = d.source.x + Math.cos(angle) * sourceRadius;
+      const sourceY = d.source.y + Math.sin(angle) * sourceRadius;
+      const targetX = d.target.x - Math.cos(angle) * targetRadius;
+      const targetY = d.target.y - Math.sin(angle) * targetRadius;
+      const dr = Math.sqrt(dx * dx + dy * dy) * 0; // Ajustez le facteur multiplicatif pour augmenter la courbure : 0 = droit. En faire une variable pour fichier de config. je pense possible de rendre la courbure progressive pour éviter le changement brutal
+      const sweepFlag = dx > 0 ? 1 : 0; // Inverse le sens de l'arc si dx est négatif
+      return `M${sourceX},${sourceY}A${dr},${dr} 0 0,${sweepFlag} ${targetX},${targetY}`;
+    });
+  
+  g.selectAll('.node')
+      .attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+  g.selectAll('.link-label')
+      .attr('x', d => (d.source.x + d.target.x) / 2)
+      .attr('y', d => (d.source.y + d.target.y) / 2);
+
+  updateGraph(); // à désactiver avec variable on/off activable dans config_graph pour mettre en mode light
+}
+
+// Fonction de zoom et de déplacement
+function zoomed(event) {
+  if (event.sourceEvent.button === 2) { // Vérifie si le bouton droit de la souris est enfoncé
+    g.attr('transform', `translate(${event.transform.x},${event.transform.y})`);
+  } else {
+    g.attr('transform', `translate(${event.transform.x},${event.transform.y}) scale(${event.transform.k})`);
+  }
+}
+
+svg.call(d3.zoom()
+  .extent([[0, 0], [width, height]])
+  .scaleExtent([0.5, 3])
+  .filter(event => event.button === 2 || event.type === "wheel") //// Permet de déplacer seulement avec le bouton droit de la souris et de zoomer avec la molette
+  .on('zoom', zoomed));
+
+svg.on('dblclick.zoom', null);
+svg.on('contextmenu', event => event.preventDefault()); // Empêche l'affichage du menu contextuel lors du clic droit
+
+// Drag nodes
+function drag(simulation) {
+  function dragStarted(event) {
     if (!event.active) simulation.alphaTarget(0.3).restart();
-    d.fx = d.x;
-    d.fy = d.y;
+    event.subject.x = event.subject.x;
+    event.subject.y = event.subject.y;
   }
 
-  function dragged(event, d) {
-    d.fx = event.x;
-    d.fy = event.y;
+  function dragged(event) {
+    event.subject.fx = event.x;
+    event.subject.fy = event.y;
   }
 
-  function dragended(event, d) {
+  function dragEnded(event) {
     if (!event.active) simulation.alphaTarget(0);
-    d.fx = null;
-    d.fy = null;
+    event.subject.fx = null;
+    event.subject.fy = null;
   }
 
   return d3.drag()
-    .on("start", dragstarted)
-    .on("drag", dragged)
-    .on("end", dragended);
+    .on('start', dragStarted)
+    .on('drag', dragged)
+    .on('end', dragEnded);
 }
 
-// Importer un graph JSON
-function importGraph(jsonData) {
-  nodesData = jsonData.nodes;
-  linksData = jsonData.links;
-  
+function selectNode(event, d) {
+  if (event.ctrlKey && selectedNode) {
+    const newLink = createLink(selectedNode, d);
+    // Vérifie si le lien existe déjà
+    const existingLinkIndex = links.findIndex(l => l.source === newLink.source && l.target === newLink.target);
+    if (existingLinkIndex >= 0) {
+      links[existingLinkIndex].type = "bidirectionnel"; // A modifier pour le rendre utlisable
+    } else {
+      links.push(newLink);
+    }
 
-  // Créez un index des nœuds par ID pour faciliter la recherche
-  const nodeById = new Map(nodesData.map(d => [d.id, d]));
+    // Ne réinitialisez pas le nœud sélectionné
+    // selectedNode = null;
+    selectedLink = null;
+    nodeForm.classed('hidden', true);
+    linkForm.classed('hidden', true);
+    updateGraph();
+    return;
+  }
 
-  // Initialisez les positions x et y des nœuds
-  nodesData.forEach(node => {
-    node.x = Math.random() * width;
-    node.y = Math.random() * height;
-  });
+  // Met à jour les nœuds sélectionnés
+  if (selectedNode === d) {
+    nodeForm.classed('hidden', true);
+    selectedNode = null;
+  } else {
+    selectedNode = d;
+    selectedLink = null;
+    linkForm.classed('hidden', true);
+    nodeForm.classed('hidden', false);
+    document.getElementById("node-form-name").focus();  // Focus on "name" input
+    updateForm(nodeInputs, d);
+  }
+  updateGraph();
+}
 
-  // Mettez à jour les liens pour utiliser les objets de nœuds
-  linksData = linksData.filter(link => {
-    link.source = nodeById.get(link.source);
-    link.target = nodeById.get(link.target);
-
-  // Filtrer les liens avec des nœuds source et cible valides
-  return link.source !== undefined && link.target !== undefined;
-});
-
-
-  simulation.nodes(nodesData);
-  simulation.force("link").links(linksData);
+function selectLink(event, d) {
+  if (selectedLink === d) {
+    linkForm.classed('hidden', true);
+    selectedLink = null;
+  } else {
+    selectedLink = d;
+    selectedNode = null;
+    nodeForm.classed('hidden', true);
+    linkForm.classed('hidden', false);
+    document.getElementById("link-form-name").focus();  // Focus on "name" input
+    updateForm(linkInputs, d);
+  }
 
   updateGraph();
-
-  // Redémarrez la simulation avec les nouvelles données et réinitialisez l'alpha
-  simulation.alpha(1).restart();
 }
-  // Exporter un graph JSON
-  function exportGraph() {
-  const jsonData = {
-  nodes: nodesData,
-  links: linksData
+
+function createNode(x, y) {
+  const id = nextNodeId.toString();
+  nextNodeId++;
+  const newNode = {
+      id,
+      name: `Node ${id}`,
+      description: `Description ${id}`,
+      x,
+      y,
+      size: defaultNodeRadius // Ajouter la propriété size ici
   };
-  
-  return JSON.stringify(jsonData);
+  nodes.push(newNode);
+  updateGraph();
+  return newNode;
+}
+
+function createLink(source, target) {
+  const id = nextLinkId.toString();
+  nextLinkId++;
+  const newLink = {id, name: `Link ${id}`, description: `Description ${id}`, source: source.id, target: target.id};
+  links.push(newLink);
+  updateGraph();
+  return newLink;
+}
+
+function updateForm(inputs, data) {
+  for (const key in inputs) {
+    let value = data[key];
+    if (key === 'source' || key === 'target') {
+      value = value.id;
+    }
+    inputs[key].property('value', value || '');
+    inputs[key].on('input', function () {
+      if (key === 'source' || key === 'target') {
+        const selected = key === 'source' ? selectedLink.source : selectedLink.target;
+        const nodeId = this.value;
+        const node = nodes.find(node => node.id === nodeId);
+        if (node) {
+          selected[key] = node;
+        }
+      } else {
+        if (selectedLink) {
+          selectedLink[key] = this.value;
+        }
+        if (selectedNode) {
+          selectedNode[key] = this.value;
+        }
+      }
+      updateGraph();
+    });
+  }
+}
+
+// Supprime noeud et lien sélectionné lors de l'appuis sur la touche "Delete" ou "Backspace"
+window.addEventListener('keyup', function(event) {
+  if (['Delete', 'Backspace'].includes(event.key)) {
+    if (selectedNode) {
+      nodes = nodes.filter(node => node !== selectedNode);
+      links = links.filter(link => link.source !== selectedNode && link.target !== selectedNode);
+      selectedNode = null;
+      nodeForm.classed('hidden', true);
+    }
+    if (selectedLink) {
+      links = links.filter(link => link !== selectedLink);
+      selectedLink = null;
+      linkForm.classed('hidden', true);
+    }
+    updateGraph();
+  }
+});
+
+// Listener pour les changements dans les champs du formulaire
+for (const key in nodeInputs) {
+    nodeInputs[key].on('input', function () {
+      if (selectedNode) {
+        selectedNode[key] = this.value;
+      }
+    });
   }
   
-  // Gestion du menu de configuration (je pense non)
-  forceFieldCheckbox.on("change", function () {
-  if (this.checked) {
-  simulation.force("charge", d3.forceManyBody());
-  } else {
-  simulation.force("charge", null);
+  for (const key in linkInputs) {
+    linkInputs[key].on('input', function () {
+      if (selectedLink) {
+        selectedLink[key] = this.value;
+      }
+    });
   }
-  simulation.alpha(0.3).restart();
+
+// Exporter JSON
+d3.select('#export-json').on('click', function() {
+  const filteredNodes = nodes.map(node => {
+    const {vx, vy, fx, fy, index, ...rest} = node;
+    return rest;
   });
-  
 
-// ####################### IMPORT #######################
-// Importer un graph JSON à partir d'un fichier
+  const filteredLinks = links.map(link => {
+    const { id, source, target, ...rest } = link;
+    return { id, source: source.id, target: target.id, ...rest };
+  });
 
-/*
-function importGraphFromFile(file) {
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    const jsonData = JSON.parse(event.target.result);
-    importGraph(jsonData);
-  };
-  reader.readAsText(file);
-}
-
-// Exporter un graph JSON dans un fichier
-function exportGraphToFile() {
-  const jsonData = exportGraph();
-  const blob = new Blob([jsonData], {type: "application/json;charset=utf-8"});
+  const json = JSON.stringify({nodes: filteredNodes, links: filteredLinks}, null, 2); // Utilisation du paramètre null et 2 pour l'indentation
+  const blob = new Blob([json], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "graph.json";
-  link.click();
-  URL.revokeObjectURL(url);
-}
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'graph.json';
+  a.click();
+});
 
-// Liez les boutons d'importation et d'exportation aux fonctions
-const importButton = d3.select("#importButton");
-const importFile = d3.select("#importFile");
-const exportButton = d3.select("#exportButton");
+// Importer JSON
+d3.select('#import-json').on('click', function() {
+  d3.select('#json-file').node().click();
+});
 
-importButton.on("click", () => importFile.node().click());
-importFile.on("change", () => importGraphFromFile(importFile.node().files[0]));
-exportButton.on("click", exportGraphToFile);
+d3.select('#json-file').on('change', function() {
+  const file = this.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const jsonData = JSON.parse(event.target.result);
 
-*/
-// ####################### IMPORT - END #######################
+      // Obtenir les clés de l'objet JSON
+      const keys = Object.keys(jsonData);
 
-  // Exemple de données pour tester
-  const exampleData = {
-  nodes: [
-  {id: 1, "name": "Node 1", description: "This is node 1"},
-  {id: 2, "name": "Node 2", description: "This is node 2"},
-  {id: 3, "name": "Node 3", description: "This is node 3"}
-  ],
-  links: [
-  {id: 1, source: 1, target: 2, "edge name": "Edge 1", description: "This is edge 1"},
- 
-  ]
-  };
-  
-  importGraph(exampleData);
+      // Utiliser la première clé pour les noeuds et la deuxième pour les liens. Permet de namemer les choses différemment.
+      const nodeKey = keys[0];
+      const linkKey = keys[1];
+
+      // Utiliser les clés pour charger les noeuds et les liens
+      nodes = jsonData[nodeKey];
+      links = jsonData[linkKey].map(link => ({
+        ...link,
+        source: nodes.find(node => node.id === link.source),
+        target: nodes.find(node => node.id === link.target)
+      }));
+
+      clearFormInputs(nodeForm);
+      clearFormInputs(linkForm);
+
+      // Crée les champs d'input pour les noeuds et les liens importés
+      createFormInputs(nodes, nodeForm, nodeInputs);
+      createFormInputs(links, linkForm, linkInputs);
+
+      updateGraph();
+    };
+    reader.readAsText(file);
+  }
+});
+
+//pour debug, update graph
+d3.select('#update').on('click', function() {
+  updateGraph();
+});
+
+//Créer noeud en double cliquant dans la zone SVG en adaptant les coordonnées au zoom
+svg.on('dblclick', (event) => {
+    const transform = d3.zoomTransform(svg.node());
+    const point = transform.invert([event.clientX, event.clientY]);
+    createNode(point[0], point[1]);
+});
+
+// Créez un nouveau nœud et un lien lors d'un ctrl + clic sur le SVG
+svg.on('mousedown', (event) => {
+  if (event.ctrlKey && selectedNode) {
+      // Obtenez les coordonnées du point de clic adapté au zoom
+      const transform = d3.zoomTransform(svg.node());
+      const point = transform.invert(d3.pointer(event));
+      const existingNode = nodes.find(node => Math.hypot(point[0] - node.x, point[1] - node.y) < defaultNodeRadius);
+       // Si un nœud existant est présent, ne créez pas de lien ici
+      if (!existingNode) {
+          // Si aucun nœud existant n'est présent, créez un nouveau nœud et un lien
+          const newNode = createNode(point[0], point[1]);
+          createLink(selectedNode, newNode);
+          // Si ctrl + shift + clic est pressé, sélectionnez automatiquement le nouveau nœud créé
+          if (event.shiftKey) {
+              selectedNode = newNode;
+          }
+      }
+  }
+});
+
+// Désélectionne le nœud et le lien sélectionné lors de l'appui sur la touche "Échap"
+window.addEventListener('keyup', function(event) {
+  if (event.key === 'Escape') {
+    if (selectedNode) {
+      selectedNode = null;
+      nodeForm.classed('hidden', true);
+    }
+    if (selectedLink) {
+      selectedLink = null;
+      linkForm.classed('hidden', true);
+    }
+    updateGraph();
+  }
+});
+
+// Temporaire pour résoudre le problème "name" non initialisé de la liste déroulante des labels des noeuds
+d3.select("#changeNodeLabelButton").on("click", function() {
+  const selectedValue = "name"; // Valeur que vous souhaitez sélectionner
+
+  // Sélectionnez la liste déroulante des labels des nœuds
+  const labelOptions = d3.select("#node-label");
+
+  // Mettez à jour la valeur sélectionnée de la liste déroulante
+  labelOptions.property("value", selectedValue);
+
+  // Mettez à jour le graphique en fonction de la nouvelle sélection
+  updateGraph();
+});
+
+// Initialise le graph
+updateGraph();

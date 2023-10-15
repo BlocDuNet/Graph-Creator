@@ -8,3 +8,8 @@ Créer un code sur d3.js v6 qui permette de :
 - L'utilisateur peut renommer, ajouter et supprimer de nouveaux champs pour les noeuds et pour les liens.
 - Pouvoir importer et exporter les graph en JSON
 - Créer un menu de configuration pour activer ou désactiver des options comme : le "force field"
+
+
+
+
+

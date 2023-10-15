@@ -1,0 +1,66 @@
+{
+    "nodes": [
+        {
+            "id": 2,
+            "title": "I have an idea",
+            "x": 159.00001525878906,
+            "y": 50.695316314697266
+        },
+        {
+            "id": 3,
+            "title": "So, I create a graph",
+            "x": 69,
+            "y": 232.69528198242188
+        },
+        {
+            "id": 4,
+            "title": "And it's very cool !",
+            "x": 252.00001525878906,
+            "y": 228.69529724121094
+        },
+        {
+            "id": 5,
+            "title": "And easy",
+            "x": 248.00001525878906,
+            "y": 391.6953125
+        },
+        {
+            "id": 6,
+            "title": "And quickly",
+            "x": 420,
+            "y": 413.6953125
+        },
+        {
+            "id": 7,
+            "title": "And...I think...",
+            "x": 452.8393249511719,
+            "y": 173.04467010498047
+        }
+    ],
+    "edges": [
+        {
+            "source": 2,
+            "target": 3
+        },
+        {
+            "source": 3,
+            "target": 4
+        },
+        {
+            "source": 4,
+            "target": 5
+        },
+        {
+            "source": 5,
+            "target": 6
+        },
+        {
+            "source": 6,
+            "target": 7
+        },
+        {
+            "source": 7,
+            "target": 2
+        }
+    ]
+}

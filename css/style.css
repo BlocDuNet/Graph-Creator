@@ -1,5 +1,135 @@
-.label {
-    font-size: 12px;
-    font-family: sans-serif;
-    fill: #333;
+
+body {
+  overflow: hidden; /* Enlève le scroll du HTML */
 }
+
+/* Graph */
+.link {
+  stroke: #000000;
+  stroke-width:5;
+  marker-end: url(#arrowhead);
+}
+
+.node {
+  stroke: #ffffff00;
+  stroke-width: 2px;
+  fill: #000000bb;
+}
+
+.selected{
+  stroke: #f00;
+}
+
+.selected text{
+  font-size: 2em;
+  fill:#f00;
+}
+
+.selected .link-label{
+  font-size: 2em;
+  fill:#f00;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Empêche l'auto-sélection du texte par double clic */
+svg {
+  background-color: #FFF;
+  cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+/* Graph end */
+
+/* Panel */
+#bottom-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 450px; /* Taille fixe */
+
+    transition: all 0.3s ease;
+}
+
+#bottom-panel.collapsed {
+    height: 20px;
+    overflow-y: hidden;
+}
+
+.card-body{
+    overflow-y: auto;
+}
+
+.card-header {
+  cursor: pointer;
+  padding-top: 0px;
+}
+
+
+#bottom-panel.collapsed {
+  height: 60px;
+  overflow: hidden;
+}
+
+.arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 5px;
+  margin-bottom: -10px;
+  vertical-align: middle;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+.arrow-up {
+  border-bottom: 4px solid currentColor;
+}
+
+.arrow-down {
+  border-top: 4px solid currentColor;
+}
+
+.header-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* Panel end */
+
+/* Tableur */
+.table-container {
+    max-width: 650px; /* Définir la largeur maximale du conteneur du tableau */
+    margin: 0 auto; /* Centrer le conteneur horizontalement */
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  th, td {
+    border: 1px solid black;
+    padding: 8px;
+    text-align: left;
+  }
+/* Tableur end */
+
+.context-menu {
+  position: absolute;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 8px;
+  list-style: none;
+}
+
+
+
