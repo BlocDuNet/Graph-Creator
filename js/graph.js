@@ -399,7 +399,10 @@ function selectNode(event, d) {
     selectedLink = null;
     linkForm.classed('hidden', true);
     nodeForm.classed('hidden', false);
-    document.getElementById("node-form-name").focus();  // Focus on "name" input
+    setTimeout(function() {
+      document.getElementById("node-form-name").focus();
+      document.getElementById("node-form-name").select();
+    }, 100); // delais nécessaire pour que ça marche, peu rigoureux à changer plus tard
     updateForm(nodeInputs, d);
   }
   updateGraph();
