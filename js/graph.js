@@ -617,19 +617,35 @@ window.addEventListener('keyup', function(event) {
   }
 });
 
-// Temporaire pour résoudre le problème "name" non initialisé de la liste déroulante des labels des noeuds
-d3.select("#changeNodeLabelButton").on("click", function() {
-  const selectedValue = "name"; // Valeur que vous souhaitez sélectionner
-
-  // Sélectionnez la liste déroulante des labels des nœuds
-  const labelOptions = d3.select("#node-label");
-
+// Initialise automatiquement les labels au chargement + bouton Initialisé
+function initializeLabels() {
+  const selectedValueNode = "name";
+  const selectedValueLink = "";
+  // Sélectionnez la liste déroulante des labels
+  const nodeDefaultName = d3.select("#node-label");
+  const linkDefaultName = d3.select("#link-label");
   // Mettez à jour la valeur sélectionnée de la liste déroulante
-  labelOptions.property("value", selectedValue);
-
+  nodeDefaultName.property("value", selectedValueNode);
+  linkDefaultName.property("value", selectedValueLink);
   // Mettez à jour le graphique en fonction de la nouvelle sélection
   updateGraph();
+}
+// Attendez que le document soit prêt
+document.addEventListener("DOMContentLoaded", function() {
+  // Sélectionnez le bouton par son ID
+  const changeLabelButton = document.getElementById("changeLabelButton");
+  // Définissez un gestionnaire d'événement de clic pour le bouton
+  changeLabelButton.addEventListener("click", initializeLabels);
+  // Déclenchez le clic sur le bouton
+  const clickEvent = new MouseEvent("click", {
+    bubbles: true,
+    cancelable: true,
+    view: window
+  });
+  changeLabelButton.dispatchEvent(clickEvent);
 });
+// Initialise automatiquement les labels au chargement + bouton Initialisé - END
+
 
 // Initialise le graph
 updateGraph();

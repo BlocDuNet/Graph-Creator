@@ -90,23 +90,27 @@
             </p>
           </div>
           <div class="tab-pane fade show active" id="tab1">
-            <p>
-              <button id="export-json">Export JSON</button>
-              <button id="import-json">Import JSON</button>
-              <input type="file" id="json-file" accept=".json" class="hidden">
-            </p>
             <p><!-- TODO -->
               (TODO)
               <button id="undo-button">Undo</button>
               <button id="redo-button">Redo</button>
             </p>
+            <hr> 
             <p>
               <button id="update">debug</button>
-              <button id="changeNodeLabelButton">Changer le label des nœuds</button>
             </p>
           </div>
           <div class="tab-pane fade" id="tab2">
             <p>
+              <p>
+                <button id="export-json">Export JSON</button>
+                <button id="import-json">Import JSON</button>
+                <input type="file" id="json-file" accept=".json" class="hidden">
+              </p>
+              <p>
+                <button id="changeLabelButton">Initialiser les labels à name</button>
+              </p>
+              <hr>
               <p>
                 <button id="addNodeFieldButton">Add Node Field</button>
                 <input type="text" id="addNodeFieldInput" placeholder="New node name">
@@ -121,19 +125,17 @@
                 <label for="link-label">Label du lien:</label>
                 <select id="link-label">
                 </select>
-                <label for="node-size">Node size : </label>
+                <label for="node-size">Node size : (inactif)</label>
                 <select id="node-size"></select>
                 <input type="number" id="node-size-input" value="10" step="0.1" min="0" max="100" onchange="updateNodeSize()">
-
               </p>
-              <hr>
               <form id="node-form" class="hidden"></form>
               <form id="link-form" class="hidden"></form>
             </p>
           </div>
           <div class="tab-pane fade" id="tab3">
             <p>
-              <span id="import-config-json"></span>
+              <span id="import-config-json">Config : </span>
               <br>
               <label for="export-config">Export config :</label>
               <button id="export-config">Export config</button>

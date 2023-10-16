@@ -136,9 +136,9 @@ fetch(directoryPath)
         console.log(jsonObj);
       })
       .catch(error => console.error('Erreur lors du chargement du fichier JSON : ', error));
-  })
-  .catch(error => console.error('Erreur lors de la récupération de la liste des fichiers JSON : ', error));
-// # Import JSON # END
+    })
+    .catch(error => console.error('Erreur lors de la récupération de la liste des fichiers JSON : ', error));
+  // # Import JSON # END
 
 //Export vers graph.js (as module ES6)
 export function getForceConfiguration() {
