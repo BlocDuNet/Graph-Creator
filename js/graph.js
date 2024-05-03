@@ -71,7 +71,7 @@ function createField(fieldName, formElement, inputObject, data) {
       .append('button')
       .text('x')
       .on('click', function() {
-        const confirmed = confirm("Êtes-vous sûr de vouloir supprimer ce champ ?");
+        const confirmed = confirm("Êtes-vous sûr de vouloir supprimer ce champ ? ATTENTION cela supprimera les valeurs de ce champs pour tous les noeuds");
         if (confirmed) {
           data.forEach(item => delete item[fieldName]);
           fieldDiv.remove();
