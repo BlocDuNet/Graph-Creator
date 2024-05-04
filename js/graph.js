@@ -380,12 +380,12 @@ function selectNode(event, d) {
     } else {
       links.push(newLink);
     }
-
     // Ne réinitialisez pas le nœud sélectionné
     // selectedNode = null;
     selectedLink = null;
     nodeForm.classed('hidden', true);
     linkForm.classed('hidden', true);
+
     updateGraph();
     return;
   }
@@ -425,6 +425,7 @@ function selectLink(event, d) {
 }
 
 function createNode(x, y) {
+  document.querySelector('a[href="#tab2"]').click(); // Focus on Value tab. Problème, le champs nom n'est pas sélectionné pour le premier noeud crée
   const id = nextNodeId.toString();
   nextNodeId++;
   const newNode = {
@@ -436,7 +437,7 @@ function createNode(x, y) {
       size: defaultNodeRadius // Ajouter la propriété size ici
   };
   nodes.push(newNode);
-  updateGraph();
+    updateGraph();
   return newNode;
 }
 
