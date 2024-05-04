@@ -475,6 +475,14 @@ function updateForm(inputs, data) {
       updateGraph();
     });
   }
+
+  // Définir le focus sur le champ de nom si un nœud est sélectionné
+  if (selectedNode) {
+    setTimeout(function() {
+      document.getElementById("node-form-name").focus();
+      document.getElementById("node-form-name").select();
+    }, 10);
+  }
 }
 
 // Supprime noeud et lien sélectionné lors de l'appuis sur la touche "Delete" ou "Backspace"
@@ -583,6 +591,12 @@ svg.on('dblclick', (event) => {
     const transform = d3.zoomTransform(svg.node());
     const point = transform.invert([event.clientX, event.clientY]);
     createNode(point[0], point[1]);
+
+    // Sélectionne le noeud crée
+    selectedNode = nodes[nodes.length - 1];
+    selectedLink = null;
+    nodeForm.classed('hidden', false);
+    updateForm(nodeInputs, selectedNode);
 });
 
 // Créez un nouveau nœud et un lien lors d'un ctrl + clic sur le SVG
@@ -600,6 +614,8 @@ svg.on('mousedown', (event) => {
           // Si ctrl + shift + clic est pressé, sélectionnez automatiquement le nouveau nœud créé
           if (event.shiftKey) {
               selectedNode = newNode;
+              nodeForm.classed('hidden', false);
+              updateForm(nodeInputs, selectedNode);
           }
       }
   }
