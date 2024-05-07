@@ -133,29 +133,29 @@ function addField(fieldName, formElement, inputObject, data) {
   function updateNodes() {
     const node = g.selectAll('.node')
       .data(nodes, d => d.id);
-      
+  
     const nodeEnter = node.enter().append('g')
       .attr('class', 'node')
-      .attr('transform', d => `translate(${d.x}, ${d.y})`)
       .call(drag(simulation))
       .on('click', selectNode)
       .on('dblclick', event => event.stopPropagation());
-      
+  
     nodeEnter.append('circle')
       .attr('r', getNodeSize);
-      
+  
     nodeEnter.append('text')
       .attr('dx', 35)
       .text(d => d.name);
-      
+  
     const nodeUpdate = nodeEnter.merge(node)
       .classed('selected', d => d === selectedNode);
-      
+  
     nodeUpdate.select('circle')
       .attr('r', getNodeSize);
-      
+  
     node.exit().remove();
   }
+  
   
 function getNodeSize(d) {
   const selectedValue = d3.select('#node-size').property('value');
