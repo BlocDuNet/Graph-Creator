@@ -61,8 +61,11 @@ function createField(fieldName, formElement, inputObject, data) {
     .attr('type', 'text')
     .attr('id', `${formElement.attr('id')}-${fieldName}`)
     .attr('name', fieldName)
-    .on('input', handleInput);
-  
+    .on('input', handleInput)
+    .on('error', function() {
+      console.error('An error occurred in handleInput function.');
+    });
+
   inputObject[fieldName] = input;
 
   // Ajout bouton supprimer champs
@@ -77,6 +80,9 @@ function createField(fieldName, formElement, inputObject, data) {
           fieldDiv.remove();
           delete inputObject[fieldName];
         }
+      })
+      .on('error', function() {
+        console.error('An error occurred in deleteButton click event.');
       });
   }
 }
