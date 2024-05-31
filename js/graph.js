@@ -375,7 +375,7 @@ function selectNode(event, d) {
     selectedLink = null;
     nodeForm.classed('hidden', true);
     linkForm.classed('hidden', true);
-
+  
     updateGraph();
     return;
   }
@@ -389,10 +389,11 @@ function selectNode(event, d) {
     selectedLink = null;
     linkForm.classed('hidden', true);
     nodeForm.classed('hidden', false);
+    document.querySelector('a[href="#tab2"]').click(); // Switch to the "Valeurs" tab
     setTimeout(function() {
       document.getElementById("node-form-name").focus();
       document.getElementById("node-form-name").select();
-    }, 100); // delais nécessaire pour que ça marche, peu rigoureux à changer plus tard
+    }, 200); // delais nécessaire pour que ça marche, peu rigoureux à changer plus tard
     updateForm(nodeInputs, d);
   }
   updateGraph();
@@ -407,7 +408,11 @@ function selectLink(event, d) {
     selectedNode = null;
     nodeForm.classed('hidden', true);
     linkForm.classed('hidden', false);
-    document.getElementById("link-form-name").focus();  // Focus on "name" input
+    document.querySelector('a[href="#tab2"]').click(); // Switch to the "Valeurs" tab
+    setTimeout(function() {
+      document.getElementById("link-form-name").focus();
+      document.getElementById("link-form-name").select();
+    }, 200); // delais nécessaire pour que ça marche, peu rigoureux à changer plus tard
     updateForm(linkInputs, d);
   }
 
