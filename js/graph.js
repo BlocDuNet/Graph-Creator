@@ -217,22 +217,15 @@ function updateLabels() {
 
 function updateLabelOptions(data, isNode) {
   let fieldOptions = getFieldOptions(data);
-
-  // Ajouter la case vide
-  fieldOptions.unshift("");
-
+  fieldOptions.unshift("");   // Ajouter la case vide
   const labelOptions = isNode ? d3.select('#node-label') : d3.select('#link-label');
-
   const options = labelOptions.selectAll('option')
     .data(fieldOptions);
-
   options.enter().append('option')
     .merge(options)
     .attr('value', d => d)
     .text(d => d);
-
   options.exit().remove();
-
   // Sélection par défaut du champ "name" ou du champ vide
   const selectedValue = labelOptions.property('value');
   if (selectedValue === "" || !fieldOptions.includes(selectedValue)) {
@@ -247,14 +240,11 @@ function updateLabelOptions(data, isNode) {
 function updateSizeOptions(data) {
   const fieldOptions = getFieldOptions(data);
   const sizeOptions = d3.select('#node-size');
-  
   sizeOptions.selectAll('option').remove(); // Supprimer toutes les options existantes
-  
   // Ajouter l'option vide en premier
   sizeOptions.append('option')
     .attr('value', '')
     .text('');
-  
   // Ajouter les autres options
   sizeOptions.selectAll('option')
     .data(fieldOptions)
