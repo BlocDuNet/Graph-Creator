@@ -395,11 +395,7 @@ function selectNode(event, d) {
     selectedLink = null;
     linkForm.classed('hidden', true);
     nodeForm.classed('hidden', false);
-    document.querySelector('a[href="#tab2"]').click(); // Switch to the "Valeurs" tab
-    setTimeout(function() {
-      document.getElementById("node-form-name").focus();
-      document.getElementById("node-form-name").select();
-    }, 200); // delais nécessaire pour que ça marche, peu rigoureux à changer plus tard
+    focusInputField('a[href="#tab2"]', 'node-form-name');
     updateForm(nodeInputs, d);
   }
   updateGraph();
@@ -414,19 +410,36 @@ function selectLink(event, d) {
     selectedNode = null;
     nodeForm.classed('hidden', true);
     linkForm.classed('hidden', false);
-    document.querySelector('a[href="#tab2"]').click(); // Switch to the "Valeurs" tab
-    setTimeout(function() {
-      document.getElementById("link-form-name").focus();
-      document.getElementById("link-form-name").select();
-    }, 200); // delais nécessaire pour que ça marche, peu rigoureux à changer plus tard
+    focusInputField('a[href="#tab2"]', 'link-form-name');
     updateForm(linkInputs, d);
   }
 
   updateGraph();
 }
 
+// Focus on the specified input field and tab
+function focusInputField(tabSelector, fieldId) {
+  // Focus on the specified tab
+  document.querySelector(tabSelector).click();
+  // Create a new MutationObserver
+  const observer = new MutationObserver((mutationsList, observer) => {
+    // Select the specified input field
+    const inputField = document.getElementById(fieldId);
+    // If the input field exists, focus on it and select its contents
+    if (inputField) {
+      inputField.focus();
+      inputField.select();
+      // Disconnect the observer to stop watching for changes
+      observer.disconnect();
+    }
+  });
+  // Start observing the document for changes to the input field
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+
 function createNode(x, y) {
-  document.querySelector('a[href="#tab2"]').click(); // Focus on Value tab. Problème, le champs nom n'est pas sélectionné pour le premier noeud crée
+  focusInputField('a[href="#tab2"]', 'node-form-name');
   const id = nextNodeId.toString();
   nextNodeId++;
   const newNode = {
@@ -435,7 +448,7 @@ function createNode(x, y) {
       description: `Description ${id}`,
       x,
       y,
-      size: defaultNodeRadius // Ajouter la propriété size ici
+      size: defaultNodeRadius
   };
   nodes.push(newNode);
     updateGraph();
@@ -480,10 +493,7 @@ function updateForm(inputs, data) {
 
   // Définir le focus sur le champ de nom si un nœud est sélectionné
   if (selectedNode) {
-    setTimeout(function() {
-      document.getElementById("node-form-name").focus();
-      document.getElementById("node-form-name").select();
-    }, 10);
+    focusInputField('a[href="#tab2"]', 'node-form-name');
   }
 }
 
