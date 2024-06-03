@@ -103,10 +103,11 @@
           <div class="tab-pane fade" id="tab2">
             <p>
               <p>
-                <button id="export-json">Export JSON</button>
-                <button id="import-json">Import JSON</button>
-                <input type="file" id="json-file" accept=".json" class="hidden">
-              </p>
+                <button id="export-json" aria-label="Export data in JSON format">Export JSON</button>
+                <button id="import-json" aria-label="Import data from a JSON file">Import JSON</button>
+                <input type="file" id="json-file" accept=".json" class="hidden" aria-label="Select a JSON file to import">
+                
+            </p>                         
               <p>
                 <button id="changeLabelButton">Initialiser les labels à name</button>
               </p>
@@ -178,3 +179,4 @@
 <!-- Important, insérer le script après le body pour que ça marche -->
 <script type="module" src="js/graph.js"></script>
 </html>
+
