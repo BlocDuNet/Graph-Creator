@@ -464,6 +464,23 @@ function createLink(source, target) {
   return newLink;
 }
 
+// Function to delete a node and its associated links
+function deleteNode(node) {
+  nodes = nodes.filter(n => n !== node);
+  links = links.filter(link => link.source !== node && link.target !== node);
+  selectedNode = null;
+  nodeForm.classed('hidden', true);
+  updateGraph();
+}
+
+// Function to delete a link
+function deleteLink(link) {
+  links = links.filter(l => l !== link);
+  selectedLink = null;
+  linkForm.classed('hidden', true);
+  updateGraph();
+}
+
 function updateForm(inputs, data) {
   for (const key in inputs) {
     let value = data[key];
@@ -497,21 +514,16 @@ function updateForm(inputs, data) {
   }
 }
 
-// Supprime noeud et lien sélectionné lors de l'appuis sur la touche "Delete" ou "Backspace"
+
+// Event listener for 'Delete' or 'Backspace' key press
 window.addEventListener('keyup', function(event) {
   if (['Delete', 'Backspace'].includes(event.key)) {
     if (selectedNode) {
-      nodes = nodes.filter(node => node !== selectedNode);
-      links = links.filter(link => link.source !== selectedNode && link.target !== selectedNode);
-      selectedNode = null;
-      nodeForm.classed('hidden', true);
+      deleteNode(selectedNode);
     }
     if (selectedLink) {
-      links = links.filter(link => link !== selectedLink);
-      selectedLink = null;
-      linkForm.classed('hidden', true);
+      deleteLink(selectedLink);
     }
-    updateGraph();
   }
 });
 
@@ -680,3 +692,4 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Initialise le graph
 updateGraph();
+
