@@ -1,5 +1,6 @@
 // Import de config_graph.js
 import { getForceConfiguration } from './config_graph.js';
+import { saveState, undo, redo } from './undo_redo.js';
 
 const forceConfig = getForceConfiguration();
 
@@ -450,8 +451,9 @@ function createNode(x, y) {
       y,
       size: defaultNodeRadius
   };
+  saveState(nodes, links); // Save the state before adding a new node
   nodes.push(newNode);
-    updateGraph();
+  updateGraph();
   return newNode;
 }
 
@@ -459,13 +461,14 @@ function createLink(source, target) {
   const id = nextLinkId.toString();
   nextLinkId++;
   const newLink = {id, name: `Link ${id}`, description: `Description ${id}`, source: source.id, target: target.id};
+  saveState(nodes, links); // Save the state before adding a new link
   links.push(newLink);
   updateGraph();
   return newLink;
 }
 
-// Function to delete a node and its associated links
 function deleteNode(node) {
+  saveState(nodes, links); // Save the state before deleting a node
   nodes = nodes.filter(n => n !== node);
   links = links.filter(link => link.source !== node && link.target !== node);
   selectedNode = null;
@@ -473,13 +476,14 @@ function deleteNode(node) {
   updateGraph();
 }
 
-// Function to delete a link
 function deleteLink(link) {
+  saveState(nodes, links); // Save the state before deleting a link
   links = links.filter(l => l !== link);
   selectedLink = null;
   linkForm.classed('hidden', true);
   updateGraph();
 }
+
 
 function updateForm(inputs, data) {
   for (const key in inputs) {
@@ -543,6 +547,25 @@ for (const key in nodeInputs) {
       }
     });
   }
+
+d3.select("#undoButton").on("click", function() {
+    const previousState = undo();
+    if (previousState) {
+        nodes = previousState.nodes;
+        links = previousState.links;
+        updateGraph();
+    }
+});
+
+d3.select("#redoButton").on("click", function() {
+    const nextState = redo();
+    if (nextState) {
+        nodes = nextState.nodes;
+        links = nextState.links;
+        updateGraph();
+    }
+});
+
 
 // Exporter JSON
 d3.select('#export-json').on('click', function() {
