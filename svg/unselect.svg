@@ -1,0 +1,7 @@
+<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="25" cy="25" r="10" fill="#4285f4">
+    <animate attributeName="stroke-width" values="3;0;3" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="stroke" values="#333;transparent;#333" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <text x="25" y="46" text-anchor="middle" font-size="6" fill="#333">ESC</text>
+</svg>

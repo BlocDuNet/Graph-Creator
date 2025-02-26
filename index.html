@@ -1,182 +1,233 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Graph Network avec D3.js v6</title>
-
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-  <link rel="stylesheet" href="css/style.css" />
-</head>
-<body>
-  <svg width="800" height="600">
-    <defs>
-      <marker id="arrowhead" markerWidth="10" markerHeight="7" 
-      refX="3" refY="1.75" orient="auto">
-          <polygon points="0 0, 5 1.75, 0 3" />
-      </marker>
-  </defs>
-  </svg>
-  <!-- Volet -->
-  <div class="container-fluid">
-    <div id="bottom-panel" class="card">
-      <div class="card-header" id="bottom-panel-header">
-        <div class="header-toggle">
-          <ul class="nav nav-tabs card-header-tabs">
-            <!-- Ajout d'onglet vide pour éviter la sélection de texte lors d'un double clic pour créer des noeuds sur le graph - enlevé au profit de "user-select" par CSS -->
-            <!-- <li class="nav-item"><a class="nav-link" href="#tabempty" data-toggle="tab"></a></li> -->
-            <li class="nav-item"><a class="nav-link" href="#tab_help" data-toggle="tab">?</a></li>
-            <li class="nav-item"><a class="nav-link active" href="#tab1" data-toggle="tab">Actions</a></li>
-            <li class="nav-item"><a class="nav-link" href="#tab2" data-toggle="tab">Valeurs</a></li>
-            <li class="nav-item"><a class="nav-link" href="#tab3" data-toggle="tab">Config graph</a></li>
-            <li class="nav-item"><a class="nav-link" href="#tab4" data-toggle="tab">AI Request</a></li>
-          </ul>
-          <span class="arrow arrow-down"></span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Graph Network avec D3.js v6</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"
+    ></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <svg width="800" height="600">
+      <defs>
+        <marker
+          id="arrowhead"
+          markerWidth="10"
+          markerHeight="7"
+          refX="3"
+          refY="1.75"
+          orient="auto"
+        >
+          <polygon points="0 0, 5 1.75, 0 3.5" />
+        </marker>
+      </defs>
+    </svg>
+    <!-- Volet -->
+    <div class="container-fluid">
+      <div id="bottom-panel" class="card">
+        <div class="card-header" id="bottom-panel-header">
+          <div class="header-toggle">
+            <ul class="nav nav-tabs card-header-tabs">
+              <li class="nav-item">
+                <a class="nav-link" href="#tab_help" data-toggle="tab">?</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" href="#tab1" data-toggle="tab">Actions</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#tab2" data-toggle="tab">Valeurs</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#tab3" data-toggle="tab">Config graph</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#tab4" data-toggle="tab">AI Request</a>
+              </li>
+            </ul>
+            <span class="arrow arrow-down"></span>
+          </div>
         </div>
-      </div>
-      <div class="card-body">
-        <div class="tab-content">
-          <div class="tab-pane fade" id="tab_help">
-            <p>
-              <table class="table-container">
-                <tr>
-                  <th>Actions</th>
-                  <th>Instructions</th>
-                </tr>
-                <tr>
-                  <td><b>Create a node</b></td>
-                  <td><b>Double click</b> in the void</td>
-                </tr>
-                <tr>
-                  <td><b>Create a edge</b></td>
-                  <td><b>Click on a node</b> then <b>CTRL + Click on the target</b> node</td>
-                </tr>
-                <tr>
-                  <td><b>Create a node with edge</b></td>
-                  <td><b>Click on a node</b> then <b>CTRL + Click on empty space</b> (Add Shift for focus select on the new node)</td>
-                </tr>
-                <tr>
-                  <td><b>Delete</b> (node/edge)</td>
-                  <td><b>Select a node/edge</b> and press <b>Delete</b> or <b>Backspace</b></td>
-                </tr>
-                <tr>
-                  <td><b>Unselect</b> (node/edge)</td>
-                  <td>Press <b>Echap</b> or <b>Clic again on same node/edge</b></td>
-                </tr>
-                <tr>
-                  <td><b>Change name</b> (node/edge)</td>
-                  <td><b>Select item </b>then change value in <b>value tab</b></td>
-                </tr>
-                <tr>
-                  <td><b>Zoom</b></td>
-                  <td>Mouse <b>wheel scroll</b></td>
-                </tr>
-                <tr>
-                  <td><b>Move node</b></td>
-                  <td><b>Left click + drag</b></td>
-                </tr>
-                <tr>
-                  <td><b>Move graph</b></td>
-                  <td><b>Right click + drag</b></td>
-                </tr>
-              </table>
+        <div class="card-body">
+          <div class="tab-content">
+            <div class="tab-pane fade" id="tab_help">
               <p>
-                Tips : You can select Node and Edge by clicking on their labels
+                <center><b>How to do</b></center>
               </p>
-            </p>
-          </div>
-          <div class="tab-pane fade show active" id="tab1">
-            <p><!-- TODO -->
-              (TODO)
-              <button id="undoButton">Undo</button>
-              <button id="redoButton">Redo</button>              
-            </p>
-            <hr> 
-            <p>
-              <button id="update">debug</button>
-            </p>
-          </div>
-          <div class="tab-pane fade" id="tab2">
-            <p>
               <p>
-                <button id="export-json" aria-label="Export data in JSON format">Export JSON</button>
-                <button id="import-json" aria-label="Import data from a JSON file">Import JSON</button>
-                <input type="file" id="json-file" accept=".json" class="hidden" aria-label="Select a JSON file to import">
-                
-            </p>                         
+                <table class="table-container">
+                  <tr>
+                    <th>Icon</th>
+                    <th>Actions</th>
+                    <th>Instructions</th>
+                  </tr>
+                  <tr>
+                    <td><object type="image/svg+xml" data="svg/create-node.svg" width="40" height="40" title="Create a node"></object></td>
+                    <td><b>Create a node</b></td>
+                    <td><b>Double click</b> in the void</td>
+                  </tr>
+                  <tr>
+                    <td><object type="image/svg+xml" data="svg/create-edge.svg" width="40" height="40" title="Create an edge"></object></td>
+                    <td><b>Create an edge</b></td>
+                    <td>
+                      <b>Click on a node</b> then <b>CTRL+Click on the target</b>
+                      node</td
+                    >
+                  </tr>
+                  <tr>
+                    <td><object type="image/svg+xml" data="svg/create-node-edge.svg" width="40" height="40" title="Create a node with edge"></object></td>
+                    <td><b>Create a node with edge</b></td>
+                    <td>
+                      <b>Click on a node</b> then <b>CTRL+Click on empty space</b>
+                      (Add <b>Shift</b> for focus on the new node)</td
+                    >
+                  </tr>
+                  <tr>
+                    <td><object type="image/svg+xml" data="svg/delete.svg" width="40" height="40" title="Delete"></object></td>
+                    <td><b>Delete</b> (node/edge)</td>
+                    <td>
+                      <b>Select a node/edge</b> and press <b>Delete</b> or
+                      <b>Backspace</b>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><object type="image/svg+xml" data="svg/unselect.svg" width="40" height="40" title="Unselect"></object></td>
+                    <td><b>Unselect</b> (node/edge)</td>
+                    <td>
+                      Press <b>Escape</b> or <b>Click again on the same</b> node/edge
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><object type="image/svg+xml" data="svg/change-name.svg" width="40" height="40" title="Change name"></object></td>
+                    <td><b>Change name</b> (node/edge)</td>
+                    <td>
+                      <b>Select an item</b> then change value in <b>Valeurs</b> tab
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><object type="image/svg+xml" data="svg/zoom.svg" width="40" height="40" title="Zoom"></object></td>
+                    <td><b>Zoom</b></td>
+                    <td>Mouse <b>wheel scroll</b></td>
+                  </tr>
+                  <tr>
+                    <td><object type="image/svg+xml" data="svg/move-node.svg" width="40" height="40" title="Move node"></object></td>
+                    <td><b>Move node</b></td>
+                    <td><b>Left click + drag</b></td>
+                  </tr>
+                  <tr>
+                    <td><object type="image/svg+xml" data="svg/move-graph.svg" width="40" height="40" title="Move graph"></object></td>
+                    <td><b>Move graph</b></td>
+                    <td><b>Right click + drag</b></td>
+                  </tr>
+                  <tr>
+                    <td><object type="image/svg+xml" data="svg/undo-redo.svg" width="40" height="40" title="Undo/Redo"></object></td>
+                    <td><b>Undo/Redo</b></td>
+                    <td><b>CTRL + Z / CTRL + Y</b></td>
+                  </tr>
+                </table>
+                <p>Tips: You can select nodes and edges by clicking on their labels</p>
+              </p>
+            </div>
+            <div class="tab-pane fade show active" id="tab1">
               <p>
-                <button id="changeLabelButton">Initialiser les labels à name</button>
+                <button id="undoButton">Undo</button>
+                <button id="redoButton">Redo</button>
+              <p>
+                <button id="update">Debug</button>
+              </p>
+              </p>
+              <hr>
+              <!-- Liste déroulante de l'historique (double-cliquer sur une option lance jumpToHistory) -->
+              <p>
+                <label for="historySelect">History:</label>
+                <select id="historySelect" size="8"></select>
+              </p>
+            </div>            
+            <div class="tab-pane fade" id="tab2">
+              <p>
+                <button id="export-json">Export JSON</button>
+                <button id="import-json">Import JSON</button>
+                <label for="json-file" class="sr-only">Select JSON file</label>
+                <input type="file" id="json-file" accept=".json" class="hidden">
+              </p>
+              <p>
+                <button id="changeLabelButton">Initialize Labels</button>
               </p>
               <hr>
               <p>
+                <label for="addNodeFieldInput">Node Field</label>
+                <input type="text" id="addNodeFieldInput" placeholder="New node field">
                 <button id="addNodeFieldButton">Add Node Field</button>
-                <input type="text" id="addNodeFieldInput" placeholder="New node name">
                 <br>
+                <label for="addLinkFieldInput">Link Field</label>
+                <input type="text" id="addLinkFieldInput" placeholder="New link field">
                 <button id="addLinkFieldButton">Add Link Field</button>
-                <input type="text" id="addLinkFieldInput" placeholder="New link name">                
               </p>
               <p>
-                <label for="node-label">Label du nœud:</label>
-                <select id="node-label">
-                </select>
-                <label for="link-label">Label du lien:</label>
-                <select id="link-label">
-                </select>
-                <label for="node-size">Node size : (inactif)</label>
-                <select id="node-size"></select>
-                <input type="number" id="node-size-input" value="10" step="0.1" min="0" max="100" onchange="updateNodeSize()">
+                <label for="node-label">Node label:</label>
+                <select id="node-label"></select>
+                <label for="link-label">Link label:</label>
+                <select id="link-label"></select>
+              </p>
+              <p>
+                <label for="node-size-field">Node size field:</label>
+                <select id="node-size-field"></select>
+                &nbsp;&nbsp;
+                <label for="defaultNodeSizeInput">Default node size:</label>
+                <input type="number" id="defaultNodeSizeInput" value="30" min="1" step="1">
               </p>
               <form id="node-form" class="hidden"></form>
               <form id="link-form" class="hidden"></form>
-            </p>
-          </div>
-          <div class="tab-pane fade" id="tab3">
-            <p>
-              <span id="import-config-json">Config : </span>
-              <br>
-              <label for="export-config">Export config :</label>
-              <button id="export-config">Export config</button>
-              <br>
-              <label for="import-config">Import config :</label>
-              <input type="file" id="import-config" accept=".json">
-            </p>
-            <hr>
-            <p>
-              <input type="checkbox" id="link-force" name="link-force">
-              <label for="link-force">Link force</label>
-              <br>
-              <label for="link-distance">Link distance</label>
-              <input type="number" id="link-distance" name="link-distance">
-            </p>
-            <p>
-              <label for="charge-strength">Charge strength</label>
-              <input type="number" id="charge-strength" name="charge-strength" title="Use negative value with center force activate is recommanded">
-            </p>
-            <p>
-              <input type="checkbox" id="center-force" name="center-force">
-              <label for="center-force">Center force</label>              
-            </p>
-          </div>
-          
-          <div class="tab-pane fade" id="tab4">
-            <p>
-              A venir
-            </p>
+            </div>                      
+            <div class="tab-pane fade" id="tab3">
+              <p>
+                <span id="import-config-json">Config:</span><br />
+                <label for="export-config">Export config:</label>
+                <button id="export-config">Export config</button><br />
+                <label for="import-config">Import config:</label>
+                <input type="file" id="import-config" accept=".json" />
+              </p>
+              <p>
+                <label for="layoutSelect">Layout:</label>
+                <select id="layoutSelect">
+                  <option value="">-- Select layout --</option>
+                  <option value="circle">Circle</option>
+                  <option value="grid">Grid</option>
+                  <!-- Ajoutez d'autres layouts si désiré -->
+                </select>
+              </p>
+              <hr />
+              <p>
+                <input type="checkbox" id="link-force" name="link-force" />
+                <label for="link-force">Link force</label><br />
+                <label for="link-distance">Link distance</label>
+                <input type="number" id="link-distance" name="link-distance" />
+              </p>
+              <p>
+                <label for="charge-strength">Charge strength</label>
+                <input type="number" id="charge-strength" name="charge-strength" title="Use negative value with center force activated is recommended" />
+              </p>
+              <p>
+                <input type="checkbox" id="center-force" name="center-force" />
+                <label for="center-force">Center force</label>
+              </p>
+            </div>
+            <div class="tab-pane fade" id="tab4">
+              <p>A venir</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</body>
-<script src="js/script.js"></script>
-<!-- <script type="module" src="js/undo_redo.js"></script>-->
-<!-- Semble fortmeent compatible v7 -->
-<script src="https://d3js.org/d3.v6.min.js"></script>
-<!-- Important, insérer le script après le body pour que ça marche -->
-<script type="module" src="js/graph.js"></script>
+    <script src="js/script.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script type="module" src="js/graph.js"></script>
+  </body>
 </html>
-

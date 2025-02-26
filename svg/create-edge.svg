@@ -1,0 +1,8 @@
+<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="15" cy="25" r="8" fill="#4285f4"/>
+  <circle cx="35" cy="25" r="8" fill="#34a853"/>
+  <line x1="15" y1="25" x2="35" y2="25" stroke="#ea4335" stroke-width="2" stroke-dasharray="3,3">
+    <animate attributeName="stroke-dashoffset" values="6;0;6" dur="3s" repeatCount="indefinite"/>
+  </line>
+  <text x="25" y="15" text-anchor="middle" font-size="8" fill="#333">CTRL</text>
+</svg>

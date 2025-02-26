@@ -1,0 +1,32 @@
+<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <g>
+    <animateTransform 
+      attributeName="transform" 
+      type="scale" 
+      values="0.7;1.3;0.7" 
+      dur="3s" 
+      repeatCount="indefinite" 
+      additive="sum"
+      attributeType="XML"
+      calcMode="spline"
+      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"/>
+    <animateTransform 
+      attributeName="transform" 
+      type="translate" 
+      values="7.5,7.5;-7.5,-7.5;7.5,7.5" 
+      dur="3s" 
+      repeatCount="indefinite" 
+      additive="sum"
+      attributeType="XML"
+      calcMode="spline"
+      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"/>
+      
+    <circle cx="25" cy="15" r="5" fill="#4285f4"/>
+    <circle cx="15" cy="30" r="5" fill="#34a853"/>
+    <circle cx="35" cy="30" r="5" fill="#fbbc05"/>
+    
+    <line x1="25" y1="15" x2="15" y2="30" stroke="#333" stroke-width="1.5"/>
+    <line x1="25" y1="15" x2="35" y2="30" stroke="#333" stroke-width="1.5"/>
+    <line x1="15" y1="30" x2="35" y2="30" stroke="#333" stroke-width="1.5"/>
+  </g>
+</svg>
