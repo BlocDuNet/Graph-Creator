@@ -62,9 +62,12 @@ createFormInputs(graphState.links, linkForm, linkInputs);
 
 // Réglages globaux – ces valeurs s’appliquent à l’ensemble du graph.
 let globalSettings = {
+  nodeIdField: "id",      // Field used as node id (modifiable by user)
   nodeLabelField: "name",    // Par défaut, le label pour les nœuds est "name"
   linkLabelField: "",        // Par défaut vide pour les liens
   nodeSizeField: "",         // Si vide, on utilise la propriété "size"
+  xField: "x",            // Field for x coordinate
+  yField: "y",            // Field for y coordinate
   defaultNodeSize: 30,       // Taille par défaut pour la création de nouveaux nœuds
   defaultFocusField: "name"  // Champ par défaut à focus (sera remplacé par le choix dans le dropdown)
 };
@@ -80,60 +83,63 @@ function createFormInputs(data, formElement, inputObject) {
 function createField(fieldName, formElement, inputObject, data) {
   const fieldDiv = formElement.append('div');
   fieldDiv.append('label')
-    .attr('for', `${formElement.attr('id')}-${fieldName}`)
-    .text(`${fieldName}:`);
+      .attr('for', `${formElement.attr('id')}-${fieldName}`)
+      .text(`${fieldName}:`);
   const input = fieldDiv.append('input')
-    .attr('type', 'text')
-    .attr('id', `${formElement.attr('id')}-${fieldName}`)
-    .attr('name', fieldName)
-    .on('blur', function () {
-      const newValue = this.value;
-      if (selectedNode && inputObject === nodeInputs) {
-        const oldValue = selectedNode[fieldName] || "";
-        if (newValue !== oldValue) {
-          performAction({
-            type: "update_node",
-            data: {
-              nodeId: selectedNode.id,
-              field: fieldName,
-              from: oldValue,
-              to: newValue,
-              label: `Rename node (${oldValue} → ${newValue})`
-            }
-          });
-        }
-      } else if (selectedLink && inputObject === linkInputs) {
-        const oldValue = selectedLink[fieldName] || "";
-        if (newValue !== oldValue) {
-          performAction({
-            type: "update_link",
-            data: {
-              linkId: selectedLink.id,
-              field: fieldName,
-              from: oldValue,
-              to: newValue,
-              label: `Rename link (${oldValue} → ${newValue})`
-            }
-          });
-        }
-      }
-      updateGraph();
-    });
-  inputObject[fieldName] = input;
-  if (fieldName !== "id" && fieldName !== "x" && fieldName !== "y") {
-    fieldDiv.append('button')
-      .text('x')
-      .on('click', function () {
-        if (confirm("Supprimer ce champ pour tous les éléments ?")) {
-          data.forEach(item => delete item[fieldName]);
-          fieldDiv.remove();
-          delete inputObject[fieldName];
-          performAction({ type: "remove_field", data: { field: fieldName, target: (inputObject === nodeInputs ? "node" : "link"), label: `Remove field ${fieldName}` } });
-          updateGraph();
-        }
+      .attr('type', 'text')
+      .attr('id', `${formElement.attr('id')}-${fieldName}`)
+      .attr('name', fieldName)
+      .on('input', function() {
+          // Mise à jour en temps réel pendant la saisie
+          const newValue = this.value;
+          if (selectedNode && inputObject === nodeInputs) {
+              const oldValue = selectedNode[fieldName];
+              selectedNode[fieldName] = newValue;
+              updateGraph(); // Mettre à jour le graphe immédiatement
+          } else if (selectedLink && inputObject === linkInputs) {
+              const oldValue = selectedLink[fieldName];
+              selectedLink[fieldName] = newValue;
+              updateGraph(); // Mettre à jour le graphe immédiatement
+          }
+      })
+      .on('blur', function() {
+          // Enregistrement de l'action dans l'historique lors de la perte de focus
+          const newValue = this.value;
+          if (selectedNode && inputObject === nodeInputs) {
+              const oldValue = selectedNode[fieldName] || "";
+              if (newValue !== oldValue) {
+                  performAction({
+                      type: "update_node",
+                      data: {
+                          nodeId: selectedNode.id,
+                          field: fieldName,
+                          from: oldValue,
+                          to: newValue,
+                          label: `Rename node (${oldValue} → ${newValue})`
+                      }
+                  });
+              }
+          } else if (selectedLink && inputObject === linkInputs) {
+              const oldValue = selectedLink[fieldName] || "";
+              if (newValue !== oldValue) {
+                  performAction({
+                      type: "update_link",
+                      data: {
+                          linkId: selectedLink.id,
+                          field: fieldName,
+                          from: oldValue,
+                          to: newValue,
+                          label: `Rename link (${oldValue} → ${newValue})`
+                      }
+                  });
+              }
+          }
       });
-  }
+
+  inputObject[fieldName] = input;
+  
 }
+
 
 function getFieldOptions(data) {
   const excluded = ["x", "y", "vx", "vy", "fx", "fy"];
@@ -204,21 +210,44 @@ d3.select("#addLinkFieldButton").on("click", () => {
 });
 
 // Mise à jour des menus déroulants globaux
+// Modifier la fonction updateGlobalSelects() pour préserver les valeurs sélectionnées
 function updateGlobalSelects() {
-  updateSelectOptions(d3.select('#node-label'), getFieldOptions(graphState.nodes), globalSettings.nodeLabelField);
-  updateSelectOptions(d3.select('#link-label'), getFieldOptions(graphState.links), globalSettings.linkLabelField);
-  updateSelectOptions(d3.select('#node-size-field'), getFieldOptions(graphState.nodes), globalSettings.nodeSizeField);
+  // Sauvegarder les valeurs actuelles avant de mettre à jour les options
+  const currentNodeLabelValue = d3.select('#node-label').property('value');
+  const currentLinkLabelValue = d3.select('#link-label').property('value');
+  const currentNodeSizeFieldValue = d3.select('#node-size-field').property('value');
+  
+  // Mettre à jour les options des listes déroulantes
+  updateSelectOptions(d3.select('#node-id-field'), getFieldOptions(graphState.nodes), globalSettings.nodeIdField);
+  updateSelectOptions(d3.select('#x-field'), getFieldOptions(graphState.nodes), globalSettings.xField);
+  updateSelectOptions(d3.select('#y-field'), getFieldOptions(graphState.nodes), globalSettings.yField);
+  
+  // Utiliser les valeurs sauvegardées ou les valeurs par défaut des paramètres globaux
+  updateSelectOptions(d3.select('#node-label'), getFieldOptions(graphState.nodes), 
+      currentNodeLabelValue || globalSettings.nodeLabelField);
+  updateSelectOptions(d3.select('#link-label'), getFieldOptions(graphState.links), 
+      currentLinkLabelValue || globalSettings.linkLabelField);
+  updateSelectOptions(d3.select('#node-size-field'), getFieldOptions(graphState.nodes), 
+      currentNodeSizeFieldValue || globalSettings.nodeSizeField);
 }
 
+// Modifier la fonction updateSelectOptions pour préserver la valeur sélectionnée
 function updateSelectOptions(selectElem, optionsArr, selectedValue) {
+  // Sauvegarder la valeur actuelle si aucune valeur n'est fournie
+  const currentValue = selectedValue || selectElem.property('value');
+  
   selectElem.selectAll('option').remove();
   selectElem.append('option').attr('value', '').text('');
+  
   optionsArr.forEach(opt => {
-    selectElem.append('option').attr('value', opt).text(opt);
+      selectElem.append('option').attr('value', opt).text(opt);
   });
-  if (selectedValue && optionsArr.includes(selectedValue)) {
-    selectElem.property('value', selectedValue);
+  
+  // Restaurer la valeur sélectionnée si elle existe dans les options
+  if (currentValue && optionsArr.includes(currentValue)) {
+      selectElem.property('value', currentValue);
   }
+  
   // Dès que l'utilisateur change la sélection, mettre à jour immédiatement le graph.
   selectElem.on("change", () => updateGraph());
 }
@@ -227,7 +256,7 @@ function updateSelectOptions(selectElem, optionsArr, selectedValue) {
 
 function updateNodes() {
   const sizeField = d3.select("#node-size-field").property("value");
-  const nodeSelection = g.selectAll('.node').data(graphState.nodes, d => d.id);
+  const nodeSelection = g.selectAll('.node').data(graphState.nodes, d => d[globalSettings.nodeIdField] || d.id);
   const nodeEnter = nodeSelection.enter()
     .append('g')
     .attr('class', 'node')
@@ -238,20 +267,23 @@ function updateNodes() {
       updateGraph();
     });
   nodeEnter.append('circle')
-    .attr('r', d => (sizeField && d[sizeField]) ? +d[sizeField] : (d.size || defaultNodeRadius));
-  nodeEnter.append('text')
-    .attr('dx', d => (sizeField && d[sizeField]) ? (+d[sizeField] + 5) : 35)
+    .attr('r', d => (sizeField && d[sizeField]) ? Number(d[sizeField]) : (Number(d.size) || defaultNodeRadius));
+    nodeEnter.append('text')
+    .attr('dx', d => (sizeField && d[sizeField]) ? (Number(d[sizeField]) + 5) : 35)
     .attr('dy', 5)
     .text(d => {
-      const field = d3.select('#node-label').property('value') || globalSettings.nodeLabelField;
-      return field ? (d[field] || "") : "";
+        const field = d3.select('#node-label').property('value');
+        // Si le champ est vide, ne rien afficher
+        return field ? (d[field] || "") : "";
     });
-  nodeSelection.merge(nodeEnter)
-    .classed('selected', d => d === selectedNode)
-    .select('text')
+  const merged = nodeSelection.merge(nodeEnter)
+    .classed('selected', d => d === selectedNode);
+  merged.select('circle')
+    .attr('r', d => (sizeField && d[sizeField]) ? Number(d[sizeField]) : (Number(d.size) || defaultNodeRadius));
+    merged.select('text')
     .text(d => {
-      const field = d3.select('#node-label').property('value') || globalSettings.nodeLabelField;
-      return field ? (d[field] || "") : "";
+        const field = d3.select('#node-label').property('value');
+        return field ? (d[field] || "") : "";
     });
   nodeSelection.exit().remove();
 }
@@ -518,7 +550,7 @@ d3.select("#historySelect").on("dblclick", function() {
 // ===== RÉGLAGES GLOBAUX (dans l'onglet "Values") =====
 d3.select("#node-label").on("change", function() {
   const oldVal = globalSettings.nodeLabelField;
-  const newVal = this.value || "name";
+  const newVal = this.value; // Suppression de "|| name"
   performAction({ type: "update_global", data: { field: "nodeLabelField", from: oldVal, to: newVal, label: `Change node label (${oldVal} → ${newVal})` } });
   globalSettings.nodeLabelField = newVal;
   updateGraph();
