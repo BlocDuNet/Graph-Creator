@@ -1,10 +1,13 @@
+import { graphState, performAction, updateGraph } from './graph.js';
+
 document.addEventListener("DOMContentLoaded", () => {
   const tab4 = document.getElementById("tab4");
   if (!tab4) {
     console.error("L'élément avec l'ID 'tab4' n'a pas été trouvé dans le DOM.");
     return;
   }
-  // Rewrite the UI with separate sections
+  
+  // Rebuild the UI
   tab4.innerHTML = `
     <h3>Génération par prompt</h3>
     <div style="margin-bottom: 8px;">
@@ -15,8 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <br>
     <button id="ollamaSend">Envoyer la requête</button>
     <button id="ollamaStop" style="margin-left:10px;">Stop Generation</button>
-    <!-- New export/import buttons for Ollama -->
-    <button id="exportGraph" style="margin-left:10px;">Exporter Graph Ollama</button>
+    <!-- Export/import pour graph généré -->
     <button id="importGraph" style="margin-left:10px;">Importer Graph Ollama</button>
     <br><br>
     <h3>Propositions basées sur le graph actuel</h3>
@@ -40,7 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
     <pre id="ollamaResult" style="background:#f8f8f8; padding:10px; max-height:200px; overflow:auto;"></pre>
   `;
   
-  // Toggle log display
   document.getElementById("toggleRaw").addEventListener("click", () => {
     const rawArea = document.getElementById("ollamaRaw");
     rawArea.style.display = (rawArea.style.display === "none") ? "block" : "none";
@@ -48,9 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Globals for responses
   let currentAbortController = null;
-  let currentFinalResponse = "";   // For generation by prompt
-  let currentProposalResponse = "";  // For proposals
-
+  let currentFinalResponse = "";    // For generation by prompt
+  let currentProposalResponse = "";   // For proposals
+  
   /* --- SECTION 1: Génération par prompt --- */
   document.getElementById("ollamaSend").addEventListener("click", () => {
     currentAbortController = new AbortController();
@@ -58,19 +59,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const userPrompt = document.getElementById("ollamaPrompt").value.trim();
     const promptText = `
 Pour la requête : "${userPrompt}", créer un graph network en JSON.
-Le JSON doit contenir deux clés principales : "nodes" et "links".
-Pour "nodes": chaque objet doit inclure "id", "name", "description", "x", "y", "size", "index".
-Pour "links": chaque objet doit inclure "id", "source", "target", "name", "description", "index".
-Répondez uniquement avec un JSON valide, sans texte additionnel.
+Le JSON doit contenir "nodes" et "links" avec les propriétés nécessaires.
+Répondez uniquement avec un JSON valide sans texte additionnel.
 Exemple :
 {
-  "nodes": [
-    { "id": "1", "name": "Node1", "description": "Description1", "x": 100, "y": 300, "size": 30, "index": 0 },
-    { "id": "2", "name": "Node2", "description": "Description2", "x": 200, "y": 200, "size": 30, "index": 1 }
-  ],
-  "links": [
-    { "id": "1", "source": "1", "target": "2", "name": "Link1", "description": "Description1", "index": 0 }
-  ]
+  "nodes": [ { "id": "1", "name": "Node1", "description": "Description1", "x": 100, "y": 300, "size": 30 } ],
+  "links": [ { "id": "1", "source": "1", "target": "2", "name": "Link1", "description": "Description1" } ]
 }`;
     const payload = { model, prompt: promptText, format: "json", stream: true };
     document.getElementById("ollamaResult").textContent = "";
@@ -132,103 +126,77 @@ Exemple :
     if (currentAbortController) currentAbortController.abort();
   });
   
-  // Separate functions for export/import specific to Ollama (do not factorize with graph.js)
-  function exportOllamaGraph() {
+  /* --- IMPORT DU GRAPH GÉNÉRÉ (Génération par prompt) --- */
+  document.getElementById("importGraph").addEventListener("click", () => {
+    // Importer le graph généré (currentFinalResponse) dans le graphe actuel
     if (!currentFinalResponse) {
-      alert("Aucun graph généré par Ollama pour export.");
+      alert("Aucun graph généré disponible à importer.");
       return;
     }
     try {
-      const jsonStr = JSON.stringify(JSON.parse(currentFinalResponse), null, 2);
-      const blob = new Blob([jsonStr], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "graph_from_ollama.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch (err) {
-      alert("Erreur lors de l'exportation : " + err.message);
-    }
-  }
-  
-  function importOllamaGraph() {
-    if (!currentFinalResponse) {
-      alert("Aucune donnée Ollama disponible pour l'import.");
-      return;
-    }
-    try {
-      const jsonObj = JSON.parse(currentFinalResponse);
-      if (!jsonObj.nodes || !jsonObj.links) {
-        throw new Error("JSON invalide.");
+      const generatedGraph = JSON.parse(currentFinalResponse);
+      if (!generatedGraph.nodes || !generatedGraph.links) {
+        throw new Error("Graph JSON invalide");
       }
-      window.performAction({
+      // Préparer les nodes et links pour l'import
+      const preparedGraph = {
+        nodes: generatedGraph.nodes,
+        links: generatedGraph.links.map(link => ({
+          ...link,
+          source: generatedGraph.nodes.find(n => n.id === link.source),
+          target: generatedGraph.nodes.find(n => n.id === link.target)
+        }))
+      };
+      performAction({
         type: "import_graph",
-        data: { oldState: { nodes: window.graphState.nodes, links: window.graphState.links }, newState: jsonObj, label: "Import graph from Ollama" }
+        data: { oldState: { nodes: [...graphState.nodes], links: [...graphState.links] },
+                newState: preparedGraph,
+                label: "Import graph from Ollama generation" }
       });
-      alert("Graph importé avec succès.");
+      updateGraph();
+      alert("Graph importé avec succès dans le graph actuel !");
     } catch (err) {
-      alert("Erreur lors de l'importation : " + err.message);
+      alert("Erreur lors de l'importation du graph généré : " + err.message);
     }
-  }
-  
-  // Attach export/import handlers to the buttons
-  document.getElementById("exportGraph").addEventListener("click", exportOllamaGraph);
-  document.getElementById("importGraph").addEventListener("click", importOllamaGraph);
+  });
   
   /* --- SECTION 2: Propositions basées sur le graph actuel --- */
-  // When proposals are requested, we use the current graph state instead of requiring a previous generation
   document.getElementById("ollamaSendProposals").addEventListener("click", () => {
     currentAbortController = new AbortController();
     const model = document.getElementById("ollamaModel").value.trim() || "mistral";
     
-    // Convert current graph state to JSON format
+    // Utiliser le graph actuel (graphState) pour constituer la requête
     const currentGraphJSON = JSON.stringify({
-      nodes: window.graphState.nodes.map(node => {
+      nodes: graphState.nodes.map(node => {
         const { vx, vy, fx, fy, index, ...rest } = node;
-        return { ...rest, index: node.index || 0 };
+        return rest;
       }),
-      links: window.graphState.links.map(link => {
-        return {
-          id: link.id,
-          source: link.source.id,
-          target: link.target.id,
-          name: link.name || "",
-          description: link.description || "",
-          index: link.index || 0
-        };
-      })
+      links: graphState.links.map(link => ({
+        id: link.id,
+        source: link.source.id,
+        target: link.target.id,
+        name: link.name || "",
+        description: link.description || ""
+      }))
     });
     
     const proposalPrompt = `
-  Voici le graph network actuel en JSON :
-  ${currentGraphJSON}
-  Propose uniquement des ajouts sous forme de nouveaux nodes et links au format JSON,
-  c'est-à-dire un objet {"nodes": [...], "links": [...]} contenant uniquement les ajouts.
-  Assure-toi que les nouveaux nodes ont des ids uniques qui ne sont pas déjà dans le graph existant.
-  Pour les liens, assure-toi que source et target référencent des ids valides (existants ou nouveaux).
-  Ne retourne aucun autre texte.
-  `;
-  
-    // Clear previous proposals UI
+Voici le graph network actuel en JSON :
+${currentGraphJSON}
+Propose uniquement des ajouts au graph sous forme de nouveaux nodes et links au format JSON.
+Assure-toi que les nouveaux nodes ont des ids uniques et que les liens référencent des ids valides.
+Ne retourne aucun autre texte.
+`;
     document.getElementById("proposalNodes").innerHTML = "";
     document.getElementById("proposalLinks").innerHTML = "";
     currentProposalResponse = "";
-    
-    // Update UI to show processing
     document.getElementById("ollamaRaw").value = "Envoi de la requête à Ollama...";
     
     fetch("http://localhost:11434/api/generate", {
       method: "POST",
       mode: "cors",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model,
-        prompt: proposalPrompt,
-        format: "json",
-        stream: true
-      }),
+      body: JSON.stringify({ model, prompt: proposalPrompt, format: "json", stream: true }),
       signal: currentAbortController.signal
     })
     .then(response => {
@@ -258,10 +226,10 @@ Exemple :
       return readStream();
     })
     .then(() => {
-      // Now process the proposals to separate nodes and links
       try {
         const proposals = JSON.parse(currentProposalResponse);
         if (!proposals.nodes || !proposals.links) throw new Error("Propositions JSON invalide.");
+        // Afficher les noeuds proposés
         const nodesUl = document.getElementById("proposalNodes");
         proposals.nodes.forEach(nodeP => {
           const li = document.createElement("li");
@@ -270,8 +238,9 @@ Exemple :
           approve.textContent = "Approuver";
           approve.style.marginLeft = "10px";
           approve.addEventListener("click", () => {
-            window.performAction({ type: "create_node", data: { node: nodeP, label: `Ajout node ${nodeP.name}` } });
+            performAction({ type: "create_node", data: { node: nodeP, label: `Ajout node ${nodeP.name}` } });
             li.style.textDecoration = "line-through";
+            updateGraph();
           });
           const reject = document.createElement("button");
           reject.textContent = "Rejeter";
@@ -281,6 +250,7 @@ Exemple :
           li.appendChild(reject);
           nodesUl.appendChild(li);
         });
+        // Afficher les liens proposés
         const linksUl = document.getElementById("proposalLinks");
         proposals.links.forEach(linkP => {
           const li = document.createElement("li");
@@ -289,14 +259,14 @@ Exemple :
           approve.textContent = "Approuver";
           approve.style.marginLeft = "10px";
           approve.addEventListener("click", () => {
-            // For links, try to find referenced nodes (in proposals or current graph)
             const src = proposals.nodes.find(n => n.id === linkP.source) ||
-                        window.graphState.nodes.find(n => n.id === linkP.source);
+                        graphState.nodes.find(n => n.id === linkP.source);
             const tgt = proposals.nodes.find(n => n.id === linkP.target) ||
-                        window.graphState.nodes.find(n => n.id === linkP.target);
+                        graphState.nodes.find(n => n.id === linkP.target);
             if (src && tgt) {
-              window.performAction({ type: "create_link", data: { link: { ...linkP, source: src, target: tgt }, label: `Ajout link ${linkP.name}` } });
+              performAction({ type: "create_link", data: { link: { ...linkP, source: src, target: tgt }, label: `Ajout link ${linkP.name}` } });
               li.style.textDecoration = "line-through";
+              updateGraph();
             } else {
               alert("Impossible de trouver les noeuds source ou cible pour ce lien.");
             }
@@ -314,16 +284,15 @@ Exemple :
       }
     })
     .catch(error => {
-      document.getElementById("proposalResult").textContent =
-        (error.name === 'AbortError') ? "Génération de propositions stoppée." : `Erreur : ${error.message}`;
+      document.getElementById("ollamaRaw").value += "\nErreur : " + 
+        ((error.name === 'AbortError') ? "Génération de propositions stoppée." : error.message);
     });
   });
   
-  // Reset proposals list
+  // Réinitialiser les propositions
   document.getElementById("ollamaRejectProposals").addEventListener("click", () => {
     currentProposalResponse = "";
     document.getElementById("proposalNodes").innerHTML = "";
     document.getElementById("proposalLinks").innerHTML = "";
-    document.getElementById("ollamaResult").textContent = "";
   });
 });
