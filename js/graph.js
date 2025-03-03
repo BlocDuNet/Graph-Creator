@@ -1,6 +1,6 @@
 // graph.js
 // ===== IMPORTS =====
-import { getForceConfiguration } from './config_graph.js';
+import { getForceConfiguration, getLinkStyle } from './config_graph.js';
 import {
   performAction,
   undo,
@@ -421,18 +421,20 @@ function updateLinkLabels() {
   linkLabels.exit().remove();
 }
 
-// Modifier ticked pour raccourcir légèrement les liens avant la flèche
+// Modifier ticked pour vérifier curvedLinks
 function ticked() {
   const sizeField = d3.select("#node-size-field").property("value");
+  // Récupérer la configuration des liens (droits ou courbes)
+  const { curvedLinks } = getLinkStyle();
   
-  // Mise à jour des liens avec des courbes plus harmonieuses
+  // Mise à jour des liens
   g.selectAll('.link')
     .attr('d', d => {
       // Récupérer les rayons des nœuds
       const rSource = (sizeField && d.source[sizeField]) ? +d.source[sizeField] : (d.source.size || defaultNodeRadius);
       const rTarget = (sizeField && d.target[sizeField]) ? +d.target[sizeField] : (d.target.size || defaultNodeRadius);
       
-      // Vérifier s'il s'agit d'un auto-lien
+      // Vérifier s'il s'agit d'un auto-lien (toujours dessiné comme une courbe)
       if (d.isLoop) {
         return drawSelfLoop(d.source.x, d.source.y, rSource);
       }
@@ -455,14 +457,18 @@ function ticked() {
       };
       
       // Ajuster la fin du lien pour laisser un peu d'espace avant le bord du nœud
-      // La distance additionnelle de 1 pixel empêche le lien de dépasser la flèche
       const markerAdjustment = 1; 
       const adjustedEnd = {
         x: d.target.x - unitX * (rTarget + markerAdjustment),
         y: d.target.y - unitY * (rTarget + markerAdjustment)
       };
       
-      // Courbe de Bézier avec courbure ajustée
+      // Si les liens droits sont sélectionnés, retourner une simple ligne
+      if (!curvedLinks) {
+        return `M${adjustedStart.x},${adjustedStart.y} L${adjustedEnd.x},${adjustedEnd.y}`;
+      }
+      
+      // Sinon utiliser une courbe de Bézier avec courbure ajustée
       const curvature = d.curvature || 0.05;
       
       // Vecteur perpendiculaire pour le point de contrôle
@@ -480,14 +486,14 @@ function ticked() {
       return `M${adjustedStart.x},${adjustedStart.y} Q${ctrlX},${ctrlY} ${adjustedEnd.x},${adjustedEnd.y}`;
     });
   
-  // Mise à jour des positions des nœuds
+  // Mise à jour des positions des nœuds - inchangé
   g.selectAll('.node')
     .attr('transform', d => `translate(${d.x},${d.y})`);
   
-  // Mise à jour des positions des labels de liens
+  // Mise à jour des positions des labels de liens - adapter au mode liens droits/courbes
   g.selectAll('.link-label')
     .attr('transform', d => {
-      // Pour les auto-liens, positionner le label au-dessus de la boucle
+      // Pour les auto-liens, position inchangée
       if (d.isLoop) {
         const radius = (sizeField && d.source[sizeField]) 
           ? +d.source[sizeField] 
@@ -496,25 +502,28 @@ function ticked() {
         return `translate(${d.source.x},${d.source.y - radius * 2.5})`;
       }
       
-      // Pour les liens normaux, utiliser le code existant
       const sx = d.source.x;
       const sy = d.source.y;
       const tx = d.target.x;
       const ty = d.target.y;
-      const dist = Math.sqrt((tx - sx) * (tx - sy) + (ty - sy) * (ty - sy));
+      
+      // Si les liens sont droits, placer le label au milieu de la ligne
+      if (!curvedLinks) {
+        return `translate(${(sx + tx) / 2},${(sy + ty) / 2})`;
+      }
+      
+      // Pour les liens courbes, utiliser le calcul pour courbes de Bézier
+      const dist = Math.sqrt((tx - sx) * (tx - sx) + (ty - sy) * (ty - sy));
       
       if (dist === 0) return "translate(0,0)";
       
-      // Placer le label à un point t=0.55 le long de la courbe de Bézier
-      // (légèrement passé le milieu pour éviter de chevaucher la ligne)
       const curvature = d.curvature || 0.05;
-      const t = 0.55; // Paramètre entre 0 et 1 pour la position le long de la courbe
+      const t = 0.55; // Paramètre pour la position le long de la courbe
       
-      // Calcul de Bézier quadratique au point t
       const perpX = -(ty - sy) / dist;
       const perpY = (tx - sx) / dist;
       
-      // Point intermédiaire pour le paramètre t sur la courbe
+      // Calcul du point sur la courbe de Bézier
       const midX = (1-t)*(1-t)*sx + 2*(1-t)*t*((sx + tx)/2 + perpX*dist*curvature) + t*t*tx;
       const midY = (1-t)*(1-t)*sy + 2*(1-t)*t*((sy + ty)/2 + perpY*dist*curvature) + t*t*ty;
       
