@@ -275,31 +275,43 @@ function getLinkId(link) {
   return `${link.source.id}-${link.target.id}-${link.id}`;
 }
 
-// Ajouter cette fonction pour déterminer la courbure des liens parallèles
+// Modifier la fonction calculateLinkCurvature pour utiliser les paramètres configurables
 function calculateLinkCurvature(source, target, linkId, links) {
+  const { baseCurvature, loopCurvature, curvatureStep } = getLinkStyle();
+  
   // Cas spécial pour les auto-liens (boucles)
   if (source.id === target.id) {
-    return 1.0; // Forte courbure pour les auto-liens
+    return loopCurvature; // Utiliser la configuration pour les boucles
   }
   
-  // Trouver tous les liens entre la même paire de nœuds (dans les deux directions)
+  // Déterminer la direction de ce lien
+  const isForward = source.id < target.id;
+  
+  // Trouver tous les liens entre cette paire de nœuds spécifiquement
+  // Attention: nous séparons les liens forward (source.id < target.id) et backward
   const parallelLinks = links.filter(l => 
     (l.source.id === source.id && l.target.id === target.id) || 
     (l.source.id === target.id && l.target.id === source.id)
   );
   
-  // Si c'est le seul lien, très légère courbure
+  // Séparer en deux groupes selon la direction
+  const forwardLinks = parallelLinks.filter(l => l.source.id < l.target.id);
+  const backwardLinks = parallelLinks.filter(l => l.source.id > l.target.id);
+  
+  // Si c'est le seul lien entre ces nœuds, appliquer la courbure de base
   if (parallelLinks.length === 1) {
-    return 0.05;
+    return isForward ? baseCurvature : -baseCurvature; // Courbure de base configurable
   }
   
-  // Trouver l'index de ce lien spécifique dans l'ensemble des liens parallèles
-  const linkIndex = parallelLinks.findIndex(l => l.id === linkId);
+  // Trouver l'index de ce lien spécifique dans le groupe approprié
+  const targetGroup = isForward ? forwardLinks : backwardLinks;
+  const linkIndex = targetGroup.findIndex(l => l.id === linkId);
   
-  // Pour plusieurs liens, calculer des courbures qui alternent de chaque côté
-  // Les liens pairs vont d'un côté, les impairs de l'autre
-  const baseCurvature = 0.2 + (0.05 * Math.floor(linkIndex / 2));
-  return (linkIndex % 2 === 0) ? baseCurvature : -baseCurvature;
+  // Utiliser les paramètres configurables pour calculer la courbure
+  const calculatedCurvature = baseCurvature + (curvatureStep * linkIndex);
+  
+  // Assurer que les directions opposées ont des courbures opposées
+  return isForward ? calculatedCurvature : -calculatedCurvature;
 }
 
 // Améliorer les définitions de flèches avec un style inspiré de l'exemple Observable
@@ -535,8 +547,10 @@ function ticked() {
 
 // Fonction pour dessiner un auto-lien (boucle)
 function drawSelfLoop(x, y, radius) {
+  const { loopCurvature } = getLinkStyle();
+  
   // Dessiner une boucle au-dessus du nœud
-  const loopRadius = radius * 1.5;
+  const loopRadius = radius * loopCurvature; // Utiliser le facteur configurable
   const startAngle = -Math.PI/2 - Math.PI/6;
   const endAngle = -Math.PI/2 + Math.PI/6;
   

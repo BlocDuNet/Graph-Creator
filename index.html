@@ -209,6 +209,21 @@
                 <input type="checkbox" id="curved-links" name="curved-links" checked />
                 <label for="curved-links">Curved links</label>
               </p>
+              <!-- Nouveaux contrôles pour la courbure -->
+              <div id="curvature-controls">
+                <p>
+                  <label for="base-curvature">Base curvature:</label>
+                  <input type="number" id="base-curvature" name="base-curvature" min="0" max="1" step="0.05" value="0.2" style="width: 70px" />
+                </p>
+                <p>
+                  <label for="loop-curvature">Loop curvature factor:</label>
+                  <input type="number" id="loop-curvature" name="loop-curvature" min="0.5" max="3" step="0.1" value="1.5" style="width: 70px" />
+                </p>
+                <p>
+                  <label for="curvature-step">Parallel link step:</label>
+                  <input type="number" id="curvature-step" name="curvature-step" min="0.01" max="0.5" step="0.01" value="0.1" style="width: 70px" />
+                </p>
+              </div>
               <hr />
               <p>
                 <input type="checkbox" id="link-force" name="link-force" />
