@@ -18,16 +18,7 @@
   <body>
     <svg width="800" height="600">
       <defs>
-        <marker
-          id="arrowhead"
-          markerWidth="10"
-          markerHeight="7"
-          refX="3"
-          refY="1.75"
-          orient="auto"
-        >
-          <polygon points="0 0, 5 1.75, 0 3.5" />
-        </marker>
+        <!-- La définition de marker sera remplacée dynamiquement par le JavaScript -->
       </defs>
     </svg>
     <!-- Volet -->
@@ -131,6 +122,11 @@
                     <td><b>Undo/Redo</b></td>
                     <td><b>CTRL + Z / CTRL + Y</b></td>
                   </tr>
+                  <tr>
+                    <td><object type="image/svg+xml" data="svg/self-loop.svg" width="40" height="40" title="Create self loop"></object></td>
+                    <td><b>Create a self loop</b></td>
+                    <td><b>Select a node</b> then <b>ALT+Click on the same node</b></td>
+                  </tr>
                 </table>
                 <p>Tips: You can select nodes and edges by clicking on their labels</p>
               </p>
@@ -183,6 +179,10 @@
                 <label for="defaultNodeSizeInput">Default node size:</label>
                 <input type="number" id="defaultNodeSizeInput" value="30" min="1" step="1">
               </p>
+              <p>
+                <label for="defaultLinkWidthInput">Default link width:</label>
+                <input type="number" id="defaultLinkWidthInput" value="2" min="1" max="10" step="1">
+              </p>
               <form id="node-form" class="hidden"></form>
               <form id="link-form" class="hidden"></form>
             </div>                      
@@ -227,8 +227,8 @@
       </div>
     </div>
     <script src="js/script.js"></script>
-    <script src="js/ai_ollama.js"></script>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script type="module" src="js/graph.js"></script>
+    <script type="module" src="js/ai_ollama.js"></script>
   </body>
 </html>

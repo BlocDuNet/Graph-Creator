@@ -1,69 +1,87 @@
-
 body {
-  overflow: hidden; /* Enlève le scroll du HTML */
+  overflow: hidden;
 }
 
-/* Graph */
-.link {
-  stroke: #000000;
-  stroke-width:5;
-  marker-end: url(#arrowhead);
-}
-
-.node {
-  stroke: #ffffff00;
-  stroke-width: 2px;
-  fill: #000000bb;
-}
-
-.selected{
-  stroke: #f00;
-}
-
-.selected text{
-  font-size: 2em;
-  fill:#f00;
-}
-
-.selected .link-label{
-  font-size: 2em;
-  fill:#f00;
-}
-
-.hidden {
-  display: none;
-}
-
-/* Empêche l'auto-sélection du texte par double clic */
+/* SVG et éléments du graph */
 svg {
   background-color: #FFF;
   cursor: default;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
-  -o-user-select: none;
   user-select: none;
 }
-/* Graph end */
 
-/* Panel */
+/* Styles des nœuds */
+.node {
+  stroke: #ffffff00;
+  stroke-width: 2px;
+  fill: #000000bb;
+}
+
+/* Styles des liens */
+.link {
+  stroke: #000;
+  stroke-width: 2px;
+  fill: none;
+  cursor: pointer;
+  stroke-linecap: round;
+  pointer-events: stroke;
+  marker-end: url(#arrowhead);
+}
+
+/* Étiquettes de liens */
+.link-label {
+  font-family: sans-serif;
+  font-size: 11px;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  background-color: rgba(255, 255, 255, 0.5);
+  padding: 2px;
+}
+
+/* Styles des éléments sélectionnés */
+.selected {
+  stroke: #0077ff;
+}
+
+.link.selected {
+  stroke: #0077ff;
+}
+
+.selected text {
+  font-size: 2em;
+  fill: #0077ff;
+}
+
+.selected .link-label {
+  font-size: 2em;
+  fill: #0077ff;
+}
+
+/* Utilitaires */
+.hidden {
+  display: none;
+}
+
+/* Panneau inférieur */
 #bottom-panel {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 450px; /* Taille fixe */
-
-    transition: all 0.3s ease;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 450px;
+  transition: all 0.3s ease;
 }
 
 #bottom-panel.collapsed {
-    height: 20px;
-    overflow-y: hidden;
+  height: 60px;
+  overflow: hidden;
 }
 
-.card-body{
-    overflow-y: auto;
+.card-body {
+  overflow-y: auto;
 }
 
 .card-header {
@@ -71,12 +89,14 @@ svg {
   padding-top: 0px;
 }
 
-
-#bottom-panel.collapsed {
-  height: 60px;
-  overflow: hidden;
+.header-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
+/* Flèches de contrôle du panneau */
 .arrow {
   display: inline-block;
   width: 0;
@@ -96,32 +116,22 @@ svg {
   border-top: 4px solid currentColor;
 }
 
-.header-toggle {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Tableau d'aide */
+.table-container {
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+table {
+  border-collapse: collapse;
   width: 100%;
 }
 
-/* Panel end */
-
-/* Tableur */
-.table-container {
-    max-width: 650px; /* Définir la largeur maximale du conteneur du tableau */
-    margin: 0 auto; /* Centrer le conteneur horizontalement */
-  }
-
-  table {
-    border-collapse: collapse;
-    width: 100%;
-  }
-
-  th, td {
-    border: 1px solid black;
-    padding: 8px;
-    text-align: left;
-  }
-/* Tableur end */
+th, td {
+  border: 1px solid black;
+  padding: 8px;
+  text-align: left;
+}
 
 .context-menu {
   position: absolute;
@@ -132,6 +142,6 @@ svg {
 }
 
 #historySelect {
-  width:100%;
+  width: 100%;
 }
 
