@@ -159,97 +159,128 @@
             </div>
             
             <div class="tab-pane fade" id="tab2">
-              <!-- Valeurs tab - organiser en catégories repliables -->
+              <!-- Valeurs tab - optimisation de l'agencement -->
               <div class="accordion" id="valuesAccordion">
-                <!-- Catégorie 1: Import/Export -->
-                <div class="card">
-                  <div class="card-header section-header" id="headingImportExport">
-                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseImportExport" aria-expanded="true" aria-controls="collapseImportExport">
-                      Import/Export Data
+                <!-- Section 1: Import/Export et Champs -->
+                <div class="card mb-3">
+                  <div class="card-header section-header" id="headingActions">
+                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseActions" aria-expanded="true" aria-controls="collapseActions">
+                      Actions et champs
                     </button>
                   </div>
-                  <div id="collapseImportExport" class="collapse show" aria-labelledby="headingImportExport">
+                  <div id="collapseActions" class="collapse show" aria-labelledby="headingActions">
                     <div class="card-body">
-                      <p>
-                        <button id="export-json">Export JSON</button>
-                        <button id="import-json">Import JSON</button>
-                        <label for="json-file" class="sr-only">Select JSON file</label>
-                        <input type="file" id="json-file" accept=".json" class="hidden">
-                      </p>
-                      <p>
-                        <button id="changeLabelButton">Initialize Labels</button>
-                      </p>
+                      <div class="row">
+                        <!-- Import/Export -->
+                        <div class="col-md-5">
+                          <div class="action-group">
+                            <h5>Import/Export</h5>
+                            <div class="d-flex flex-wrap">
+                              <button id="export-json" class="btn btn-sm btn-outline-primary m-1">Export JSON</button>
+                              <button id="import-json" class="btn btn-sm btn-outline-primary m-1">Import JSON</button>
+                              <button id="changeLabelButton" class="btn btn-sm btn-outline-secondary m-1">Initialize Labels</button>
+                            </div>
+                            <input type="file" id="json-file" accept=".json" class="hidden">
+                          </div>
+                        </div>
+                        
+                        <!-- Gestion des champs -->
+                        <div class="col-md-7">
+                          <div class="field-group">
+                            <h5>Ajouter des champs</h5>
+                            <div class="row mb-2">
+                              <div class="col-sm-6">
+                                <div class="input-group input-group-sm">
+                                  <input type="text" id="addNodeFieldInput" class="form-control" placeholder="Nouveau champ noeud">
+                                  <div class="input-group-append">
+                                    <button id="addNodeFieldButton" class="btn btn-outline-secondary">+Node</button>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="col-sm-6">
+                                <div class="input-group input-group-sm">
+                                  <input type="text" id="addLinkFieldInput" class="form-control" placeholder="Nouveau champ lien">
+                                  <div class="input-group-append">
+                                    <button id="addLinkFieldButton" class="btn btn-outline-secondary">+Link</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                
-                <!-- Catégorie 2: Gestion des champs -->
-                <div class="card">
-                  <div class="card-header section-header" id="headingFields">
-                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseFields" aria-expanded="true" aria-controls="collapseFields">
-                      Field Management
-                    </button>
-                  </div>
-                  <div id="collapseFields" class="collapse show" aria-labelledby="headingFields">
-                    <div class="card-body">
-                      <p>
-                        <label for="addNodeFieldInput">Node Field</label>
-                        <input type="text" id="addNodeFieldInput" placeholder="New node field">
-                        <button id="addNodeFieldButton">Add Node Field</button>
-                      </p>
-                      <p>
-                        <label for="addLinkFieldInput">Link Field</label>
-                        <input type="text" id="addLinkFieldInput" placeholder="New link field">
-                        <button id="addLinkFieldButton">Add Link Field</button>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Catégorie 3: Paramètres globaux -->
-                <div class="card">
+            
+                <!-- Section 2: Paramètres Globaux -->
+                <div class="card mb-3">
                   <div class="card-header section-header" id="headingGlobalParams">
                     <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseGlobalParams" aria-expanded="true" aria-controls="collapseGlobalParams">
-                      Global Parameters
+                      Paramètres Globaux
                     </button>
                   </div>
                   <div id="collapseGlobalParams" class="collapse show" aria-labelledby="headingGlobalParams">
                     <div class="card-body">
-                      <p>
-                        <label for="node-label">Node label:</label>
-                        <select id="node-label"></select>
-                      </p>
-                      <p>
-                        <label for="link-label">Link label:</label>
-                        <select id="link-label"></select>
-                      </p>
-                      <p>
-                        <label for="node-size-field">Node size field:</label>
-                        <select id="node-size-field"></select>
-                      </p>
-                      <p>
-                        <label for="defaultNodeSizeInput">Default node size:</label>
-                        <input type="number" id="defaultNodeSizeInput" value="30" min="1" step="1">
-                      </p>
-                      <p>
-                        <label for="defaultLinkWidthInput">Default link width:</label>
-                        <input type="number" id="defaultLinkWidthInput" value="2" min="1" max="10" step="1">
-                      </p>
+                      <div class="row">
+                        <!-- Labels et tailles -->
+                        <div class="col-md-6">
+                          <div class="row mb-2">
+                            <div class="col-sm-6">
+                              <label for="node-label" class="small">Label noeud:</label>
+                              <select id="node-label" class="form-control form-control-sm"></select>
+                            </div>
+                            <div class="col-sm-6">
+                              <label for="link-label" class="small">Label lien:</label>
+                              <select id="link-label" class="form-control form-control-sm"></select>
+                            </div>
+                          </div>
+                          <div class="row">
+                            <div class="col-sm-4">
+                              <label for="node-size-field" class="small">Champ de taille:</label>
+                              <select id="node-size-field" class="form-control form-control-sm"></select>
+                            </div>
+                            <div class="col-sm-4">
+                              <label for="defaultNodeSizeInput" class="small">Taille par défaut:</label>
+                              <input type="number" id="defaultNodeSizeInput" class="form-control form-control-sm" value="30" min="1" step="1">
+                            </div>
+                            <div class="col-sm-4">
+                              <label for="defaultLinkWidthInput" class="small">Largeur lien:</label>
+                              <input type="number" id="defaultLinkWidthInput" class="form-control form-control-sm" value="2" min="1" max="10" step="1">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                
-                <!-- Catégorie 4: Édition d'éléments -->
-                <div class="card">
+            
+                <!-- Section 3: Édition d'éléments -->
+                <div class="card mb-3">
                   <div class="card-header section-header" id="headingElementEdit">
                     <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseElementEdit" aria-expanded="true" aria-controls="collapseElementEdit">
-                      Nodes/Links fields
+                      Édition des Noeuds/Liens
                     </button>
                   </div>
                   <div id="collapseElementEdit" class="collapse show" aria-labelledby="headingElementEdit">
                     <div class="card-body">
-                      <form id="node-form" class="hidden"></form>
-                      <form id="link-form" class="hidden"></form>
+                      <div class="row">
+                        <!-- Formulaire des noeuds -->
+                        <div class="col-md-6">
+                          <div class="form-container">
+                            <h5 class="edit-title">Édition Noeud</h5>
+                            <form id="node-form" class="hidden"></form>
+                          </div>
+                        </div>
+                        
+                        <!-- Formulaire des liens -->
+                        <div class="col-md-6">
+                          <div class="form-container">
+                            <h5 class="edit-title">Édition Lien</h5>
+                            <form id="link-form" class="hidden"></form>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -259,91 +290,104 @@
             <div class="tab-pane fade" id="tab3">
               <!-- Config Graph tab - organiser en sections repliables -->
               <div class="accordion" id="configAccordion">
-                <!-- Section 1: Import/Export Config -->
-                <div class="card">
-                  <div class="card-header section-header" id="headingConfigIO">
-                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseConfigIO" aria-expanded="true" aria-controls="collapseConfigIO">
-                      Configuration Import/Export
-                    </button>
-                  </div>
-                  <div id="collapseConfigIO" class="collapse show" aria-labelledby="headingConfigIO">
-                    <div class="card-body">
-                      <p>
-                        <span id="import-config-json">Config:</span><br />
-                        <label for="export-config">Export config:</label>
-                        <button id="export-config">Export config</button><br />
-                        <label for="import-config">Import config:</label>
-                        <input type="file" id="import-config" accept=".json" />
-                      </p>
-                      <p>
-                        <label for="layoutSelect">Layout:</label>
-                        <select id="layoutSelect">
-                          <option value="">-- Select layout --</option>
-                          <option value="circle">Circle</option>
-                          <option value="grid">Grid</option>
-                        </select>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Section 2: Link Appearance -->
-                <div class="card">
-                  <div class="card-header section-header" id="headingLinkStyle">
-                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseLinkStyle" aria-expanded="true" aria-controls="collapseLinkStyle">
-                      Link Style
-                    </button>
-                  </div>
-                  <div id="collapseLinkStyle" class="collapse show" aria-labelledby="headingLinkStyle">
-                    <div class="card-body">
-                      <p>
-                        <input type="checkbox" id="curved-links" name="curved-links" checked />
-                        <label for="curved-links">Curved links</label>
-                      </p>
-                      <!-- Contrôles pour la courbure -->
-                      <div id="curvature-controls">
-                        <p>
-                          <label for="base-curvature">Base curvature:</label>
-                          <input type="number" id="base-curvature" name="base-curvature" min="0" max="1" step="0.05" value="0.2" style="width: 70px" />
-                        </p>
-                        <p>
-                          <label for="loop-curvature">Loop curvature factor:</label>
-                          <input type="number" id="loop-curvature" name="loop-curvature" min="0.5" max="3" step="0.1" value="1.5" style="width: 70px" />
-                        </p>
-                        <p>
-                          <label for="curvature-step">Parallel link step:</label>
-                          <input type="number" id="curvature-step" name="curvature-step" min="0.01" max="0.5" step="0.01" value="0.1" style="width: 70px" />
-                        </p>
+                <div class="row">
+      
+                  <!-- Colonne 1 -->
+                  <div class="col-12 col-lg-4 mb-3">
+                    <!-- Section 1: Import/Export Config -->
+                    <div class="card h-100">
+                      <div class="card-header section-header" id="headingConfigIO">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseConfigIO" aria-expanded="true" aria-controls="collapseConfigIO">
+                          Configuration Import/Export
+                        </button>
+                      </div>
+                      <div id="collapseConfigIO" class="collapse show" aria-labelledby="headingConfigIO">
+                        <div class="card-body">
+                          <p>
+                            <span id="import-config-json">Config:</span><br />
+                            <label for="export-config">Export config:</label>
+                            <button id="export-config">Export config</button><br />
+                            <label for="import-config">Import config:</label>
+                            <input type="file" id="import-config" accept=".json" />
+                          </p>
+                          <p>
+                            <label for="layoutSelect">Layout:</label>
+                            <select id="layoutSelect">
+                              <option value="">-- Select layout --</option>
+                              <option value="circle">Circle</option>
+                              <option value="grid">Grid</option>
+                            </select>
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                
-                <!-- Section 3: Force Parameters -->
-                <div class="card">
-                  <div class="card-header section-header" id="headingForce">
-                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseForce" aria-expanded="true" aria-controls="collapseForce">
-                      Force Parameters
-                    </button>
-                  </div>
-                  <div id="collapseForce" class="collapse show" aria-labelledby="headingForce">
-                    <div class="card-body">
-                      <p>
-                        <input type="checkbox" id="link-force" name="link-force" />
-                        <label for="link-force">Link force</label><br />
-                        <label for="link-distance">Link distance</label>
-                        <input type="number" id="link-distance" name="link-distance" />
-                      </p>
-                      <p>
-                        <label for="charge-strength">Charge strength</label>
-                        <input type="number" id="charge-strength" name="charge-strength" title="Use negative value with center force activated is recommended" />
-                      </p>
-                      <p>
-                        <input type="checkbox" id="center-force" name="center-force" />
-                        <label for="center-force">Center force</label>
-                      </p>
+                  
+                  <!-- Colonne 2 -->
+                  <div class="col-12 col-md-6 col-lg-4 mb-3">
+                    <!-- Section 2: Link Appearance -->
+                    <div class="card h-100">
+                      <div class="card-header section-header" id="headingLinkStyle">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseLinkStyle" aria-expanded="true" aria-controls="collapseLinkStyle">
+                          Link Style
+                        </button>
+                      </div>
+                      <div id="collapseLinkStyle" class="collapse show" aria-labelledby="headingLinkStyle">
+                        <div class="card-body">
+                          <p>
+                            <input type="checkbox" id="curved-links" name="curved-links" checked />
+                            <label for="curved-links">Curved links</label>
+                          </p>
+                          <!-- Contrôles pour la courbure -->
+                          <div id="curvature-controls">
+                            <p>
+                              <label for="base-curvature">Base curvature:</label>
+                              <input type="number" id="base-curvature" name="base-curvature" min="0" max="1" step="0.05" value="0.2" style="width: 70px" />
+                            </p>
+                            <p>
+                              <label for="loop-curvature">Loop curvature factor:</label>
+                              <input type="number" id="loop-curvature" name="loop-curvature" min="0.5" max="3" step="0.1" value="1.5" style="width: 70px" />
+                            </p>
+                            <p>
+                              <label for="curvature-step">Parallel link step:</label>
+                              <input type="number" id="curvature-step" name="curvature-step" min="0.01" max="0.5" step="0.01" value="0.1" style="width: 70px" />
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
+                  
+                  <!-- Colonne 3 -->
+                  <div class="col-12 col-md-6 col-lg-4 mb-3">
+                    <!-- Section 3: Force Parameters -->
+                    <div class="card h-100">
+                      <div class="card-header section-header" id="headingForce">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseForce" aria-expanded="true" aria-controls="collapseForce">
+                          Force Parameters
+                        </button>
+                      </div>
+                      <div id="collapseForce" class="collapse show" aria-labelledby="headingForce">
+                        <div class="card-body">
+                          <p>
+                            <input type="checkbox" id="link-force" name="link-force" />
+                            <label for="link-force">Link force</label><br />
+                            <label for="link-distance">Link distance</label>
+                            <input type="number" id="link-distance" name="link-distance" />
+                          </p>
+                          <p>
+                            <label for="charge-strength">Charge strength</label>
+                            <input type="number" id="charge-strength" name="charge-strength" title="Use negative value with center force activated is recommended" />
+                          </p>
+                          <p>
+                            <input type="checkbox" id="center-force" name="center-force" />
+                            <label for="center-force">Center force</label>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                 </div>
               </div>
             </div>
@@ -351,78 +395,88 @@
             <div class="tab-pane fade" id="tab4">
               <!-- AI Request tab - organisé en sections repliables -->
               <div class="accordion" id="aiAccordion">
-                <!-- Section 1: Génération par prompt -->
-                <div class="card">
-                  <div class="card-header section-header" id="headingGeneration">
-                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseGeneration" aria-expanded="true" aria-controls="collapseGeneration">
-                      Génération par prompt
-                    </button>
-                  </div>
-                  <div id="collapseGeneration" class="collapse show" aria-labelledby="headingGeneration">
-                    <div class="card-body">
-                      <!-- Conteneur pour la génération par prompt -->
-                      <div id="div-generation">
-                        <div style="margin-bottom: 8px;">
-                          <label for="ollamaModel">Modèle d'IA (ollama only):</label>
-                          <input id="ollamaModel" type="text" placeholder="ex: mistral" style="width:100%;">
-                        </div>
-                        <textarea id="ollamaPrompt" placeholder="Saisissez votre requête ici" style="width:100%; height:100px;"></textarea>
-                        <br>
-                        <button id="ollamaSend">Envoyer la requête</button>
-                        <button id="ollamaStop" style="margin-left:10px;">Stop Generation</button>
-                        <button id="importGraph" style="margin-left:10px;">Importer Graph Ollama</button>
+                <div class="row">
+      
+                  <!-- Section 1: Génération par prompt - maintenant dans une colonne -->
+                  <div class="col-12 col-md-6 mb-3">
+                    <div class="card">
+                      <div class="card-header section-header" id="headingGeneration">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseGeneration" aria-expanded="true" aria-controls="collapseGeneration">
+                          Génération par prompt
+                        </button>
                       </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Section 2: Propositions basées sur le graph actuel -->
-                <div class="card">
-                  <div class="card-header section-header" id="headingProposals">
-                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseProposals" aria-expanded="true" aria-controls="collapseProposals">
-                      Propositions basées sur le graph actuel
-                    </button>
-                  </div>
-                  <div id="collapseProposals" class="collapse show" aria-labelledby="headingProposals">
-                    <div class="card-body">
-                      <!-- Conteneur pour les propositions -->
-                      <div id="div-proposals">
-                        <button id="ollamaSendProposals">Envoyer le graph actuel pour propositions</button>
-                        <div id="proposalLists" style="margin-top:10px;">
-                          <div>
-                            <h4>Noeuds proposés</h4>
-                            <ul id="proposalNodes"></ul>
-                          </div>
-                          <div>
-                            <h4>Liens proposés</h4>
-                            <ul id="proposalLinks"></ul>
+                      <div id="collapseGeneration" class="collapse show" aria-labelledby="headingGeneration">
+                        <div class="card-body">
+                          <!-- Conteneur pour la génération par prompt -->
+                          <div id="div-generation">
+                            <div style="margin-bottom: 8px;">
+                              <label for="ollamaModel">Modèle d'IA (ollama only):</label>
+                              <input id="ollamaModel" type="text" placeholder="ex: mistral" style="width:100%;">
+                            </div>
+                            <textarea id="ollamaPrompt" placeholder="Saisissez votre requête ici" style="width:100%; height:100px;"></textarea>
+                            <br>
+                            <button id="ollamaSend">Envoyer la requête</button>
+                            <button id="ollamaStop" style="margin-left:10px;">Stop Generation</button>
+                            <button id="importGraph" style="margin-left:10px;">Importer Graph Ollama</button>
                           </div>
                         </div>
-                        <br>
-                        <button id="ollamaRejectProposals">Réinitialiser Propositions</button>
                       </div>
                     </div>
                   </div>
-                </div>
-                
-                <!-- Section 3: Logs -->
-                <div class="card">
-                  <div class="card-header section-header" id="headingLogs">
-                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseLogs" aria-expanded="false" aria-controls="collapseLogs">
-                      Logs de réponse
-                    </button>
-                  </div>
-                  <div id="collapseLogs" class="collapse" aria-labelledby="headingLogs">
-                    <div class="card-body">
-                      <!-- Conteneur pour les logs -->
-                      <div id="div-logs">
-                        <button id="toggleRaw">Afficher/Masquer log</button>
-                        <br>
-                        <textarea id="ollamaRaw" style="width:100%; height:150px; margin-top:5px; display:none;" readonly></textarea>
-                        <pre id="ollamaResult" style="background:#f8f8f8; padding:10px; max-height:200px; overflow:auto;"></pre>
+                  
+                  <!-- Section 2: Propositions - maintenant dans une colonne -->
+                  <div class="col-12 col-md-6 mb-3">
+                    <div class="card">
+                      <div class="card-header section-header" id="headingProposals">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseProposals" aria-expanded="true" aria-controls="collapseProposals">
+                          Propositions basées sur le graph actuel
+                        </button>
+                      </div>
+                      <div id="collapseProposals" class="collapse show" aria-labelledby="headingProposals">
+                        <div class="card-body">
+                          <!-- Conteneur pour les propositions -->
+                          <div id="div-proposals">
+                            <button id="ollamaSendProposals">Envoyer le graph actuel pour propositions</button>
+                            <div id="proposalLists" style="margin-top:10px;">
+                              <div>
+                                <h4>Noeuds proposés</h4>
+                                <ul id="proposalNodes"></ul>
+                              </div>
+                              <div>
+                                <h4>Liens proposés</h4>
+                                <ul id="proposalLinks"></ul>
+                              </div>
+                            </div>
+                            <br>
+                            <button id="ollamaRejectProposals">Réinitialiser Propositions</button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  
+                  <!-- Section 3: Logs - prend toute la largeur -->
+                  <div class="col-12 mb-3">
+                    <div class="card">
+                      <div class="card-header section-header" id="headingLogs">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseLogs" aria-expanded="false" aria-controls="collapseLogs">
+                          Logs de réponse
+                        </button>
+                      </div>
+                      <div id="collapseLogs" class="collapse" aria-labelledby="headingLogs">
+                        <div class="card-body">
+                          <!-- Conteneur pour les logs -->
+                          <div id="div-logs">
+                            <button id="toggleRaw">Afficher/Masquer log</button>
+                            <br>
+                            <textarea id="ollamaRaw" style="width:100%; height:150px; margin-top:5px; display:none;" readonly></textarea>
+                            <pre id="ollamaResult" style="background:#f8f8f8; padding:10px; max-height:200px; overflow:auto;"></pre>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                 </div>
               </div>
             </div>
