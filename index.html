@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
-    <svg width="800" height="600">
+    <svg width="3000" height="3000">
       <defs>
         <!-- La définition de marker sera remplacée dynamiquement par le JavaScript -->
       </defs>
@@ -369,20 +369,29 @@
                       </div>
                       <div id="collapseForce" class="collapse show" aria-labelledby="headingForce">
                         <div class="card-body">
-                          <p>
-                            <input type="checkbox" id="link-force" name="link-force" />
-                            <label for="link-force">Link force</label><br />
-                            <label for="link-distance">Link distance</label>
-                            <input type="number" id="link-distance" name="link-distance" />
-                          </p>
-                          <p>
-                            <label for="charge-strength">Charge strength</label>
-                            <input type="number" id="charge-strength" name="charge-strength" title="Use negative value with center force activated is recommended" />
-                          </p>
-                          <p>
-                            <input type="checkbox" id="center-force" name="center-force" />
-                            <label for="center-force">Center force</label>
-                          </p>
+                          <div class="control-group">
+                            <div class="form-field">
+                              <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="link-force" name="link-force">
+                                <label class="custom-control-label" for="link-force">Link force</label>
+                              </div>
+                              <div class="compact-control">
+                                <label for="link-distance">Link distance</label>
+                                <input type="number" id="link-distance" name="link-distance" class="form-control form-control-sm">
+                              </div>
+                            </div>
+                            <div class="form-field">
+                              <label for="charge-strength">Charge strength</label>
+                              <input type="number" id="charge-strength" name="charge-strength" class="form-control form-control-sm" 
+                                     title="Use negative value with center force activated is recommended">
+                            </div>
+                            <div class="form-field">
+                              <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="center-force" name="center-force">
+                                <label class="custom-control-label" for="center-force">Center force</label>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

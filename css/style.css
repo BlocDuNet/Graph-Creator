@@ -292,3 +292,120 @@ th, td {
   }
 }
 
+/* Styles harmonisés pour tous les onglets */
+
+/* Harmonisation des boutons */
+button, .btn {
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+}
+
+/* Style global pour les inputs et selects */
+input, select, textarea {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.5rem;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+/* Harmonisation pour les inputs de type number */
+input[type="number"] {
+  max-width: 100px;
+}
+
+/* Style commun pour les groupes d'éléments dans tous les onglets */
+.control-group, .action-group, .field-group {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+/* Style de titre uniformisé pour tous les sous-titres */
+.section-title, .edit-title, h5 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+/* Harmonisation des sections réduites en hauteur */
+.compact-control {
+  margin-bottom: 0.5rem;
+}
+
+.compact-control label {
+  display: inline-block;
+  margin-bottom: 0.2rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+/* Harmonisation des checkboxes */
+input[type="checkbox"] {
+  width: auto;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Style pour les éléments des formulaires dans tous les onglets */
+.form-field {
+  margin-bottom: 0.75rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Style uniformisé pour les listes */
+ul {
+  padding-left: 1.2rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+}
+
+/* Style spécifique au tab3 - Config graph */
+#curvature-controls .form-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+#curvature-controls label {
+  flex: 1;
+  margin-right: 0.5rem;
+  margin-bottom: 0;
+}
+
+/* Style pour les tabs AI Request */
+#tab4 button {
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+}
+
+#tab4 button:hover {
+  background-color: #e9ecef;
+}
+
+/* Harmonisation pour les petits écrans */
+@media (max-width: 767.98px) {
+  /* Style compact pour les petits écrans */
+  button, .btn {
+    font-size: 0.85rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .card-body {
+    padding: 0.5rem;
+  }
+}
+
