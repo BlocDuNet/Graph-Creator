@@ -648,23 +648,29 @@ li {
   padding: 3px 5px;
 }
 
-/* Style pour le toggle switch */
+/* Style amélioré pour le toggle switch */
 .toggle-container {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  background-color: #f8f9fa;
+  border-radius: 50px;
+  padding: 5px 15px;
+  justify-content: space-between;
 }
 
 .toggle-label {
   font-size: 0.9rem;
-  margin: 0 10px;
+  margin: 0 15px;
+  font-weight: 500;
+  color: #6c757d;
 }
 
 .toggle-switch {
   position: relative;
   display: inline-block;
   width: 60px;
-  height: 34px;
+  height: 30px;
 }
 
 .toggle-switch input {
@@ -682,17 +688,19 @@ li {
   bottom: 0;
   background-color: #ccc;
   transition: .4s;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.2);
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 26px;
-  width: 26px;
+  height: 22px;
+  width: 22px;
   left: 4px;
   bottom: 4px;
   background-color: white;
   transition: .4s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 input:checked + .slider {
@@ -704,15 +712,34 @@ input:focus + .slider {
 }
 
 input:checked + .slider:before {
-  transform: translateX(26px);
+  transform: translateX(30px);
 }
 
-/* Style pour arrondir les bords */
 .slider.round {
-  border-radius: 34px;
+  border-radius: 30px;
 }
 
 .slider.round:before {
   border-radius: 50%;
+}
+
+/* Styles pour les contrôles de courbure */
+#curvature-controls {
+  transition: all 0.3s ease;
+}
+
+#curvature-controls .form-control-range {
+  width: 100%;
+}
+
+#curvature-controls label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+#curvature-controls small {
+  display: block;
+  text-align: right;
 }
 

@@ -25,4 +25,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+
+  // Mise à jour des valeurs affichées pour les contrôles de courbure
+  function setupRangeValueDisplay(rangeId, valueId) {
+    const range = document.getElementById(rangeId);
+    const valueDisplay = document.getElementById(valueId);
+    
+    if (range && valueDisplay) {
+      // Initialiser avec la valeur actuelle
+      valueDisplay.textContent = range.value;
+      
+      // Mettre à jour pendant le glissement
+      range.addEventListener('input', () => {
+        valueDisplay.textContent = range.value;
+      });
+    }
+  }
+  
+  // Configuration des affichages de valeur pour chaque slider
+  setupRangeValueDisplay('base-curvature', 'base-curvature-value');
+  setupRangeValueDisplay('loop-curvature', 'loop-curvature-value');
+  setupRangeValueDisplay('curvature-step', 'curvature-step-value');
 });

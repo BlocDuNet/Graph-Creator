@@ -1,32 +1,145 @@
 import { graphState, performAction, updateGraph } from './graph.js';
 
-// Attendre que le DOM soit complètement chargé et que Bootstrap soit initialisé
-document.addEventListener("DOMContentLoaded", () => {
-  // Laisser à Bootstrap le temps d'initialiser ses composants
-  setTimeout(() => {
-    initAIFeatures();
-  }, 100);
-});
-
-function initAIFeatures() {
-  // Vérifications moins restrictives pour éviter de bloquer tout le script
-  if (!document.getElementById("ollamaModel")) {
-    console.error("Élément ollamaModel non trouvé. Fonctionnalités AI limitées.");
+/**
+ * Fonction utilitaire pour lire les flux de réponses d'Ollama
+ * @param {ReadableStreamDefaultReader} reader - Le lecteur de flux
+ * @param {Function} processChunk - Fonction de traitement des fragments reçus
+ * @returns {Promise<string>} - La réponse complète
+ */
+async function readOllamaStream(reader, processChunk) {
+  const decoder = new TextDecoder();
+  let responseText = '';
+  
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      responseText += chunk;
+      
+      if (processChunk) {
+        processChunk(chunk, responseText);
+      }
+    }
+    return responseText;
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      console.error("Erreur de lecture du flux:", error);
+    }
+    throw error;
   }
+}
+
+/**
+ * Envoie une requête à l'API Ollama
+ * @param {Object} options - Options de la requête
+ * @returns {Promise<Object>} - Résultat de la requête
+ */
+async function sendOllamaRequest(options) {
+  const {
+    prompt,
+    model = 'mistral',
+    abortController = new AbortController(),
+    onChunk = null,
+    onComplete = null,
+    onError = null
+  } = options;
   
-  // Globals for responses
+  let responseText = '';
+  
+  try {
+    const response = await fetch("http://localhost:11434/api/generate", {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        model, 
+        prompt, 
+        format: "json", 
+        stream: true 
+      }),
+      signal: abortController.signal
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP: ${response.status}`);
+    }
+    
+    const reader = response.body.getReader();
+    
+    // Fonction de traitement de chaque fragment
+    const processFragment = (chunk) => {
+      chunk.split("\n").forEach(line => {
+        if (line.trim()) {
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed.response) {
+              responseText += parsed.response;
+              if (onChunk) onChunk(parsed.response, responseText);
+            }
+          } catch (err) {
+            console.error("Erreur parsing:", err);
+          }
+        }
+      });
+    };
+    
+    await readOllamaStream(reader, processFragment);
+    
+    // Traiter la réponse finale
+    if (onComplete) {
+      try {
+        const result = JSON.parse(responseText);
+        onComplete(result, responseText);
+      } catch (err) {
+        console.error("Erreur parsing final:", err);
+        if (onError) onError(new Error("Format JSON invalide dans la réponse"));
+      }
+    }
+    
+    return { success: true, text: responseText };
+    
+  } catch (error) {
+    if (onError) {
+      onError(error.name === 'AbortError' 
+        ? new Error("Requête annulée par l'utilisateur") 
+        : error);
+    }
+    return { success: false, error };
+  }
+}
+
+// Initialisation des fonctionnalités d'IA
+function initAIFeatures() {
+  // Références aux éléments DOM fréquemment utilisés
+  const elements = {
+    model: document.getElementById("ollamaModel"),
+    prompt: document.getElementById("ollamaPrompt"),
+    result: document.getElementById("ollamaResult"),
+    raw: document.getElementById("ollamaRaw"),
+    sendBtn: document.getElementById("ollamaSend"),
+    stopBtn: document.getElementById("ollamaStop"),
+    importBtn: document.getElementById("importGraph"),
+    proposalsBtn: document.getElementById("ollamaSendProposals"),
+    rejectBtn: document.getElementById("ollamaRejectProposals"),
+    proposalNodes: document.getElementById("proposalNodes"),
+    proposalLinks: document.getElementById("proposalLinks")
+  };
+  
+  // Variables pour gérer l'état global
   let currentAbortController = null;
-  let currentFinalResponse = "";    // For generation by prompt
-  let currentProposalResponse = "";   // For proposals
+  let currentFinalResponse = "";
+  let currentProposalResponse = "";
   
-  /* --- SECTION 1: Génération par prompt --- */
-  const ollamaSendBtn = document.getElementById("ollamaSend");
-  if (ollamaSendBtn) {
-    ollamaSendBtn.addEventListener("click", () => {
+  // --- SECTION 1: Génération par prompt ---
+  if (elements.sendBtn) {
+    elements.sendBtn.addEventListener("click", () => {
       currentAbortController = new AbortController();
-      const model = document.getElementById("ollamaModel").value.trim() || "mistral";
-      const userPrompt = document.getElementById("ollamaPrompt").value.trim();
-      const promptText = `
+      const model = elements.model?.value.trim() || "mistral";
+      const userPrompt = elements.prompt?.value.trim();
+      
+      const promptTemplate = `
 Pour la requête : "${userPrompt}", créer un graph network en JSON.
 Le JSON doit contenir "nodes" et "links" avec les propriétés nécessaires.
 Répondez uniquement avec un JSON valide sans texte additionnel.
@@ -35,90 +148,55 @@ Exemple :
   "nodes": [ { "id": "1", "name": "Node1", "description": "Description1", "x": 100, "y": 300, "size": 30 } ],
   "links": [ { "id": "1", "source": "1", "target": "2", "name": "Link1", "description": "Description1" } ]
 }`;
-      const payload = { model, prompt: promptText, format: "json", stream: true };
       
-      const resultElement = document.getElementById("ollamaResult");
-      const rawElement = document.getElementById("ollamaRaw");
-      
-      if (resultElement) resultElement.textContent = "";
-      if (rawElement) rawElement.value = "";
-      
+      // Réinitialiser les zones d'affichage
+      if (elements.result) elements.result.textContent = "";
+      if (elements.raw) elements.raw.value = "";
       currentFinalResponse = "";
-      fetch("http://localhost:11434/api/generate", {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: currentAbortController.signal
-      })
-      .then(response => {
-        if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        function readStream() {
-          return reader.read().then(({ done, value }) => {
-            if (done) return currentFinalResponse;
-            const chunk = decoder.decode(value, { stream: true });
-            chunk.split("\n").forEach(line => {
-              if (line.trim()) {
-                try {
-                  const parsed = JSON.parse(line);
-                  if (parsed.response) {
-                    currentFinalResponse += parsed.response;
-                    if (rawElement) rawElement.value += parsed.response;
-                    if (resultElement) resultElement.textContent = currentFinalResponse;
-                  }
-                } catch (err) {
-                  console.error("Parsing error:", err);
-                }
-              }
-            });
-            return readStream();
-          });
-        }
-        return readStream();
-      })
-      .then(() => {
-        try {
-          const jsonObj = JSON.parse(currentFinalResponse);
-          if (!jsonObj.nodes || !jsonObj.links) throw new Error("JSON invalide.");
-          if (resultElement) resultElement.textContent = JSON.stringify(jsonObj, null, 2);
-        } catch (err) {
-          console.error("Final parsing error:", err);
-        }
-      })
-      .catch(error => {
-        if (resultElement) {
-          resultElement.textContent = (error.name === 'AbortError')
-            ? "Génération stoppée par l'utilisateur."
-            : `Erreur : ${error.message}`;
+      
+      sendOllamaRequest({
+        prompt: promptTemplate,
+        model,
+        abortController: currentAbortController,
+        onChunk: (chunk, fullText) => {
+          if (elements.raw) elements.raw.value += chunk;
+          if (elements.result) elements.result.textContent = fullText;
+        },
+        onComplete: (jsonResult) => {
+          if (elements.result) {
+            elements.result.textContent = JSON.stringify(jsonResult, null, 2);
+          }
+        },
+        onError: (error) => {
+          if (elements.result) {
+            elements.result.textContent = `Erreur: ${error.message}`;
+          }
         }
       });
     });
   }
   
-  // Stop generation
-  const ollamaStopBtn = document.getElementById("ollamaStop");
-  if (ollamaStopBtn) {
-    ollamaStopBtn.addEventListener("click", () => {
+  // Gestion du bouton d'arrêt
+  if (elements.stopBtn) {
+    elements.stopBtn.addEventListener("click", () => {
       if (currentAbortController) currentAbortController.abort();
     });
   }
   
-  /* --- IMPORT DU GRAPH GÉNÉRÉ (Génération par prompt) --- */
-  const importGraphBtn = document.getElementById("importGraph");
-  if (importGraphBtn) {
-    importGraphBtn.addEventListener("click", () => {
-      // Importer le graph généré (currentFinalResponse) dans le graphe actuel
+  // Gestion de l'importation du graphe
+  if (elements.importBtn) {
+    elements.importBtn.addEventListener("click", () => {
       if (!currentFinalResponse) {
         alert("Aucun graph généré disponible à importer.");
         return;
       }
+      
       try {
         const generatedGraph = JSON.parse(currentFinalResponse);
         if (!generatedGraph.nodes || !generatedGraph.links) {
           throw new Error("Graph JSON invalide");
         }
+        
         // Préparer les nodes et links pour l'import
         const preparedGraph = {
           nodes: generatedGraph.nodes,
@@ -128,26 +206,30 @@ Exemple :
             target: generatedGraph.nodes.find(n => n.id === link.target)
           }))
         };
+        
         performAction({
           type: "import_graph",
-          data: { oldState: { nodes: [...graphState.nodes], links: [...graphState.links] },
-                  newState: preparedGraph,
-                  label: "Import graph from Ollama generation" }
+          data: { 
+            oldState: { nodes: [...graphState.nodes], links: [...graphState.links] },
+            newState: preparedGraph,
+            label: "Import graph from Ollama generation" 
+          }
         });
+        
         updateGraph();
         alert("Graph importé avec succès dans le graph actuel !");
+        
       } catch (err) {
-        alert("Erreur lors de l'importation du graph généré : " + err.message);
+        alert("Erreur lors de l'importation du graph généré: " + err.message);
       }
     });
   }
   
-  /* --- SECTION 2: Propositions basées sur le graph actuel --- */
-  const ollamaSendProposalsBtn = document.getElementById("ollamaSendProposals");
-  if (ollamaSendProposalsBtn) {
-    ollamaSendProposalsBtn.addEventListener("click", () => {
+  // --- SECTION 2: Propositions basées sur le graph actuel ---
+  if (elements.proposalsBtn) {
+    elements.proposalsBtn.addEventListener("click", () => {
       currentAbortController = new AbortController();
-      const model = document.getElementById("ollamaModel")?.value.trim() || "mistral";
+      const model = elements.model?.value.trim() || "mistral";
       
       // Utiliser le graph actuel (graphState) pour constituer la requête
       const currentGraphJSON = JSON.stringify({
@@ -172,56 +254,26 @@ Exemple :
   Ne retourne aucun autre texte.
   `;
       
-      const proposalNodesEl = document.getElementById("proposalNodes");
-      const proposalLinksEl = document.getElementById("proposalLinks");
-      const ollamaRawEl = document.getElementById("ollamaRaw");
-      
-      if (proposalNodesEl) proposalNodesEl.innerHTML = "";
-      if (proposalLinksEl) proposalLinksEl.innerHTML = "";
-      
+      // Réinitialiser les zones d'affichage
+      if (elements.proposalNodes) elements.proposalNodes.innerHTML = "";
+      if (elements.proposalLinks) elements.proposalLinks.innerHTML = "";
       currentProposalResponse = "";
-      if (ollamaRawEl) ollamaRawEl.value = "Envoi de la requête à Ollama...";
+      if (elements.raw) elements.raw.value = "Envoi de la requête à Ollama...";
       
-      fetch("http://localhost:11434/api/generate", {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model, prompt: proposalPrompt, format: "json", stream: true }),
-        signal: currentAbortController.signal
-      })
-      .then(response => {
-        if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        function readStream() {
-          return reader.read().then(({ done, value }) => {
-            if (done) return currentProposalResponse;
-            const chunk = decoder.decode(value, { stream: true });
-            chunk.split("\n").forEach(line => {
-              if (line.trim()) {
-                try {
-                  const parsed = JSON.parse(line);
-                  if (parsed.response) {
-                    currentProposalResponse += parsed.response;
-                    if (ollamaRawEl) ollamaRawEl.value += parsed.response;
-                  }
-                } catch (err) {
-                  console.error("Erreur proposals parsing:", err);
-                }
-              }
-            });
-            return readStream();
-          });
-        }
-        return readStream();
-      })
-      .then(() => {
-        try {
-          const proposals = JSON.parse(currentProposalResponse);
-          if (!proposals.nodes || !proposals.links) throw new Error("Propositions JSON invalide.");
+      sendOllamaRequest({
+        prompt: proposalPrompt,
+        model,
+        abortController: currentAbortController,
+        onChunk: (chunk, fullText) => {
+          if (elements.raw) elements.raw.value += chunk;
+        },
+        onComplete: (proposals) => {
+          if (!proposals.nodes || !proposals.links) {
+            throw new Error("Propositions JSON invalide.");
+          }
           
           // Afficher les noeuds proposés
-          if (proposalNodesEl) {
+          if (elements.proposalNodes) {
             proposals.nodes.forEach(nodeP => {
               const li = document.createElement("li");
               li.textContent = `${nodeP.name} (id: ${nodeP.id})`;
@@ -239,12 +291,12 @@ Exemple :
               reject.addEventListener("click", () => { li.style.display = "none"; });
               li.appendChild(approve);
               li.appendChild(reject);
-              proposalNodesEl.appendChild(li);
+              elements.proposalNodes.appendChild(li);
             });
           }
           
           // Afficher les liens proposés
-          if (proposalLinksEl) {
+          if (elements.proposalLinks) {
             proposals.links.forEach(linkP => {
               const li = document.createElement("li");
               li.textContent = `${linkP.name} (de ${linkP.source} vers ${linkP.target})`;
@@ -270,31 +322,26 @@ Exemple :
               reject.addEventListener("click", () => { li.style.display = "none"; });
               li.appendChild(approve);
               li.appendChild(reject);
-              proposalLinksEl.appendChild(li);
+              elements.proposalLinks.appendChild(li);
             });
           }
-        } catch (err) {
-          console.error("Erreur lors du traitement final des propositions:", err);
-        }
-      })
-      .catch(error => {
-        if (ollamaRawEl) {
-          ollamaRawEl.value += "\nErreur : " + 
-            ((error.name === 'AbortError') ? "Génération de propositions stoppée." : error.message);
+        },
+        onError: (error) => {
+          if (elements.raw) {
+            elements.raw.value += "\nErreur : " + 
+              ((error.name === 'AbortError') ? "Génération de propositions stoppée." : error.message);
+          }
         }
       });
     });
   }
   
   // Réinitialiser les propositions
-  const ollamaRejectProposalsBtn = document.getElementById("ollamaRejectProposals");
-  if (ollamaRejectProposalsBtn) {
-    ollamaRejectProposalsBtn.addEventListener("click", () => {
+  if (elements.rejectBtn) {
+    elements.rejectBtn.addEventListener("click", () => {
       currentProposalResponse = "";
-      const proposalNodesEl = document.getElementById("proposalNodes");
-      const proposalLinksEl = document.getElementById("proposalLinks");
-      if (proposalNodesEl) proposalNodesEl.innerHTML = "";
-      if (proposalLinksEl) proposalLinksEl.innerHTML = "";
+      if (elements.proposalNodes) elements.proposalNodes.innerHTML = "";
+      if (elements.proposalLinks) elements.proposalLinks.innerHTML = "";
     });
   }
   
@@ -309,3 +356,8 @@ Exemple :
     });
   }
 }
+
+// Démarrer l'initialisation après chargement du DOM
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(initAIFeatures, 100);
+});

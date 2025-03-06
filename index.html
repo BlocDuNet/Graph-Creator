@@ -336,7 +336,8 @@
                       </div>
                       <div id="collapseLinkStyle" class="collapse show" aria-labelledby="headingLinkStyle">
                         <div class="card-body">
-                          <div class="toggle-container">
+                          <!-- Toggle amélioré pour liens droits/courbés -->
+                          <div class="toggle-container mb-3">
                             <div class="toggle-label">Liens droits</div>
                             <label class="toggle-switch">
                               <input type="checkbox" id="curved-links" checked>
@@ -344,20 +345,37 @@
                             </label>
                             <div class="toggle-label">Liens courbés</div>
                           </div>
-                          <!-- Contrôles pour la courbure -->
-                          <div id="curvature-controls">
-                            <p>
-                              <label for="base-curvature">Base curvature:</label>
-                              <input type="number" id="base-curvature" name="base-curvature" min="0" max="1" step="0.05" value="0.2" class="input-narrow" title="Base curvature for links" />
-                            </p>
-                            <p>
-                              <label for="loop-curvature">Loop curvature factor:</label>
-                              <input type="number" id="loop-curvature" name="loop-curvature" min="0.5" max="3" step="0.1" value="1.5" class="input-narrow" title="Curvature factor for self-loops" />
-                            </p>
-                            <p>
-                              <label for="curvature-step">Parallel link step:</label>
-                              <input type="number" id="curvature-step" name="curvature-step" min="0.01" max="0.5" step="0.01" value="0.1" class="input-narrow" title="Step increment for parallel links" />
-                            </p>
+                          
+                          <!-- Contrôles pour la courbure avec meilleure organisation -->
+                          <div id="curvature-controls" class="card border-light mb-3">
+                            <div class="card-header bg-light">Paramètres de courbure</div>
+                            <div class="card-body">
+                              <p>
+                                <label for="base-curvature">Courbure de base:</label>
+                                <input type="range" id="base-curvature" name="base-curvature" min="0" max="1" step="0.05" value="0.2" class="form-control-range" title="Courbure par défaut pour les liens simples">
+                                <small class="text-muted">Valeur: <span id="base-curvature-value">0.2</span></small>
+                              </p>
+                              <p>
+                                <label for="loop-curvature">Taille des boucles:</label>
+                                <input type="range" id="loop-curvature" name="loop-curvature" min="0.5" max="3" step="0.1" value="1.5" class="form-control-range" title="Facteur de taille pour les auto-liens">
+                                <small class="text-muted">Valeur: <span id="loop-curvature-value">1.5</span></small>
+                              </p>
+                              <p>
+                                <label for="curvature-step">Décalage liens parallèles:</label>
+                                <input type="range" id="curvature-step" name="curvature-step" min="0.01" max="0.5" step="0.01" value="0.1" class="form-control-range" title="Écart entre liens parallèles">
+                                <small class="text-muted">Valeur: <span id="curvature-step-value">0.1</span></small>
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <!-- Force recreate links option -->
+                          <div id="forceRecreateLinksDiv" class="form-group mt-3">
+                            <div class="custom-control custom-checkbox">
+                              <input type="checkbox" class="custom-control-input" id="forceRecreateLinks" checked>
+                              <label class="custom-control-label" for="forceRecreateLinks">
+                                Recréer les liens à chaque mise à jour
+                              </label>
+                            </div>
                           </div>
                         </div>
                       </div>
