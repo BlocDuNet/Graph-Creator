@@ -89,6 +89,7 @@ function applyAction(action) {
   if (updateCallback) updateCallback();
 }
 
+// Remplacer getInverseAction par une version utilisant une table de correspondance
 function getInverseAction(action) {
   if (action.type === "composite") {
     return {
@@ -96,33 +97,23 @@ function getInverseAction(action) {
       actions: action.actions.slice().reverse().map(getInverseAction)
     };
   }
-  switch (action.type) {
-    case "create_node":
-      return { type: "delete_node", data: { node: action.data.node, relatedLinks: [] } };
-    case "delete_node":
-      return { type: "create_node", data: { node: action.data.node } };
-    case "move_node":
-      return { type: "move_node", data: { nodeId: action.data.nodeId, from: action.data.to, to: action.data.from } };
-    case "update_node":
-      return { type: "update_node", data: { nodeId: action.data.nodeId, field: action.data.field, from: action.data.to, to: action.data.from } };
-    case "create_link":
-      return { type: "delete_link", data: { link: action.data.link } };
-    case "delete_link":
-      return { type: "create_link", data: { link: action.data.link } };
-    case "update_link":
-      return { type: "update_link", data: { linkId: action.data.linkId, field: action.data.field, from: action.data.to, to: action.data.from } };
-    case "update_global":
-      return { type: "update_global", data: { field: action.data.field, from: action.data.to, to: action.data.from } };
-    case "add_field":
-      return { type: "remove_field", data: action.data };
-    case "remove_field":
-      return { type: "add_field", data: action.data };
-    case "import_graph":
-      return { type: "import_graph", data: { oldState: action.data.newState, newState: action.data.oldState } };
-    default:
-      console.error("Inverse inconnu pour", action.type);
-      return null;
-  }
+  const inverseMapping = {
+    create_node: () => ({ type: "delete_node", data: { node: action.data.node, relatedLinks: [] } }),
+    delete_node: () => ({ type: "create_node", data: { node: action.data.node } }),
+    move_node: () => ({ type: "move_node", data: { nodeId: action.data.nodeId, from: action.data.to, to: action.data.from } }),
+    update_node: () => ({ type: "update_node", data: { nodeId: action.data.nodeId, field: action.data.field, from: action.data.to, to: action.data.from } }),
+    create_link: () => ({ type: "delete_link", data: { link: action.data.link } }),
+    delete_link: () => ({ type: "create_link", data: { link: action.data.link } }),
+    update_link: () => ({ type: "update_link", data: { linkId: action.data.linkId, field: action.data.field, from: action.data.to, to: action.data.from } }),
+    update_global: () => ({ type: "update_global", data: { field: action.data.field, from: action.data.to, to: action.data.from } }),
+    add_field: () => ({ type: "remove_field", data: action.data }),
+    remove_field: () => ({ type: "add_field", data: action.data }),
+    import_graph: () => ({ type: "import_graph", data: { oldState: action.data.newState, newState: action.data.oldState } })
+  };
+  return (inverseMapping[action.type] || (() => {
+    console.error("Inverse inconnu pour", action.type);
+    return null;
+  }))();
 }
 
 export function performAction(action) {
