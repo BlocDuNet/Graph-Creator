@@ -1,4 +1,6 @@
 // config_graph.js
+import { updateGraph } from './graph.js';
+
 const svgElement = d3.select('svg');
 const width = svgElement.node().getBoundingClientRect().width;
 const height = svgElement.node().getBoundingClientRect().height;
@@ -39,10 +41,11 @@ d3.select('#link-distance').on('change', function () {
   forceConfig.link.distance(linkDistance);
 });
 
-// Ajouter un écouteur pour le style de liens
+// Modifier l'écouteur pour le style de liens afin d'appeler updateGraph explicitement
 d3.select('#curved-links').on('change', function() {
   curvedLinks = this.checked;
-  // La mise à jour du graphe se fait via la fonction updateGraph qui sera appelée
+  // Appeler explicitement updateGraph pour que le changement soit visible
+  updateGraph();
 });
 
 // Ajouter des écouteurs pour les paramètres de courbure
@@ -63,8 +66,10 @@ function updateHTMLInputs() {
   d3.select('#link-distance').property('value', linkDistance);
   d3.select('#charge-strength').property('value', chargeStrength);
   d3.select('#center-force').property('checked', centerStrength === 1);
-  // Mettre à jour le checkbox pour les liens incurvés
+  
+  // Mettre à jour le toggle pour les liens incurvés
   d3.select('#curved-links').property('checked', curvedLinks);
+  // Les textes de labels s'actualisent automatiquement grâce au CSS
   
   // Mise à jour des valeurs de courbure
   d3.select('#base-curvature').property('value', baseCurvature);
