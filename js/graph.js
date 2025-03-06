@@ -212,14 +212,35 @@ d3.select("#addLinkFieldButton").on("click", () => {
 
 // Mise à jour des menus déroulants globaux
 function updateGlobalSelects() {
+  // Sauvegarder les valeurs actuellement sélectionnées
+  const currentNodeLabel = d3.select('#node-label').property('value');
+  const currentLinkLabel = d3.select('#link-label').property('value');
+  const currentNodeSizeField = d3.select('#node-size-field').property('value');
+  
   // New dropdowns for id, x and y fields – ensure corresponding HTML selects exist (see below)
   updateSelectOptions(d3.select('#node-id-field'), getFieldOptions(graphState.nodes), globalSettings.nodeIdField);
   updateSelectOptions(d3.select('#x-field'), getFieldOptions(graphState.nodes), globalSettings.xField);
   updateSelectOptions(d3.select('#y-field'), getFieldOptions(graphState.nodes), globalSettings.yField);
   
-  updateSelectOptions(d3.select('#node-label'), getFieldOptions(graphState.nodes), globalSettings.nodeLabelField);
-  updateSelectOptions(d3.select('#link-label'), getFieldOptions(graphState.links), globalSettings.linkLabelField);
-  updateSelectOptions(d3.select('#node-size-field'), getFieldOptions(graphState.nodes), globalSettings.nodeSizeField);
+  // Crucial fix: check if value is explicitly empty string to preserve it
+  // Only use defaults for undefined/null values, not for empty strings
+  updateSelectOptions(
+    d3.select('#node-label'), 
+    getFieldOptions(graphState.nodes), 
+    currentNodeLabel !== undefined ? currentNodeLabel : globalSettings.nodeLabelField
+  );
+  
+  updateSelectOptions(
+    d3.select('#link-label'), 
+    getFieldOptions(graphState.links), 
+    currentLinkLabel !== undefined ? currentLinkLabel : globalSettings.linkLabelField
+  );
+  
+  updateSelectOptions(
+    d3.select('#node-size-field'), 
+    getFieldOptions(graphState.nodes), 
+    currentNodeSizeField !== undefined ? currentNodeSizeField : globalSettings.nodeSizeField
+  );
 }
 
 function updateSelectOptions(selectElem, optionsArr, selectedValue) {
@@ -228,17 +249,21 @@ function updateSelectOptions(selectElem, optionsArr, selectedValue) {
   optionsArr.forEach(opt => {
     selectElem.append('option').attr('value', opt).text(opt);
   });
-  if (selectedValue && optionsArr.includes(selectedValue)) {
-    selectElem.property('value', selectedValue);
-  }
+  
+  // Directly set the value without checking if it's in the options array
+  // This ensures empty string is properly preserved
+  selectElem.property('value', selectedValue);
+  
   // Dès que l'utilisateur change la sélection, mettre à jour immédiatement le graph.
   selectElem.on("change", () => updateGraph());
 }
 
 // ===== AFFICHAGE DU GRAPHE =====
 
+// Modify the updateNodes function to respect empty selection
 function updateNodes() {
   const sizeField = d3.select("#node-size-field").property("value");
+  const nodeLabelField = d3.select('#node-label').property('value');
   const nodeSelection = g.selectAll('.node').data(graphState.nodes, d => d[globalSettings.nodeIdField] || d.id);
   const nodeEnter = nodeSelection.enter()
     .append('g')
@@ -255,8 +280,8 @@ function updateNodes() {
     .attr('dx', d => (sizeField && d[sizeField]) ? (Number(d[sizeField]) + 5) : 35)
     .attr('dy', 5)
     .text(d => {
-      const field = d3.select('#node-label').property('value') || globalSettings.nodeLabelField;
-      return field ? (d[field] || "") : "";
+      // Explicitly check if nodeLabelField is empty string - don't use default in this case
+      return nodeLabelField === '' ? '' : (d[nodeLabelField] || "");
     });
   const merged = nodeSelection.merge(nodeEnter)
     .classed('selected', d => d === selectedNode);
@@ -264,8 +289,8 @@ function updateNodes() {
     .attr('r', d => (sizeField && d[sizeField]) ? Number(d[sizeField]) : (Number(d.size) || defaultNodeRadius));
   merged.select('text')
     .text(d => {
-      const field = d3.select('#node-label').property('value') || globalSettings.nodeLabelField;
-      return field ? (d[field] || "") : "";
+      // Same check here - empty string means display no label
+      return nodeLabelField === '' ? '' : (d[nodeLabelField] || "");
     });
   nodeSelection.exit().remove();
 }
@@ -437,7 +462,9 @@ function updateLinks() {
   linkSelection.exit().remove();
 }
 
+// Modify the updateLinkLabels function
 function updateLinkLabels() {
+  const linkLabelField = d3.select('#link-label').property('value');
   const linkLabels = g.selectAll('.link-label').data(graphState.links, d => `${d.source.id}-${d.target.id}`);
   linkLabels.enter()
     .append('text')
@@ -446,8 +473,8 @@ function updateLinkLabels() {
     .merge(linkLabels)
     .classed('selected', d => d === selectedLink)
     .text(d => {
-      const field = d3.select('#link-label').property('value') || globalSettings.linkLabelField;
-      return field ? (d[field] || "") : "";
+      // Similar check for links - empty string means display no label
+      return linkLabelField === '' ? '' : (d[linkLabelField] || "");
     })
     .on('click', selectLink);
   linkLabels.exit().remove();
@@ -818,27 +845,61 @@ d3.select("#historySelect").on("dblclick", function() {
 });
 
 // ===== RÉGLAGES GLOBAUX (dans l'onglet "Values") =====
+// Modify the node-label change handler
 d3.select("#node-label").on("change", function() {
   const oldVal = globalSettings.nodeLabelField;
-  const newVal = this.value || "name";
-  performAction({ type: "update_global", data: { field: "nodeLabelField", from: oldVal, to: newVal, label: `Change node label (${oldVal} ? ${newVal})` } });
+  // Preserve empty string as a valid selection
+  const newVal = this.value;
+  performAction({ 
+    type: "update_global", 
+    data: { 
+      field: "nodeLabelField", 
+      from: oldVal, 
+      to: newVal, 
+      label: `Change node label (${oldVal || "none"} → ${newVal || "none"})` 
+    } 
+  });
   globalSettings.nodeLabelField = newVal;
-  updateGraph();
+  
+  // Update only the text of nodes
+  g.selectAll('.node text').text(d => {
+    // Empty string means no label
+    return newVal === '' ? '' : (d[newVal] || "");
+  });
 });
+
+// Mêmes modifications pour les autres sélecteurs
+// Modify the link-label change handler
 d3.select("#link-label").on("change", function() {
   const oldVal = globalSettings.linkLabelField;
-  const newVal = this.value || "";
-  performAction({ type: "update_global", data: { field: "linkLabelField", from: oldVal, to: newVal, label: `Change link label (${oldVal} ? ${newVal})` } });
+  // Preserve empty string as a valid selection
+  const newVal = this.value;
+  performAction({ 
+    type: "update_global", 
+    data: { 
+      field: "linkLabelField", 
+      from: oldVal, 
+      to: newVal, 
+      label: `Change link label (${oldVal || "none"} → ${newVal || "none"})` 
+    } 
+  });
   globalSettings.linkLabelField = newVal;
-  updateGraph();
+  
+  // Update only the link labels
+  g.selectAll('.link-label').text(d => {
+    // Empty string means no label
+    return newVal === '' ? '' : (d[newVal] || "");
+  });
 });
+
 d3.select("#node-size-field").on("change", function() {
   const oldVal = globalSettings.nodeSizeField;
   const newVal = this.value || "";
   performAction({ type: "update_global", data: { field: "nodeSizeField", from: oldVal, to: newVal, label: `Change node size field (${oldVal} ? ${newVal})` } });
   globalSettings.nodeSizeField = newVal;
-  updateGraph();
+  updateGraph(); // Ici, updateGraph est nécessaire pour mettre à jour les tailles des nœuds
 });
+
 d3.select("#defaultNodeSizeInput").on("change", function() {
   const oldVal = globalSettings.defaultNodeSize;
   const newVal = +this.value || defaultNodeRadius;
