@@ -982,12 +982,33 @@ function applyLayout(layoutType) {
       node.x = spacingX * (col + 1);
       node.y = spacingY * (row + 1);
     });
+  } else if (layoutType === "random") {
+    // Disposer les nœuds aléatoirement, mais avec une distribution uniforme
+    const padding = 50; // Espace de marge autour des bords
+    const availWidth = width - (padding * 2);
+    const availHeight = height - (padding * 2);
+    
+    graphState.nodes.forEach(node => {
+      // Position aléatoire mais dans une zone utilisable
+      node.x = padding + Math.random() * availWidth;
+      node.y = padding + Math.random() * availHeight;
+    });
   }
   updateGraph();
 }
+
+// Gestionnaire d'événement pour le sélecteur de layout
 d3.select("#layoutSelect").on("change", function() {
   const layoutType = this.value;
   applyLayout(layoutType);
+});
+
+// Nouveau gestionnaire d'événement pour le bouton "Recharger"
+d3.select("#reloadLayout").on("click", function() {
+  const layoutType = d3.select("#layoutSelect").property("value");
+  if (layoutType) {
+    applyLayout(layoutType);
+  }
 });
 
 // ===== IMPORT/EXPORT JSON =====
