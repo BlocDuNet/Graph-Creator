@@ -1,8 +1,13 @@
+/* ======================================
+   1. BASE & RESET
+====================================== */
 body {
   overflow: hidden;
 }
 
-/* SVG et éléments du graph */
+/* ======================================
+   2. SVG ELEMENTS
+====================================== */
 svg {
   background-color: #FFF;
   cursor: default;
@@ -12,14 +17,14 @@ svg {
   user-select: none;
 }
 
-/* Styles des nœuds */
+/* Node styles */
 .node {
   stroke: #ffffff00;
   stroke-width: 2px;
   fill: #000000bb;
 }
 
-/* Styles des liens - simplifiés */
+/* Link styles */
 .link {
   fill: none;
   stroke: #000;
@@ -28,16 +33,14 @@ svg {
   cursor: pointer;
   marker-end: url(#arrowhead);
   pointer-events: stroke;
-  /* Éviter que le zoom n'affecte les épaisseurs */
-  vector-effect: non-scaling-stroke;
+  vector-effect: non-scaling-stroke; /* Prevent zoom affecting stroke width */
 }
 
-/* Styliser les liens sélectionnés */
 .link.selected {
   stroke: #f00 !important;
 }
 
-/* Étiquettes de liens */
+/* Link labels */
 .link-label {
   font-family: sans-serif;
   font-size: 11px;
@@ -48,12 +51,8 @@ svg {
   padding: 2px;
 }
 
-/* Styles des éléments sélectionnés */
+/* Selection styles */
 .selected {
-  stroke: #0077ff;
-}
-
-.link.selected {
   stroke: #0077ff;
 }
 
@@ -67,12 +66,10 @@ svg {
   fill: #0077ff;
 }
 
-/* Utilitaires */
-.hidden {
-  display: none;
-}
-
-/* Panneau inférieur */
+/* ======================================
+   3. LAYOUT COMPONENTS
+====================================== */
+/* Bottom panel */
 #bottom-panel {
   position: fixed;
   bottom: 0;
@@ -105,7 +102,7 @@ svg {
   width: 100%;
 }
 
-/* Flèches de contrôle du panneau */
+/* Panel control arrows */
 .arrow {
   display: inline-block;
   width: 0;
@@ -117,15 +114,10 @@ svg {
   border-left: 4px solid transparent;
 }
 
-.arrow-up {
-  border-bottom: 4px solid currentColor;
-}
+.arrow-up { border-bottom: 4px solid currentColor; }
+.arrow-down { border-top: 4px solid currentColor; }
 
-.arrow-down {
-  border-top: 4px solid currentColor;
-}
-
-/* Tableau d'aide */
+/* Help table */
 .table-container {
   max-width: 650px;
   margin: 0 auto;
@@ -142,19 +134,15 @@ th, td {
   text-align: left;
 }
 
-.context-menu {
-  position: absolute;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  padding: 8px;
-  list-style: none;
-}
-
+/* History select */
 #historySelect {
   width: 100%;
 }
 
-/* Styles pour les sections repliables */
+/* ======================================
+   4. UI COMPONENTS
+====================================== */
+/* Collapsible sections */
 .section-header {
   padding: 0.5rem;
   background-color: #f8f9fa;
@@ -188,6 +176,7 @@ th, td {
   transform: rotate(90deg);
 }
 
+/* Cards */
 .accordion .card {
   height: 100%;
   margin-bottom: 0.25rem;
@@ -199,40 +188,18 @@ th, td {
   padding: 0.75rem;
 }
 
-/* Ajuster les formulaires dans les sections */
-#node-form:not(.hidden),
-#link-form:not(.hidden) {
-  border: 1px solid #dee2e6;
-  padding: 1rem;
-  margin-top: 1rem;
-  border-radius: 4px;
-  background-color: #f9f9f9;
-}
-
-/* Améliorer l'apparence des cartes */
 .card-header.section-header {
   background-color: #f8f9fa;
   border-bottom: 1px solid rgba(0,0,0,.125);
   padding: 0.5rem 1rem;
 }
 
-/* Ajouter une petite marge entre les sections */
-.mb-3 {
-  margin-bottom: 1rem !important;
-}
-
-/* Améliorer les cartes sur les écrans plus petits */
-@media (max-width: 767.98px) {
-  .card {
-    margin-bottom: 1rem;
-  }
-}
-
-/* Styles pour l'onglet Valeurs */
+/* Forms */
 .action-group, .field-group {
   padding: 0.5rem;
   border-radius: 4px;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  background-color: rgba(0, 0, 0, 0.01);
 }
 
 .form-container {
@@ -243,15 +210,69 @@ th, td {
   position: relative;
 }
 
-.edit-title {
+/* Common form elements */
+button, .btn {
+  border-radius: 4px;
   font-size: 0.9rem;
-  color: #6c757d;
-  border-bottom: 1px solid #dee2e6;
-  padding-bottom: 0.25rem;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+}
+
+input, select, textarea {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.5rem;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+input[type="number"] {
+  max-width: 100px;
+}
+
+input[type="checkbox"] {
+  width: auto;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.form-field {
+  margin-bottom: 0.75rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.compact-control {
   margin-bottom: 0.5rem;
 }
 
-/* Styles pour les formulaires de nœuds et de liens */
+.compact-control label {
+  display: inline-block;
+  margin-bottom: 0.2rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.small {
+  margin-bottom: 0.1rem;
+  display: inline-block;
+}
+
+/* Style for sections titles */
+.section-title, .edit-title, h5 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+/* Node/Link forms */
 #node-form, #link-form {
   max-height: 300px;
   overflow-y: auto;
@@ -262,17 +283,19 @@ th, td {
   display: flex;
   flex-wrap: wrap;
   margin-top: 0;
-  padding: 0.5rem;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background-color: #f9f9f9;
 }
 
 #node-form:not(.hidden) div,
 #link-form:not(.hidden) div {
+  flex: 1 0 100%; /* Take full width */
   margin-bottom: 0.5rem;
   padding-right: 0.5rem;
-  flex: 1 0 50%;
 }
 
-/* Amélioration des formulaires pour l'édition de nœuds et de liens */
 #node-form div, 
 #link-form div {
   display: flex;
@@ -306,349 +329,7 @@ th, td {
   border-radius: 3px;
 }
 
-/* Ajustement pour que les divs des formulaires prennent plus d'espace */
-#node-form:not(.hidden) div,
-#link-form:not(.hidden) div {
-  flex: 1 0 100%; /* prendre toute la largeur */
-  padding-right: 0.5rem;
-}
-
-/* Ajustement pour les champs non modifiables comme id */
-#node-form div:has(input[name="id"]),
-#link-form div:has(input[name="id"]) {
-  padding-right: 29px; /* espace pour compenser le bouton absent */
-}
-
-/* Amélioration des boutons */
-.btn-outline-primary, .btn-outline-secondary {
-  border-width: 1px;
-}
-
-.input-group-sm {
-  margin-bottom: 0.5rem;
-}
-
-/* Espacement des labels et inputs */
-.small {
-  margin-bottom: 0.1rem;
-  display: inline-block;
-}
-
-/* Améliorer l'apparence sur petits écrans */
-@media (max-width: 767.98px) {
-  .form-container {
-    margin-bottom: 1rem;
-  }
-  
-  #node-form:not(.hidden) div,
-  #link-form:not(.hidden) div {
-    flex: 1 0 100%;
-  }
-}
-
-/* Styles harmonisés pour tous les onglets */
-
-/* Harmonisation des boutons */
-button, .btn {
-  border-radius: 4px;
-  font-size: 0.9rem;
-  margin-right: 5px;
-  margin-bottom: 5px;
-  padding: 0.25rem 0.5rem;
-  transition: all 0.2s ease;
-}
-
-/* Style global pour les inputs et selects */
-input, select, textarea {
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  padding: 0.25rem 0.5rem;
-  margin-bottom: 0.5rem;
-  width: 100%;
-  font-size: 0.9rem;
-}
-
-/* Harmonisation pour les inputs de type number */
-input[type="number"] {
-  max-width: 100px;
-}
-
-/* Style commun pour les groupes d'éléments dans tous les onglets */
-.control-group, .action-group, .field-group {
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.01);
-}
-
-/* Style de titre uniformisé pour tous les sous-titres */
-.section-title, .edit-title, h5 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #495057;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.35rem;
-  border-bottom: 1px solid #e9ecef;
-}
-
-/* Harmonisation des sections réduites en hauteur */
-.compact-control {
-  margin-bottom: 0.5rem;
-}
-
-.compact-control label {
-  display: inline-block;
-  margin-bottom: 0.2rem;
-  font-size: 0.85rem;
-  color: #6c757d;
-}
-
-/* Harmonisation des checkboxes */
-input[type="checkbox"] {
-  width: auto;
-  margin-right: 0.5rem;
-  vertical-align: middle;
-}
-
-/* Style pour les éléments des formulaires dans tous les onglets */
-.form-field {
-  margin-bottom: 0.75rem;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Style uniformisé pour les listes */
-ul {
-  padding-left: 1.2rem;
-}
-
-li {
-  margin-bottom: 0.5rem;
-}
-
-/* Style spécifique au tab3 - Config graph */
-#curvature-controls .form-field {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-#curvature-controls label {
-  flex: 1;
-  margin-right: 0.5rem;
-  margin-bottom: 0;
-}
-
-/* Style pour les tabs AI Request */
-#tab4 button {
-  background-color: #f8f9fa;
-  border: 1px solid #ced4da;
-}
-
-#tab4 button:hover {
-  background-color: #e9ecef;
-}
-
-/* Harmonisation pour les petits écrans */
-@media (max-width: 767.98px) {
-  /* Style compact pour les petits écrans */
-  button, .btn {
-    font-size: 0.85rem;
-    padding: 0.2rem 0.4rem;
-  }
-  
-  .card-body {
-    padding: 0.5rem;
-  }
-}
-
-/* Classes pour remplacer les styles inline */
-.w-100 {
-  width: 100%;
-}
-
-.ml-2 {
-  margin-left: 10px;
-}
-
-.mt-2 {
-  margin-top: 5px;
-}
-
-.mt-3 {
-  margin-top: 10px;
-}
-
-.mb-2 {
-  margin-bottom: 8px;
-}
-
-/* Classe spécifique pour la zone de texte de prompt */
-.prompt-textarea {
-  height: 100px;
-}
-
-/* Classes pour la zone de logs */
-.log-textarea {
-  height: 150px;
-}
-
-.hidden-log {
-  display: none;
-}
-
-.log-result {
-  background: #f8f8f8;
-  padding: 10px;
-  max-height: 200px;
-  overflow: auto;
-}
-
-/* Fix for the inline width styles in curvature controls */
-.input-narrow {
-  width: 70px;
-}
-
-/* Additional form accessibility improvements */
-.form-label {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-/* Improve form field spacing in config panels */
-#curvature-controls p {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-#curvature-controls label {
-  flex: 1;
-  margin-right: 0.5rem;
-  margin-bottom: 0;
-}
-
-/* Améliorer l'alignement des champs pour un effet "tableur" */
-#curvature-controls {
-  display: table;
-  width: 100%;
-}
-
-#curvature-controls p {
-  display: table-row;
-}
-
-#curvature-controls label,
-#curvature-controls input {
-  display: table-cell;
-  vertical-align: middle;
-  padding: 3px 5px;
-}
-
-#curvature-controls label {
-  min-width: 150px;
-  width: 150px;
-  padding-right: 10px;
-  text-align: left; /* Alignement à gauche */
-  white-space: nowrap;
-  margin-bottom: 0;
-}
-
-.input-narrow {
-  width: 70px;
-  margin-left: 5px;
-}
-
-/* Style tableur pour Force Parameters */
-.control-group {
-  display: table;
-  width: 100%;
-}
-
-.control-group .form-field {
-  display: table-row;
-  margin-bottom: 0;
-}
-
-.control-group .form-field label,
-.control-group .form-field input,
-.control-group .form-field .custom-control,
-.control-group .form-field .compact-control {
-  display: table-cell;
-  vertical-align: middle;
-  padding: 3px 5px;
-}
-
-.control-group .form-field label {
-  min-width: 140px;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.control-group .custom-control {
-  padding-left: 0;
-}
-
-.control-group .custom-control-label {
-  margin-left: 1.5rem;
-}
-
-/* Réduire la taille des champs dans Configuration Import/Export */
-#collapseConfigIO input,
-#collapseConfigIO select,
-#collapseConfigIO button {
-  max-width: 180px;
-  display: inline-block;
-}
-
-#collapseConfigIO p {
-  margin-bottom: 0.5rem;
-}
-
-#collapseConfigIO label {
-  display: inline-block;
-  min-width: 100px;
-}
-
-/* Améliorer l'alignement des champs pour un effet "tableur" */
-#curvature-controls p {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-#curvature-controls label {
-  min-width: 150px;
-  width: 150px;
-  padding-right: 10px;
-  text-align: right;
-  white-space: nowrap;
-  margin-bottom: 0;
-}
-
-.input-narrow {
-  width: 70px;
-  margin-left: 5px;
-}
-
-/* Créer un conteneur de type grille pour une meilleure organisation */
-#curvature-controls {
-  display: table;
-}
-
-#curvature-controls p {
-  display: table-row;
-}
-
-#curvature-controls label,
-#curvature-controls input {
-  display: table-cell;
-  vertical-align: middle;
-  padding: 3px 5px;
-}
-
-/* Style amélioré pour le toggle switch */
+/* Toggle Switch Component */
 .toggle-container {
   display: flex;
   align-items: center;
@@ -723,13 +404,15 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
-/* Styles pour les contrôles de courbure */
+/* Curvature Controls */
 #curvature-controls {
   transition: all 0.3s ease;
+  width: 100%;
 }
 
-#curvature-controls .form-control-range {
-  width: 100%;
+#curvature-controls .card-header {
+  font-weight: 500;
+  font-size: 0.9rem;
 }
 
 #curvature-controls label {
@@ -738,8 +421,136 @@ input:checked + .slider:before {
   font-weight: 500;
 }
 
+#curvature-controls p {
+  margin-bottom: 1rem;
+}
+
+#curvature-controls .form-control-range {
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+
 #curvature-controls small {
   display: block;
   text-align: right;
+  color: #6c757d;
+}
+
+/* Force Parameters */
+.control-group {
+  display: table;
+  width: 100%;
+}
+
+.control-group .form-field {
+  display: table-row;
+  margin-bottom: 0;
+}
+
+.control-group .form-field label,
+.control-group .form-field input,
+.control-group .form-field .custom-control,
+.control-group .form-field .compact-control {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 3px 5px;
+}
+
+.control-group .form-field label {
+  min-width: 140px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.control-group .custom-control {
+  padding-left: 0;
+}
+
+.control-group .custom-control-label {
+  margin-left: 1.5rem;
+}
+
+/* Configuration Import/Export */
+#collapseConfigIO input,
+#collapseConfigIO select,
+#collapseConfigIO button {
+  max-width: 180px;
+  display: inline-block;
+}
+
+#collapseConfigIO p {
+  margin-bottom: 0.5rem;
+}
+
+#collapseConfigIO label {
+  display: inline-block;
+  min-width: 100px;
+}
+
+/* AI Request Tab */
+#tab4 button {
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+}
+
+#tab4 button:hover {
+  background-color: #e9ecef;
+}
+
+.prompt-textarea {
+  height: 100px;
+}
+
+.log-textarea {
+  height: 150px;
+}
+
+.log-result {
+  background: #f8f8f8;
+  padding: 10px;
+  max-height: 200px;
+  overflow: auto;
+}
+
+/* ======================================
+   5. UTILITY CLASSES
+====================================== */
+.hidden {
+  display: none;
+}
+
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 1rem !important; }
+.mt-2 { margin-top: 5px; }
+.mt-3 { margin-top: 10px; }
+.ml-2 { margin-left: 10px; }
+.w-100 { width: 100%; }
+
+/* ======================================
+   6. RESPONSIVE
+====================================== */
+@media (max-width: 767.98px) {
+  /* Compact styles for small screens */
+  button, .btn {
+    font-size: 0.85rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .card-body {
+    padding: 0.5rem;
+  }
+  
+  .card {
+    margin-bottom: 1rem;
+  }
+  
+  .form-container {
+    margin-bottom: 1rem;
+  }
+  
+  #node-form:not(.hidden) div,
+  #link-form:not(.hidden) div {
+    flex: 1 0 100%;
+  }
 }
 
