@@ -272,6 +272,53 @@ th, td {
   flex: 1 0 50%;
 }
 
+/* Amélioration des formulaires pour l'édition de nœuds et de liens */
+#node-form div, 
+#link-form div {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+#node-form label,
+#link-form label {
+  min-width: 100px;
+  margin-right: 10px;
+  margin-bottom: 0;
+}
+
+#node-form input,
+#link-form input {
+  flex: 1;
+  margin-bottom: 0;
+  margin-right: 5px;
+}
+
+#node-form button,
+#link-form button {
+  padding: 0 6px;
+  margin: 0;
+  min-width: 24px;
+  height: 24px;
+  line-height: 1;
+  background: #f1f1f1;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+}
+
+/* Ajustement pour que les divs des formulaires prennent plus d'espace */
+#node-form:not(.hidden) div,
+#link-form:not(.hidden) div {
+  flex: 1 0 100%; /* prendre toute la largeur */
+  padding-right: 0.5rem;
+}
+
+/* Ajustement pour les champs non modifiables comme id */
+#node-form div:has(input[name="id"]),
+#link-form div:has(input[name="id"]) {
+  padding-right: 29px; /* espace pour compenser le bouton absent */
+}
+
 /* Amélioration des boutons */
 .btn-outline-primary, .btn-outline-secondary {
   border-width: 1px;
