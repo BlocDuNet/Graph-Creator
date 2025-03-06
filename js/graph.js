@@ -20,8 +20,8 @@ const initialNodes = [
   { id: '3', name: 'Node3', description: 'Description3', x: 300, y: 300, size: defaultNodeRadius }
 ];
 const initialLinks = [
-  { id: '1', name: 'Link1', description: 'Description1', source: '1', target: '2' },
-  { id: '2', name: 'Link2', description: 'Description2', source: '2', target: '3' }
+  { id: '1', name: 'Link1', description: 'Description1', source: '1', target: '2', width: 2 },
+  { id: '2', name: 'Link2', description: 'Description2', source: '2', target: '3', width: 2 }
 ];
 
 // L'état global du graphe (objet mutable)
@@ -378,33 +378,52 @@ function createArrowDefinitions() {
     .attr("stroke", "none");
 }
 
-// Modifier updateLinks pour appliquer correctement la largeur des liens
+// Modifier updateLinks pour appliquer correctement la largeur des liens avec valeurs décimales
 function updateLinks() {
+  // Suppression complète des anciens liens pour forcer leur recréation
+  if (d3.select("#forceRecreateLinks").property("checked")) {
+    g.selectAll('.link').remove();
+  }
+  
   // Précalculer les courbures pour chaque lien
   graphState.links.forEach(link => {
     // Vérifier si c'est un auto-lien
     link.isLoop = link.source.id === link.target.id;
     link.curvature = calculateLinkCurvature(link.source, link.target, link.id, graphState.links);
-    // Assurer que chaque lien a une largeur définie
-    if (!link.width) link.width = globalSettings.defaultLinkWidth;
+    
+    // IMPORTANT: Toujours remplacer la largeur par la valeur par défaut si non définie
+    if (link.width === undefined) {
+      link.width = parseFloat(globalSettings.defaultLinkWidth);
+    }
   });
   
   // Sélectionner les liens avec un ID unique pour chaque lien
   const linkSelection = g.selectAll('.link').data(graphState.links, getLinkId);
   
+  // Créer les nouveaux liens avec tous les attributs nécessaires dès le départ
   const linkEnter = linkSelection.enter()
     .append('path')
     .attr('class', 'link')
     .attr('fill', 'none')
+    .attr('stroke-linecap', 'round')
+    .attr('stroke-linejoin', 'round')
+    .attr('vector-effect', 'non-scaling-stroke')
     .on('click', selectLink)
     .on('dblclick', event => {
       event.stopPropagation();
       updateGraph();
     });
   
-  // Appliquer les styles à tous les liens (nouveaux et existants)
-  linkSelection.merge(linkEnter)
-    .attr('stroke-width', d => d.width || globalSettings.defaultLinkWidth)
+  // Appliquer TOUS les styles à TOUS les liens (nouveaux et existants)
+  const allLinks = linkSelection.merge(linkEnter);
+  
+  // Application explicite et séparée des styles avec support des valeurs décimales
+  allLinks
+    .attr('stroke-width', d => {
+      // Convertir explicitement en nombre flottant pour supporter les valeurs décimales
+      const width = parseFloat(d.width) || parseFloat(globalSettings.defaultLinkWidth) || 2;
+      return width;
+    })
     .attr('stroke', d => d === selectedLink ? '#f00' : '#000')
     .attr('marker-end', d => {
       if (d.isLoop) {
@@ -414,6 +433,7 @@ function updateLinks() {
       }
     });
   
+  // Supprimer les liens qui ne sont plus dans les données
   linkSelection.exit().remove();
 }
 
@@ -569,9 +589,13 @@ function drawSelfLoop(x, y, radius) {
 
 // Modifier updateGraph pour initialiser les définitions de flèches
 export function updateGraph() {
-  createArrowDefinitions(); // Ajouter cette ligne
+  // Ajouter l'option de recréation des liens s'il n'existe pas déjà
+  addRecreateLinksOption();
+  
+  // Reste du code inchangé
+  createArrowDefinitions();
   updateNodes();
-  updateLinks();
+  updateLinks(); 
   updateLinkLabels();
   updateGlobalSelects();
   simulation.nodes(graphState.nodes).on('tick', ticked);
@@ -825,19 +849,35 @@ d3.select("#defaultNodeSizeInput").on("change", function() {
 
 // Ajouter cette fonction pour appliquer les changements de largeur à tous les liens
 function updateLinkWidths(newWidth) {
-  // Mettre à jour la largeur de tous les liens existants qui n'ont pas de largeur spécifique
+  console.log("Updating ALL link widths to:", newWidth); 
+  
+  // Convertir en nombre flottant pour supporter les décimales
+  const widthValue = parseFloat(newWidth);
+  if (isNaN(widthValue)) return;
+  
+  // Mettre à jour TOUS les liens
   graphState.links.forEach(link => {
-    if (!link.width) {
-      link.width = newWidth;
-    }
+    link.width = widthValue;
   });
+  
+  // Forcer la recréation si l'option est activée
+  if (d3.select("#forceRecreateLinks").property("checked")) {
+    g.selectAll('.link').remove();
+  }
+  
+  console.log(`Updated ALL ${graphState.links.length} links width to ${widthValue}`);
   updateGraph();
 }
 
 // Améliorer l'événement de changement de largeur de lien par défaut
 d3.select("#defaultLinkWidthInput").on("change", function() {
-  const oldVal = globalSettings.defaultLinkWidth;
-  const newVal = +this.value || 2;
+  // Convertir en nombre flottant pour supporter les valeurs décimales
+  const oldVal = parseFloat(globalSettings.defaultLinkWidth) || 2;
+  const newVal = parseFloat(this.value) || 2;
+  
+  if (oldVal === newVal) return;
+  
+  console.log(`Changing default link width from ${oldVal} to ${newVal}`);
   
   performAction({ 
     type: "update_global", 
@@ -845,7 +885,7 @@ d3.select("#defaultLinkWidthInput").on("change", function() {
       field: "defaultLinkWidth", 
       from: oldVal, 
       to: newVal, 
-      label: `Change default link width (${oldVal} ? ${newVal})` 
+      label: `Change default link width (${oldVal} → ${newVal})` 
     }
   });
   
@@ -954,3 +994,21 @@ updateGraph();
 
 // Réexporter performAction depuis undo_redo pour faciliter l'import
 export { performAction } from './undo_redo.js';
+
+// Ajouter une option pour forcer la recréation des liens
+function addRecreateLinksOption() {
+  const configCard = d3.select("#collapseLinkStyle .card-body");
+  
+  if (!configCard.select("#forceRecreateLinksDiv").empty()) return; // Éviter les duplications
+  
+  const div = configCard.append("div")
+    .attr("id", "forceRecreateLinksDiv")
+    .attr("class", "form-group mt-3");
+  
+  div.append("label")
+    .attr("for", "forceRecreateLinks")
+    .html("<input type='checkbox' id='forceRecreateLinks'> Recréer les liens à chaque mise à jour (peut résoudre les problèmes d'affichage)");
+  
+  // Par défaut, activer cette option
+  d3.select("#forceRecreateLinks").property("checked", true);
+}

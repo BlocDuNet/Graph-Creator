@@ -19,15 +19,22 @@ svg {
   fill: #000000bb;
 }
 
-/* Styles des liens */
+/* Styles des liens - simplifiés */
 .link {
-  stroke: #000;
-  stroke-width: 2px;
   fill: none;
-  cursor: pointer;
+  stroke: #000;
   stroke-linecap: round;
-  pointer-events: stroke;
+  stroke-linejoin: round;
+  cursor: pointer;
   marker-end: url(#arrowhead);
+  pointer-events: stroke;
+  /* Éviter que le zoom n'affecte les épaisseurs */
+  vector-effect: non-scaling-stroke;
+}
+
+/* Styliser les liens sélectionnés */
+.link.selected {
+  stroke: #f00 !important;
 }
 
 /* Étiquettes de liens */
@@ -407,5 +414,190 @@ li {
   .card-body {
     padding: 0.5rem;
   }
+}
+
+/* Classes pour remplacer les styles inline */
+.w-100 {
+  width: 100%;
+}
+
+.ml-2 {
+  margin-left: 10px;
+}
+
+.mt-2 {
+  margin-top: 5px;
+}
+
+.mt-3 {
+  margin-top: 10px;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+/* Classe spécifique pour la zone de texte de prompt */
+.prompt-textarea {
+  height: 100px;
+}
+
+/* Classes pour la zone de logs */
+.log-textarea {
+  height: 150px;
+}
+
+.hidden-log {
+  display: none;
+}
+
+.log-result {
+  background: #f8f8f8;
+  padding: 10px;
+  max-height: 200px;
+  overflow: auto;
+}
+
+/* Fix for the inline width styles in curvature controls */
+.input-narrow {
+  width: 70px;
+}
+
+/* Additional form accessibility improvements */
+.form-label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+/* Improve form field spacing in config panels */
+#curvature-controls p {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+#curvature-controls label {
+  flex: 1;
+  margin-right: 0.5rem;
+  margin-bottom: 0;
+}
+
+/* Améliorer l'alignement des champs pour un effet "tableur" */
+#curvature-controls {
+  display: table;
+  width: 100%;
+}
+
+#curvature-controls p {
+  display: table-row;
+}
+
+#curvature-controls label,
+#curvature-controls input {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 3px 5px;
+}
+
+#curvature-controls label {
+  min-width: 150px;
+  width: 150px;
+  padding-right: 10px;
+  text-align: left; /* Alignement à gauche */
+  white-space: nowrap;
+  margin-bottom: 0;
+}
+
+.input-narrow {
+  width: 70px;
+  margin-left: 5px;
+}
+
+/* Style tableur pour Force Parameters */
+.control-group {
+  display: table;
+  width: 100%;
+}
+
+.control-group .form-field {
+  display: table-row;
+  margin-bottom: 0;
+}
+
+.control-group .form-field label,
+.control-group .form-field input,
+.control-group .form-field .custom-control,
+.control-group .form-field .compact-control {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 3px 5px;
+}
+
+.control-group .form-field label {
+  min-width: 140px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.control-group .custom-control {
+  padding-left: 0;
+}
+
+.control-group .custom-control-label {
+  margin-left: 1.5rem;
+}
+
+/* Réduire la taille des champs dans Configuration Import/Export */
+#collapseConfigIO input,
+#collapseConfigIO select,
+#collapseConfigIO button {
+  max-width: 180px;
+  display: inline-block;
+}
+
+#collapseConfigIO p {
+  margin-bottom: 0.5rem;
+}
+
+#collapseConfigIO label {
+  display: inline-block;
+  min-width: 100px;
+}
+
+/* Améliorer l'alignement des champs pour un effet "tableur" */
+#curvature-controls p {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+#curvature-controls label {
+  min-width: 150px;
+  width: 150px;
+  padding-right: 10px;
+  text-align: right;
+  white-space: nowrap;
+  margin-bottom: 0;
+}
+
+.input-narrow {
+  width: 70px;
+  margin-left: 5px;
+}
+
+/* Créer un conteneur de type grille pour une meilleure organisation */
+#curvature-controls {
+  display: table;
+}
+
+#curvature-controls p {
+  display: table-row;
+}
+
+#curvature-controls label,
+#curvature-controls input {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 3px 5px;
 }
 
