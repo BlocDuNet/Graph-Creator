@@ -489,23 +489,28 @@ function ticked() {
   // Mise à jour des liens
   g.selectAll('.link')
     .attr('d', d => {
-      // Récupérer les rayons des nœuds
-      const rSource = (sizeField && d.source[sizeField]) ? +d.source[sizeField] : (d.source.size || defaultNodeRadius);
-      const rTarget = (sizeField && d.target[sizeField]) ? +d.target[sizeField] : (d.target.size || defaultNodeRadius);
+      // Récupérer les rayons des nœuds - assurer qu'ils sont numériques
+      const rSource = (sizeField && d.source[sizeField]) 
+                    ? Math.max(1, Number(d.source[sizeField])) 
+                    : Number(d.source.size || defaultNodeRadius);
+      const rTarget = (sizeField && d.target[sizeField]) 
+                    ? Math.max(1, Number(d.target[sizeField])) 
+                    : Number(d.target.size || defaultNodeRadius);
       
       // Vérifier s'il s'agit d'un auto-lien (toujours dessiné comme une courbe)
       if (d.isLoop) {
         return drawSelfLoop(d.source.x, d.source.y, rSource);
       }
       
-      // Vecteurs et distances
+      // Vecteurs et distances avec protection contre les erreurs numériques
       const dx = d.target.x - d.source.x;
       const dy = d.target.y - d.source.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       
-      if (dist === 0) return "M0,0L0,0"; // Protection contre division par zéro
+      // Protection améliorée contre division par zéro
+      if (dist < 0.1) return `M${d.source.x},${d.source.y}L${d.source.x},${d.source.y}`;
       
-      // Vecteur unitaire dans la direction de la ligne
+      // Vecteur unitaire dans la direction de la ligne - plus robuste
       const unitX = dx / dist;
       const unitY = dy / dist;
       
