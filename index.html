@@ -336,10 +336,14 @@
                       </div>
                       <div id="collapseLinkStyle" class="collapse show" aria-labelledby="headingLinkStyle">
                         <div class="card-body">
-                          <p>
-                            <input type="checkbox" id="curved-links" name="curved-links" checked />
-                            <label for="curved-links">Curved links</label>
-                          </p>
+                          <div class="toggle-container">
+                            <div class="toggle-label">Liens droits</div>
+                            <label class="toggle-switch">
+                              <input type="checkbox" id="curved-links" checked>
+                              <span class="slider round"></span>
+                            </label>
+                            <div class="toggle-label">Liens courbés</div>
+                          </div>
                           <!-- Contrôles pour la courbure -->
                           <div id="curvature-controls">
                             <p>
