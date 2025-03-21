@@ -13,6 +13,12 @@ import {
 // ===== ÉTAT GLOBAL DU GRAPHE =====
 const defaultNodeRadius = 30; // Valeur par défaut
 
+// Configuration pour les modèles JSON
+const jsonModelsConfig = {
+  directoryPath: 'json/',  // Chemin vers le dossier contenant les modèles
+  defaultFile: 'default.json'     // Fichier par défaut (optionnel)
+};
+
 // Données initiales
 const initialNodes = [
   { id: '1', name: 'Node1', description: 'Description1', x: 100, y: 300, size: defaultNodeRadius },
@@ -1031,33 +1037,117 @@ d3.select('#export-json').on('click', () => {
   a.download = "graph.json";
   a.click();
 });
+
 d3.select('#import-json').on('click', () => {
   d3.select('#json-file').node().click();
 });
+
 d3.select('#json-file').on('change', function() {
   const file = this.files[0];
   if (file) {
     const reader = new FileReader();
     reader.onload = function(event) {
-      const jsonData = JSON.parse(event.target.result);
-      const newState = {
-        nodes: jsonData.nodes,
-        links: jsonData.links.map(link => ({
-          ...link,
-          source: jsonData.nodes.find(n => n.id === link.source),
-          target: jsonData.nodes.find(n => n.id === link.target)
-        }))
-      };
-      performAction({ type: "import_graph", data: { oldState: { nodes: graphState.nodes, links: graphState.links }, newState, label: "Import graph" } });
-      graphState.nodes = newState.nodes;
-      graphState.links = newState.links;
-      createFormInputs(graphState.nodes, nodeForm, nodeInputs);
-      createFormInputs(graphState.links, linkForm, linkInputs);
-      updateGraph();
+      loadJSONGraph(event.target.result);
     };
     reader.readAsText(file);
   }
 });
+
+/**
+ * Initialise la liste des modèles JSON disponibles
+ */
+async function initJSONModelsList() {
+  try {
+    const response = await fetch(jsonModelsConfig.directoryPath);
+    const text = await response.text();
+    const parser = new DOMParser();
+    const html = parser.parseFromString(text, 'text/html');
+    
+    const jsonFiles = Array.from(html.querySelectorAll('a'))
+      .filter(link => link.href.endsWith('.json'))
+      .map(link => link.textContent);
+    
+    if (jsonFiles.length === 0) {
+      console.log('Aucun fichier modèle JSON trouvé!');
+      return;
+    }
+    
+    // Créer les options de la liste déroulante
+    const select = d3.select('#json-models');
+    select.selectAll("*").remove();
+    
+    // Ajouter une option vide au début
+    select.append('option')
+      .attr('value', '')
+      .text('-- Choisir un modèle --');
+    
+    // Ajouter les options des fichiers
+    jsonFiles.forEach(file => {
+      select.append('option')
+        .attr('value', file)
+        .text(file.split(".")[0]);
+    });
+    
+    // Ajouter l'écouteur d'événement
+    select.on('change', function() {
+      const selectedFile = this.value;
+      if (selectedFile) {
+        loadJSONModelFile(jsonModelsConfig.directoryPath + selectedFile);
+      }
+    });
+    
+  } catch (error) {
+    console.error('Erreur lors de la récupération des modèles JSON:', error);
+  }
+}
+
+/**
+ * Charge un fichier JSON modèle depuis le serveur
+ */
+async function loadJSONModelFile(file) {
+  try {
+    const response = await fetch(file);
+    if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+    const jsonData = await response.json();
+    loadJSONGraph(JSON.stringify(jsonData));
+  } catch (error) {
+    console.error(`Erreur lors du chargement du modèle ${file}:`, error);
+    alert(`Erreur lors du chargement du modèle: ${error.message}`);
+  }
+}
+
+/**
+ * Charge un graphe à partir de données JSON
+ */
+function loadJSONGraph(jsonContent) {
+  try {
+    const jsonData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+    const newState = {
+      nodes: jsonData.nodes,
+      links: jsonData.links.map(link => ({
+        ...link,
+        source: jsonData.nodes.find(n => n.id === link.source),
+        target: jsonData.nodes.find(n => n.id === link.target)
+      }))
+    };
+    performAction({ 
+      type: "import_graph", 
+      data: { 
+        oldState: { nodes: graphState.nodes, links: graphState.links }, 
+        newState, 
+        label: "Import graph model" 
+      } 
+    });
+    graphState.nodes = newState.nodes;
+    graphState.links = newState.links;
+    createFormInputs(graphState.nodes, nodeForm, nodeInputs);
+    createFormInputs(graphState.links, linkForm, linkInputs);
+    updateGraph();
+  } catch (error) {
+    console.error("Erreur lors du chargement du graphe:", error);
+    alert(`Erreur lors du chargement du graphe: ${error.message}`);
+  }
+}
 
 // ===== BOUTON DE DEBUG =====
 d3.select('#update').on('click', () => { updateGraph(); });
@@ -1078,6 +1168,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ===== DÉMARRAGE INITIAL =====
 updateGraph();
+// Initialiser la liste des modèles JSON au chargement
+document.addEventListener("DOMContentLoaded", () => {
+  initJSONModelsList();
+});
 
 // Réexporter performAction depuis undo_redo pour faciliter l'import
 export { performAction } from './undo_redo.js';
