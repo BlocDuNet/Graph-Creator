@@ -10,6 +10,19 @@ import {
   registerUpdateCallback
 } from './undo_redo.js';
 
+// Tentative d'importation de l'utilitaire, mais avec un plan de secours
+let initDropdownUtil;
+try {
+  import('./utils.js').then(module => {
+    initDropdownUtil = module.initDropdown;
+    console.log("Utilitaire initDropdown chargé");
+  }).catch(error => {
+    console.warn("Erreur lors du chargement de utils.js:", error);
+  });
+} catch (error) {
+  console.warn("Import dynamique non supporté, utilisation du fallback pour les dropdowns");
+}
+
 // ===== ÉTAT GLOBAL DU GRAPHE =====
 const defaultNodeRadius = 30; // Valeur par défaut
 
@@ -78,6 +91,55 @@ let globalSettings = {
   defaultLinkWidth: 2,       // Taille par défaut pour les liens
   defaultFocusField: "name"  // Champ par défaut à focus (sera remplacé par le choix dans le dropdown)
 };
+
+// ===== UTILITAIRES =====
+
+/**
+ * Initialise et configure une liste déroulante
+ * @param {string|d3.Selection} selector - Sélecteur ou objet d3 pour la liste déroulante
+ * @param {Array} options - Options à ajouter (array de valeurs ou d'objets {value, text})
+ * @param {string|null} selectedValue - Valeur pré-sélectionnée (null pour aucune)
+ * @param {Function|null} onChange - Fonction à appeler lors du changement
+ * @param {boolean} includeEmptyOption - Inclure une option vide au début
+ * @param {string} emptyOptionText - Texte pour l'option vide
+ * @returns {d3.Selection} Sélection D3 de la liste déroulante
+ */
+function initDropdown(selector, options, selectedValue = null, onChange = null, includeEmptyOption = true, emptyOptionText = '') {
+  // Obtenir la sélection D3
+  const select = typeof selector === 'string' ? d3.select(selector) : selector;
+  
+  // Supprimer les options existantes
+  select.selectAll('option').remove();
+  
+  // Ajouter une option vide si demandé
+  if (includeEmptyOption) {
+    select.append('option')
+      .attr('value', '')
+      .text(emptyOptionText);
+  }
+  
+  // Ajouter les options
+  options.forEach(opt => {
+    const value = typeof opt === 'object' ? opt.value : opt;
+    const text = typeof opt === 'object' ? opt.text : opt;
+    
+    select.append('option')
+      .attr('value', value)
+      .text(text);
+  });
+  
+  // Définir la valeur sélectionnée si fournie
+  if (selectedValue !== null) {
+    select.property('value', selectedValue);
+  }
+  
+  // Ajouter le gestionnaire d'événement onChange si fourni
+  if (onChange) {
+    select.on('change', onChange);
+  }
+  
+  return select;
+}
 
 // --- FONCTIONS POUR LES FORMULAIRES ---
 
@@ -223,45 +285,57 @@ function updateGlobalSelects() {
   const currentLinkLabel = d3.select('#link-label').property('value');
   const currentNodeSizeField = d3.select('#node-size-field').property('value');
   
-  // New dropdowns for id, x and y fields – ensure corresponding HTML selects exist (see below)
-  updateSelectOptions(d3.select('#node-id-field'), getFieldOptions(graphState.nodes), globalSettings.nodeIdField);
-  updateSelectOptions(d3.select('#x-field'), getFieldOptions(graphState.nodes), globalSettings.xField);
-  updateSelectOptions(d3.select('#y-field'), getFieldOptions(graphState.nodes), globalSettings.yField);
+  const nodeFields = getFieldOptions(graphState.nodes);
+  const linkFields = getFieldOptions(graphState.links);
   
-  // Crucial fix: check if value is explicitly empty string to preserve it
-  // Only use defaults for undefined/null values, not for empty strings
+  // Utiliser la méthode sûre pour mettre à jour les listes déroulantes
+  updateSelectOptions(d3.select('#node-id-field'), nodeFields, globalSettings.nodeIdField);
+  updateSelectOptions(d3.select('#x-field'), nodeFields, globalSettings.xField);
+  updateSelectOptions(d3.select('#y-field'), nodeFields, globalSettings.yField);
   updateSelectOptions(
     d3.select('#node-label'), 
-    getFieldOptions(graphState.nodes), 
+    nodeFields, 
     currentNodeLabel !== undefined ? currentNodeLabel : globalSettings.nodeLabelField
   );
-  
   updateSelectOptions(
     d3.select('#link-label'), 
-    getFieldOptions(graphState.links), 
+    linkFields, 
     currentLinkLabel !== undefined ? currentLinkLabel : globalSettings.linkLabelField
   );
-  
   updateSelectOptions(
     d3.select('#node-size-field'), 
-    getFieldOptions(graphState.nodes), 
+    nodeFields, 
     currentNodeSizeField !== undefined ? currentNodeSizeField : globalSettings.nodeSizeField
   );
 }
 
+// Restaurer la fonction originale pour garantir la compatibilité
 function updateSelectOptions(selectElem, optionsArr, selectedValue) {
-  selectElem.selectAll('option').remove();
-  selectElem.append('option').attr('value', '').text('');
-  optionsArr.forEach(opt => {
-    selectElem.append('option').attr('value', opt).text(opt);
-  });
+  if (!selectElem || !selectElem.node()) {
+    console.warn(`Élément select non trouvé pour updateSelectOptions`);
+    return;
+  }
   
-  // Directly set the value without checking if it's in the options array
-  // This ensures empty string is properly preserved
-  selectElem.property('value', selectedValue);
-  
-  // Dès que l'utilisateur change la sélection, mettre à jour immédiatement le graph.
-  selectElem.on("change", () => updateGraph());
+  try {
+    // Si l'utilitaire est disponible, l'utiliser
+    if (initDropdownUtil) {
+      return initDropdownUtil(selectElem, optionsArr, selectedValue, () => updateGraph());
+    }
+    
+    // Sinon, utiliser le code d'origine
+    selectElem.selectAll('option').remove();
+    selectElem.append('option').attr('value', '').text('');
+    optionsArr.forEach(opt => {
+      selectElem.append('option').attr('value', opt).text(opt);
+    });
+    
+    selectElem.property('value', selectedValue);
+    selectElem.on("change", () => updateGraph());
+    return selectElem;
+  } catch (error) {
+    console.error("Erreur dans updateSelectOptions:", error);
+    return selectElem;
+  }
 }
 
 // ===== AFFICHAGE DU GRAPHE =====
@@ -1072,7 +1146,7 @@ async function initJSONModelsList() {
       return;
     }
     
-    // Créer les options de la liste déroulante
+    // Utiliser la méthode originale pour garantir la compatibilité
     const select = d3.select('#json-models');
     select.selectAll("*").remove();
     
@@ -1095,7 +1169,6 @@ async function initJSONModelsList() {
         loadJSONModelFile(jsonModelsConfig.directoryPath + selectedFile);
       }
     });
-    
   } catch (error) {
     console.error('Erreur lors de la récupération des modèles JSON:', error);
   }
