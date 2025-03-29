@@ -1,18 +1,5 @@
 import { updateGraph } from './graph.js';
 
-// Tentative d'importation de l'utilitaire, mais avec un plan de secours
-let initDropdownUtil;
-try {
-  import('./utils.js').then(module => {
-    initDropdownUtil = module.initDropdown;
-    console.log("Utilitaire initDropdown chargé dans config_graph.js");
-  }).catch(error => {
-    console.warn("Erreur lors du chargement de utils.js dans config_graph:", error);
-  });
-} catch (error) {
-  console.warn("Import dynamique non supporté dans config_graph, utilisation du fallback");
-}
-
 // Centraliser les constantes de configuration
 const CONFIG = {
   directoryPath: 'json_config/',
@@ -223,34 +210,28 @@ async function initConfigFilesList() {
       return;
     }
     
-    // Utiliser la méthode originale pour garantir la compatibilité
+    // Créer la liste déroulante
+    const select = document.createElement('select');
+    select.id = 'json-files';
+    jsonFiles.forEach(file => {
+      const option = document.createElement('option');
+      option.value = file;
+      option.textContent = file.split(".")[0];
+      select.appendChild(option);
+    });
+    
     const container = document.getElementById("import-config-json");
     if (container) {
-      container.innerHTML = "Config:";
+      container.appendChild(select);
+      select.value = CONFIG.defaultFile;
       
-      const select = d3.select(container)
-        .append('select')
-        .attr('id', 'json-files');
-        
-      select.append('option')
-        .attr('value', '')
-        .text('-- Sélectionner --');
-        
-      jsonFiles.forEach(file => {
-        select.append('option')
-          .attr('value', file)
-          .text(file.split(".")[0]);
-      });
-      
-      select.property('value', CONFIG.defaultFile);
-      
-      select.on('change', function() {
+      // Ajouter l'écouteur d'événement
+      select.addEventListener('change', function() {
         const selectedFile = this.value;
-        if (selectedFile) {
-          loadConfigFile(CONFIG.directoryPath + selectedFile);
-        }
+        loadConfigFile(CONFIG.directoryPath + selectedFile);
       });
     }
+    
   } catch (error) {
     console.error('Erreur lors de la récupération des fichiers JSON:', error);
   }
