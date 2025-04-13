@@ -9,6 +9,7 @@ import { graphState, performAction, updateGraph } from './graph.js';
 const CONFIG = {
   api: {
     url: "http://localhost:11434/api/generate",
+    modelsUrl: "http://localhost:11434/api/tags",
     defaultModel: "mistral",
     requestOptions: {
       format: "json",
@@ -81,6 +82,38 @@ Ne retourne AUCUN texte explicatif avant ou après le JSON.`;
  * Class handling API interactions with Ollama
  */
 class OllamaAPI {
+  /**
+   * Fetch available models from Ollama
+   * @returns {Promise<Array>} List of available models
+   */
+  static async fetchModels() {
+    try {
+      console.log("Fetching Ollama models from:", CONFIG.api.modelsUrl);
+      const response = await fetch(CONFIG.api.modelsUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Models data received:", data);
+      
+      // Extract model names from the response
+      // The structure should be { models: [{name: "..."}, ...] }
+      if (data && Array.isArray(data.models)) {
+        return data.models.map(model => model.name);
+      } else {
+        // Fall back to checking if there's an array of objects with name property
+        const modelList = Array.isArray(data) ? data : [];
+        return modelList.map(model => model.name || model.model || model);
+      }
+    } catch (error) {
+      console.error("Error fetching Ollama models:", error);
+      // Return a default model if there's an error
+      return [CONFIG.api.defaultModel];
+    }
+  }
+
   /**
    * Read a stream from Ollama response
    * @param {ReadableStreamDefaultReader} reader - Stream reader
@@ -279,7 +312,7 @@ class GraphProcessor {
     }
     
     if (!data.links || !Array.isArray(data.links)) {
-      throw new Error("Invalid JSON proposals: 'links' missing or not an array");
+      throw new Error("Invalid JSON proposals: 'links' missing ou pas un tableau");
     }
   }
 }
@@ -299,8 +332,12 @@ class UIManager {
     this.state = {
       currentAbortController: null,
       currentGraphData: null,
-      currentProposalResponse: ""
+      currentProposalResponse: "",
+      availableModels: []
     };
+    
+    // Initialize model dropdown when constructed
+    this.initModelDropdown();
   }
   
   /**
@@ -331,6 +368,72 @@ class UIManager {
     return elements;
   }
   
+  /**
+   * Initialize the models dropdown menu
+   */
+  async initModelDropdown() {
+    const modelElement = this.elements.model;
+    if (!modelElement) return;
+    
+    try {
+      // Store current value if any
+      const currentValue = modelElement.value || CONFIG.api.defaultModel;
+      
+      // Convert to select element if it's not already one
+      if (modelElement.tagName !== 'SELECT') {
+        const select = document.createElement('select');
+        select.id = modelElement.id;
+        select.className = modelElement.className + ' form-control';
+        select.setAttribute('title', 'Sélectionnez un modèle Ollama');
+        modelElement.parentNode.replaceChild(select, modelElement);
+        this.elements.model = select;
+      }
+      
+      // Get available models
+      const models = await OllamaAPI.fetchModels();
+      this.state.availableModels = models;
+      
+      // Clear existing options
+      while (this.elements.model.firstChild) {
+        this.elements.model.removeChild(this.elements.model.firstChild);
+      }
+      
+      // Add default option
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = '-- Sélectionnez un modèle --';
+      this.elements.model.appendChild(defaultOption);
+      
+      // Add options for each model
+      models.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        this.elements.model.appendChild(option);
+      });
+      
+      // Set the previously selected value or default
+      if (models.includes(currentValue)) {
+        this.elements.model.value = currentValue;
+      } else if (models.length > 0) {
+        this.elements.model.value = models[0];
+      }
+      
+      console.log(`Initialized model dropdown with ${models.length} models`);
+    } catch (error) {
+      console.error("Error initializing model dropdown:", error);
+      
+      // Make sure we have a default option even if fetching fails
+      if (this.elements.model.tagName === 'SELECT' && this.elements.model.children.length === 0) {
+        const option = document.createElement('option');
+        option.value = CONFIG.api.defaultModel;
+        option.textContent = CONFIG.api.defaultModel;
+        this.elements.model.appendChild(option);
+        this.elements.model.value = CONFIG.api.defaultModel;
+      }
+    }
+  }
+
   /**
    * Initialize all event listeners
    */
