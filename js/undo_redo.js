@@ -99,7 +99,32 @@ function getInverseAction(action) {
   }
   const inverseMapping = {
     create_node: () => ({ type: "delete_node", data: { node: action.data.node, relatedLinks: [] } }),
-    delete_node: () => ({ type: "create_node", data: { node: action.data.node } }),
+    delete_node: () => {
+      // When undoing a node deletion, we need to:
+      // 1. Restore the node
+      // 2. Restore all links that were connected to it
+      const nodeAction = { 
+        type: "create_node", 
+        data: { node: action.data.node } 
+      };
+      
+      // If no related links were stored, just return the node creation action
+      if (!action.data.relatedLinks || action.data.relatedLinks.length === 0) {
+        return nodeAction;
+      }
+      
+      // Create actions to restore each link that was connected to the node
+      const linkActions = action.data.relatedLinks.map(link => ({
+        type: "create_link",
+        data: { link }
+      }));
+      
+      // Return a composite action that restores both the node and its links
+      return {
+        type: "composite",
+        actions: [nodeAction, ...linkActions]
+      };
+    },
     move_node: () => ({ type: "move_node", data: { nodeId: action.data.nodeId, from: action.data.to, to: action.data.from } }),
     update_node: () => ({ type: "update_node", data: { nodeId: action.data.nodeId, field: action.data.field, from: action.data.to, to: action.data.from } }),
     create_link: () => ({ type: "delete_link", data: { link: action.data.link } }),
