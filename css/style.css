@@ -45,6 +45,9 @@ svg {
   font-family: sans-serif;
   font-size: 11px;
   pointer-events: auto;  /* enable clicking on link labels */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   user-select: none;
   background-color: rgba(255, 255, 255, 0.5);
   padding: 2px;
@@ -590,4 +593,3 @@ input:checked + .slider:before {
     flex: 1 0 100%;
   }
 }
-
