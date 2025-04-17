@@ -219,32 +219,8 @@ export class FormManager {
       return; // Terminer la fonction ici, ne rien faire de plus
     }
     
-    // Si nous sommes ici, c'est que nous devons activer l'onglet Valeurs et mettre le focus
-    try {
-      // Activer l'onglet Valeurs AVANT tout autre traitement
-      // Utiliser une référence directe à l'élément
-      const tabValeurs = document.querySelector('a[href="#tab2"]');
-      if (tabValeurs) {
-        // Activer directement avec un clic natif
-        tabValeurs.click();
-        
-        // Puis activer avec la méthode Bootstrap pour une double assurance
-        $(tabValeurs).tab('show');
-        
-        console.log("Onglet Valeurs activé");
-        
-        // Focus et sélection après un délai pour permettre à l'onglet de s'afficher complètement
-        setTimeout(() => {
-          if (fieldToFocus && this.nodeInputs[fieldToFocus]) {
-            this.focusAndSelectField(this.nodeInputs[fieldToFocus]);
-          }
-        }, 150); // Délai légèrement plus long
-      } else {
-        console.error("Onglet Valeurs non trouvé");
-      }
-    } catch (e) {
-      console.error("Erreur lors de l'activation de l'onglet Valeurs:", e);
-    }
+    // DRY : bascule et focus
+    this.activateValuesTab(this.nodeInputs, fieldToFocus);
   }
   
   /**
@@ -279,31 +255,8 @@ export class FormManager {
       return; // Terminer la fonction ici, ne rien faire de plus
     }
     
-    // Si nous sommes ici, c'est que nous devons activer l'onglet Valeurs et mettre le focus
-    try {
-      // Activer l'onglet Valeurs AVANT tout autre traitement
-      const tabValeurs = document.querySelector('a[href="#tab2"]');
-      if (tabValeurs) {
-        // Activer directement avec un clic natif
-        tabValeurs.click();
-        
-        // Puis activer avec la méthode Bootstrap pour une double assurance
-        $(tabValeurs).tab('show');
-        
-        console.log("Onglet Valeurs activé");
-        
-        // Focus et sélection après un délai
-        setTimeout(() => {
-          if (fieldToFocus && this.linkInputs[fieldToFocus]) {
-            this.focusAndSelectField(this.linkInputs[fieldToFocus]);
-          }
-        }, 150);
-      } else {
-        console.error("Onglet Valeurs non trouvé");
-      }
-    } catch (e) {
-      console.error("Erreur lors de l'activation de l'onglet Valeurs:", e);
-    }
+    // DRY : bascule et focus
+    this.activateValuesTab(this.linkInputs, fieldToFocus);
   }
   
   /**
@@ -409,5 +362,25 @@ export class FormManager {
     
     // Mettre à jour le graphe
     this.renderer.updateGraph();
+  }
+
+  /**
+   * Bascule vers l'onglet Valeurs et focus sur le champ donné
+   */
+  activateValuesTab(inputObject, fieldToFocus) {
+    try {
+      const tabValeurs = document.querySelector('a[href="#tab2"]');
+      if (!tabValeurs) throw new Error("Onglet Valeurs non trouvé");
+      tabValeurs.click();
+      $(tabValeurs).tab('show');
+      console.log("Onglet Valeurs activé");
+      setTimeout(() => {
+        if (fieldToFocus && inputObject[fieldToFocus]) {
+          this.focusAndSelectField(inputObject[fieldToFocus]);
+        }
+      }, 150);
+    } catch (e) {
+      console.error("Erreur lors de l'activation de l'onglet Valeurs:", e);
+    }
   }
 }
