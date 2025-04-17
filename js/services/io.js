@@ -3,6 +3,7 @@
  */
 import { performAction } from '../state/undo_redo.js';
 import { uiConfig } from '../config/index.js';
+import { listJsonFiles } from './fileService.js';  // <— nouvel import
 
 let graphState = null;
 let renderer = null;
@@ -158,53 +159,24 @@ function loadJSONGraph(jsonContent) {
  */
 async function initJSONModelsList() {
   try {
-    const response = await fetch(uiConfig.jsonModels.directoryPath);
-    const text = await response.text();
-    const parser = new DOMParser();
-    const html = parser.parseFromString(text, 'text/html');
-    
-    const jsonFiles = Array.from(html.querySelectorAll('a'))
-      .filter(link => link.href.endsWith('.json'))
-      .map(link => link.textContent);
-    
-    if (jsonFiles.length === 0) {
-      console.log('Aucun fichier modèle JSON trouvé!');
-      return;
-    }
-    
-    // Créer les options de la liste déroulante
+    // Récupérer la liste via le service commun
+    const jsonFiles = await listJsonFiles(uiConfig.jsonModels.directoryPath);
     const select = document.getElementById('json-models');
     if (!select) return;
-    
-    // Vider le select
-    while (select.firstChild) {
-      select.removeChild(select.firstChild);
-    }
-    
-    // Ajouter une option vide au début
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = '-- Choisir un modèle --';
-    select.appendChild(defaultOption);
-    
-    // Ajouter les options des fichiers
-    jsonFiles.forEach(file => {
-      const option = document.createElement('option');
-      option.value = file;
-      option.textContent = file.split(".")[0];
-      select.appendChild(option);
-    });
-    
-    // Ajouter l'écouteur d'événement
-    select.addEventListener('change', function() {
-      const selectedFile = this.value;
-      if (selectedFile) {
-        loadJSONModelFile(uiConfig.jsonModels.directoryPath + selectedFile);
+
+    // Construire les options
+    select.innerHTML = [
+      '<option value="">-- Choisir un modèle --</option>',
+      ...jsonFiles.map(f => `<option value="${f}">${f.replace(/\.json$/, '')}</option>`)
+    ].join('');
+
+    select.addEventListener('change', async function() {
+      if (this.value) {
+        await loadJSONModelFile(uiConfig.jsonModels.directoryPath + this.value);
       }
     });
-    
-  } catch (error) {
-    console.error('Erreur lors de la récupération des modèles JSON:', error);
+  } catch (e) {
+    console.error('Erreur initJSONModelsList:', e);
   }
 }
 

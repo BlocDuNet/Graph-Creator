@@ -2,6 +2,8 @@
  * Configuration du graphe (forces, styles des liens)
  */
 
+import { listJsonFiles } from '../services/fileService.js';
+
 export const graphConfig = {
   // Configuration des chemins des fichiers de configuration
   paths: {
@@ -46,25 +48,11 @@ export const graphConfig = {
  */
 export async function initConfigFilesList(updateCallback) {
   try {
-    const response = await fetch(graphConfig.paths.configDirectory);
-    if (!response.ok) {
-      console.error(`Erreur HTTP: ${response.status} en accédant au répertoire ${graphConfig.paths.configDirectory}`);
-      return;
-    }
-    
-    const text = await response.text();
-    const parser = new DOMParser();
-    const html = parser.parseFromString(text, 'text/html');
-    
-    const jsonFiles = Array.from(html.querySelectorAll('a'))
-      .filter(link => link.href.endsWith('.json'))
-      .map(link => link.textContent);
-      
+    const jsonFiles = await listJsonFiles(graphConfig.paths.configDirectory);
     if (jsonFiles.length === 0) {
       console.log('Aucun fichier JSON de configuration trouvé!');
       return;
     }
-    
     console.log(`Fichiers JSON trouvés: ${jsonFiles.join(', ')}`);
     
     // Obtenir le conteneur
