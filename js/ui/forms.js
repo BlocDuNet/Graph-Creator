@@ -160,31 +160,71 @@ export class FormManager {
       
       button.addEventListener('click', (event) => {
         event.stopPropagation();
-        
-        if (confirm("Supprimer ce champ pour tous les éléments ?")) {
-          // Déterminer si c'est un champ de nœud ou de lien
-          const isNodeField = inputObject === this.nodeInputs;
-          const target = isNodeField ? "node" : "link";
-          
-          performAction({ 
-            type: "remove_field", 
-            data: { 
-              field: fieldName, 
-              target, 
-              label: `Remove field ${fieldName} from ${target}s`
-            }
-          });
-          
-          // Mettre à jour le formulaire
-          this.refreshForms();
-          this.renderer.updateGraph();
-        }
+        this.showCustomConfirm(
+          `Supprimer le champ "${fieldName}" pour tous les éléments ?`,
+          () => {
+            const isNodeField = inputObject === this.nodeInputs;
+            const target = isNodeField ? "node" : "link";
+            
+            performAction({ 
+              type: "remove_field", 
+              data: { field: fieldName, target, label: `Remove field ${fieldName} from ${target}s` }
+            });
+            this.refreshForms();
+            this.renderer.updateGraph();
+          }
+        );
       });
       
       fieldDiv.appendChild(button);
     }
     
     formElement.appendChild(fieldDiv);
+  }
+  
+  /**
+   * Affiche une confirmation personnalisée
+   * @param {string} message
+   * @param {Function} onConfirm
+   */
+  showCustomConfirm(message, onConfirm) {
+    // Créer overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    // Boîte de dialogue
+    const box = document.createElement('div');
+    box.className = 'confirm-modal';
+    box.innerHTML = `
+      <p>${message}</p>
+      <button class="btn-yes">Oui</button>
+      <button class="btn-no">Non</button>
+    `;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    // Handlers pour les boutons
+    box.querySelector('.btn-yes').onclick = () => {
+      onConfirm();
+      cleanup();
+    };
+    box.querySelector('.btn-no').onclick = () => {
+      cleanup();
+    };
+
+    // Écouteurs de touche pour valider sur Entrée
+    const keyHandler = e => {
+      if (e.key === 'Enter') {
+        onConfirm();
+        cleanup();
+      }
+    };
+    document.addEventListener('keydown', keyHandler);
+
+    // Fonction de nettoyage des handlers et suppression de l'overlay
+    function cleanup() {
+      document.body.removeChild(overlay);
+      document.removeEventListener('keydown', keyHandler);
+    }
   }
   
   /**

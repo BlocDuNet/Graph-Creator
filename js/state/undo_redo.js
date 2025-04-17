@@ -29,9 +29,14 @@ function applyAction(action) {
     graphState.nodes = action.data.newState.nodes;
     graphState.links = action.data.newState.links;
   } else if (action.type === "add_field") {
-    const { field, target } = action.data;
-    const data = (target === "node") ? graphState.nodes : graphState.links;
-    data.forEach(item => { item[field] = ""; });
+    const { field, target, oldValues } = action.data;
+    const items = (target === "node") ? graphState.nodes : graphState.links;
+    items.forEach(item => {
+      const old = Array.isArray(oldValues) 
+        ? oldValues.find(o => o.id === item.id) 
+        : null;
+      item[field] = old ? old.value : "";
+    });
   } else if (action.type === "remove_field") {
     const { field, target } = action.data;
     const data = (target === "node") ? graphState.nodes : graphState.links;
@@ -147,6 +152,12 @@ function getInverseAction(action) {
 }
 
 export function performAction(action) {
+  // pour remove_field, capturer les anciennes valeurs
+  if (action.type === "remove_field") {
+    const { field, target } = action.data;
+    const items = target === "node" ? graphState.nodes : graphState.links;
+    action.data.oldValues = items.map(item => ({ id: item.id, value: item[field] }));
+  }
   applyAction(action);
   actionHistory.push(action);
   undoneActions = [];
