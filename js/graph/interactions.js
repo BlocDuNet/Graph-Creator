@@ -273,11 +273,19 @@ export class InteractionManager {
     window.addEventListener('keyup', event => {
       // Suppression avec Delete ou Backspace
       if (['Delete', 'Backspace'].includes(event.key)) {
+        let didDelete = false;
         if (this.graphState.selectedNode) {
           this.graphState.deleteNode(this.graphState.selectedNode);
+          didDelete = true;
         }
         if (this.graphState.selectedLink) {
           this.graphState.deleteLink(this.graphState.selectedLink);
+          didDelete = true;
+        }
+        if (didDelete) {
+          // forcer la désélection et cacher les formulaires
+          this.graphState.clearSelection();
+          window.dispatchEvent(new CustomEvent('selection-cleared'));
         }
         this.renderer.updateGraph();
       }

@@ -17,7 +17,7 @@ export class UIManager {
     this.initEventListeners();
     this.initHistoryPanel();
     this.initTabPanel();
-    this.initFieldSelects();
+    this.syncGlobalSettingsUI();  // remplace initFieldSelects() + setupGlobalSettingsListeners()
     
     // Écouteurs d'événements pour les mises à jour de l'interface
     this.setupUIUpdateListeners();
@@ -72,38 +72,51 @@ export class UIManager {
   }
   
   /**
-   * Configure les écouteurs pour les paramètres globaux
+   * Configure DRY les écouteurs sur tous les contrôles de paramètres globaux
    */
   setupGlobalSettingsListeners() {
-    // Changement du champ de label pour les nœuds
-    const nodeLabelSelect = document.getElementById('node-label');
-    if (nodeLabelSelect) {
-      nodeLabelSelect.addEventListener('change', () => this.handleNodeLabelChange());
-    }
-    
-    // Changement du champ de label pour les liens
-    const linkLabelSelect = document.getElementById('link-label');
-    if (linkLabelSelect) {
-      linkLabelSelect.addEventListener('change', () => this.handleLinkLabelChange());
-    }
-    
-    // Changement du champ de taille pour les nœuds
-    const nodeSizeSelect = document.getElementById('node-size-field');
-    if (nodeSizeSelect) {
-      nodeSizeSelect.addEventListener('change', () => this.handleNodeSizeFieldChange());
-    }
-    
-    // Changement de la taille par défaut des nœuds
-    const defaultNodeSizeInput = document.getElementById('defaultNodeSizeInput');
-    if (defaultNodeSizeInput) {
-      defaultNodeSizeInput.addEventListener('change', () => this.handleDefaultNodeSizeChange());
-    }
-    
-    // Changement de la largeur par défaut des liens
-    const defaultLinkWidthInput = document.getElementById('defaultLinkWidthInput');
-    if (defaultLinkWidthInput) {
-      defaultLinkWidthInput.addEventListener('change', () => this.handleDefaultLinkWidthChange());
-    }
+    const mapping = [
+      { id: 'node-label',     event: 'change', field: 'nodeLabelField' },
+      { id: 'link-label',     event: 'change', field: 'linkLabelField' },
+      { id: 'node-size-field',event: 'change', field: 'nodeSizeField' },
+      { id: 'defaultNodeSizeInput', event: 'change', field: 'defaultNodeSize', parser: v=>+v||30 },
+      { id: 'defaultLinkWidthInput',event: 'change', field: 'defaultLinkWidth', parser: parseFloat }
+    ];
+    mapping.forEach(({id,event,field,parser}) => {
+      const elt = document.getElementById(id);
+      if (!elt) return;
+      elt.addEventListener(event, () => {
+        const raw = elt.value;
+        const val = parser ? parser(raw) : raw;
+        this.graphState.updateGlobalSetting(field, val);
+        this.renderer.updateGraph();
+      });
+    });
+  }
+  
+  /**
+   * Met à jour les options de tous les <select> et inputs de config
+   */
+  initFieldSelects() {
+    const selects = [
+      { id: 'node-label',     opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeLabelField },
+      { id: 'link-label',     opts: this.graphState.getLinkFields(),  val: this.graphState.globalSettings.linkLabelField },
+      { id: 'node-size-field',opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeSizeField }
+    ];
+    selects.forEach(({id,opts,val}) => {
+      const sel = document.getElementById(id);
+      if (sel) this.updateSelectOptions(sel, opts, val);
+    });
+    document.getElementById('defaultNodeSizeInput').value = this.graphState.globalSettings.defaultNodeSize;
+    document.getElementById('defaultLinkWidthInput').value = this.graphState.globalSettings.defaultLinkWidth;
+  }
+  
+  /**
+   * Exécute la synchro UI globale (listeners + valeurs initiales)
+   */
+  syncGlobalSettingsUI() {
+    this.setupGlobalSettingsListeners();
+    this.initFieldSelects();
   }
   
   /**
@@ -280,66 +293,17 @@ export class UIManager {
    * Initialise les sélecteurs de champs
    */
   initFieldSelects() {
-    // Node label field
-    const nodeLabelSelect = document.getElementById('node-label');
-    if (nodeLabelSelect) {
-      this.updateSelectOptions(nodeLabelSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.nodeLabelField);
-    }
-    
-    // Link label field
-    const linkLabelSelect = document.getElementById('link-label');
-    if (linkLabelSelect) {
-      this.updateSelectOptions(linkLabelSelect, this.graphState.getLinkFields(), this.graphState.globalSettings.linkLabelField);
-    }
-    
-    // Node size field
-    const nodeSizeSelect = document.getElementById('node-size-field');
-    if (nodeSizeSelect) {
-      this.updateSelectOptions(nodeSizeSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.nodeSizeField);
-    }
-    
-    // Default node size
-    const defaultNodeSizeInput = document.getElementById('defaultNodeSizeInput');
-    if (defaultNodeSizeInput) {
-      defaultNodeSizeInput.value = this.graphState.globalSettings.defaultNodeSize;
-    }
-    
-    // Default link width
-    const defaultLinkWidthInput = document.getElementById('defaultLinkWidthInput');
-    if (defaultLinkWidthInput) {
-      defaultLinkWidthInput.value = this.graphState.globalSettings.defaultLinkWidth;
-    }
-    
-    // Add field buttons
-    const addNodeFieldButton = document.getElementById('addNodeFieldButton');
-    const addNodeFieldInput = document.getElementById('addNodeFieldInput');
-    if (addNodeFieldButton && addNodeFieldInput) {
-      addNodeFieldButton.addEventListener('click', () => {
-        const fieldName = addNodeFieldInput.value.trim();
-        if (fieldName) {
-          this.graphState.addField(fieldName, 'node');
-          addNodeFieldInput.value = '';
-          this.formManager.refreshForms();
-          this.updateAllFieldSelects();
-          this.renderer.updateGraph();
-        }
-      });
-    }
-    
-    const addLinkFieldButton = document.getElementById('addLinkFieldButton');
-    const addLinkFieldInput = document.getElementById('addLinkFieldInput');
-    if (addLinkFieldButton && addLinkFieldInput) {
-      addLinkFieldButton.addEventListener('click', () => {
-        const fieldName = addLinkFieldInput.value.trim();
-        if (fieldName) {
-          this.graphState.addField(fieldName, 'link');
-          addLinkFieldInput.value = '';
-          this.formManager.refreshForms();
-          this.updateAllFieldSelects();
-          this.renderer.updateGraph();
-        }
-      });
-    }
+    const selects = [
+      { id: 'node-label',     opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeLabelField },
+      { id: 'link-label',     opts: this.graphState.getLinkFields(),  val: this.graphState.globalSettings.linkLabelField },
+      { id: 'node-size-field',opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeSizeField }
+    ];
+    selects.forEach(({id,opts,val}) => {
+      const sel = document.getElementById(id);
+      if (sel) this.updateSelectOptions(sel, opts, val);
+    });
+    document.getElementById('defaultNodeSizeInput').value = this.graphState.globalSettings.defaultNodeSize;
+    document.getElementById('defaultLinkWidthInput').value = this.graphState.globalSettings.defaultLinkWidth;
   }
   
   /**
@@ -414,10 +378,17 @@ export class UIManager {
     
     // Mettre à jour les formulaires après application d'une action
     window.addEventListener('action-applied', (event) => {
-      if (event.detail?.action?.type === "import_graph") {
+      const type = event.detail?.action?.type;
+
+      if (type === "import_graph") {
         console.log("Action import_graph détectée, rafraîchissement des formulaires...");
         this.formManager.refreshForms();
         this.updateAllFieldSelects();
+      }
+
+      // Nouveau : masquer les formulaires après suppression
+      if (type === "delete_node" || type === "delete_link") {
+        this.formManager.hideAllForms();
       }
     });
   }
@@ -441,4 +412,29 @@ export class UIManager {
     
     this.renderer.updateGraph();
   }
+}
+
+/**
+ * Helper testable: met à jour l’UI des paramètres globaux à partir d’un GraphState donné
+ */
+export function syncGlobalSettingsUI(state) {
+  const entries = [
+    { id:'node-label',     value: state.globalSettings.nodeLabelField,  opts: state.getNodeFields() },
+    { id:'link-label',     value: state.globalSettings.linkLabelField,  opts: state.getLinkFields() },
+    { id:'node-size-field',value: state.globalSettings.nodeSizeField,  opts: state.getNodeFields() },
+    { id:'defaultNodeSizeInput',  value: state.globalSettings.defaultNodeSize },
+    { id:'defaultLinkWidthInput', value: state.globalSettings.defaultLinkWidth }
+  ];
+  entries.forEach(({id,value,opts}) => {
+    const elt = document.getElementById(id);
+    if (!elt) return;
+    if (elt.tagName === 'SELECT') {
+      // reset et remplir
+      elt.innerHTML = '<option value=""></option>' +
+        opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+      elt.value = value;
+    } else {
+      elt.value = value;
+    }
+  });
 }
