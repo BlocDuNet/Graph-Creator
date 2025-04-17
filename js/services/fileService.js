@@ -1,7 +1,7 @@
 /**
- * Liste les fichiers .json disponibles dans un dossier web
- * @param {string} dirUrl - URL du répertoire à lister
- * @returns {Promise<string[]>} - Noms de fichiers .json
+ * Liste les fichiers .json disponibles dans un dossier accessible par HTTP.
+ * @param {string} dirUrl - URL du répertoire à scanner.
+ * @returns {Promise<string[]>}
  */
 export async function listJsonFiles(dirUrl) {
   const resp = await fetch(dirUrl);

@@ -1,4 +1,15 @@
-import { applyCircleLayout, applyGridLayout, applyRandomLayout } from './layoutService.js';
+import {
+  applyCircleLayout,
+  applyGridLayout,
+  applyRandomLayout,
+  applyHierarchicalLayout,
+  applyRadialLayout,
+  applySpiralLayout,
+  applyArcDiagramLayout,
+  applyConcentricLayout,
+  applyBipartiteLayout,
+  applyForceAtlasLayout
+} from './layoutService.js';
 
 let graphState = null;
 let renderer = null;
@@ -36,12 +47,16 @@ function applyLayout(layoutType) {
   if (!graphState || !renderer) return;
   const w = renderer.width, h = renderer.height;
   switch (layoutType) {
-    case "circle":
-      applyCircleLayout(graphState.nodes, w, h); break;
-    case "grid":
-      applyGridLayout(graphState.nodes, w, h);  break;
-    case "random":
-      applyRandomLayout(graphState.nodes, w, h); break;
+    case "circle":       applyCircleLayout(graphState.nodes, w, h); break;
+    case "grid":         applyGridLayout(graphState.nodes, w, h); break;
+    case "random":       applyRandomLayout(graphState.nodes, w, h); break;
+    case "hierarchical": applyHierarchicalLayout(graphState.nodes, w, h); break;
+    case "radial":       applyRadialLayout(graphState.nodes, w, h); break;
+    case "spiral":       applySpiralLayout(graphState.nodes, w, h); break;
+    case "arc":          applyArcDiagramLayout(graphState.nodes, w, h); break;
+    case "concentric":   applyConcentricLayout(graphState.nodes, w, h); break;
+    case "bipartite":    applyBipartiteLayout(graphState.nodes, w, h); break;
+    case "forceAtlas":   applyForceAtlasLayout(graphState.nodes, w, h); break;
     default:
       console.warn(`Layout type ${layoutType} not recognized`);
   }
