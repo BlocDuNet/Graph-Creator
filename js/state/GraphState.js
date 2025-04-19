@@ -336,4 +336,38 @@ export class GraphState {
     
     return Array.from(fields);
   }
+
+  getNeighbors(nodeId) {
+    const neigh = new Set();
+    this.links.forEach(l => {
+      if (l.source.id === nodeId) neigh.add(l.target);
+      else if (l.target.id === nodeId) neigh.add(l.source);
+    });
+    return Array.from(neigh);
+  }
+
+  getNodeLinks(nodeId) {
+    return this.links.filter(l => l.source.id === nodeId || l.target.id === nodeId);
+  }
+
+  findClusters() {
+    const visited = new Set();
+    const clusters = [];
+    this.nodes.forEach(n => {
+      if (visited.has(n)) return;
+      const comp = [];
+      const stack = [n];
+      while (stack.length) {
+        const u = stack.pop();
+        if (visited.has(u)) continue;
+        visited.add(u);
+        comp.push(u);
+        this.getNeighbors(u.id).forEach(v => {
+          if (!visited.has(v)) stack.push(v);
+        });
+      }
+      clusters.push(comp);
+    });
+    return clusters;
+  }
 }

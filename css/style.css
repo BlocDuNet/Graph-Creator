@@ -68,6 +68,23 @@ svg {
   fill: #0077ff;
 }
 
+/* Highlighted styles */
+.highlighted {
+  stroke: orange !important;
+  fill: orange !important;
+}
+
+.highlighted-link {
+  stroke: orange !important;
+}
+
+/* Cluster styles */
+.cluster-0 { fill: #f28e2b; }
+.cluster-1 { fill: #4e79a7; }
+.cluster-2 { fill: #59a14f; }
+.cluster-3 { fill: #e15759; }
+/* … vous pouvez ajouter plus de classes cluster-N … */
+
 /* ======================================
    3. LAYOUT COMPONENTS
 ====================================== */

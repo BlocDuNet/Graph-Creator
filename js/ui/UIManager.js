@@ -85,6 +85,20 @@ export class UIManager {
         if (name) this.formManager.addField(name, 'link');
       });
     }
+
+    document.getElementById('btn-highlight-neighbors')?.addEventListener('click', () => {
+      this.renderer.highlightNeighbors(this.graphState.selectedNode);
+    });
+    document.getElementById('btn-clear-highlights')?.addEventListener('click', () => {
+      this.renderer.clearHighlights();
+      this.renderer.updateGraph();
+    });
+    document.getElementById('btn-high-degree')?.addEventListener('click', () => {
+      this.renderer.highlightHighDegree(2);
+    });
+    document.getElementById('btn-color-clusters')?.addEventListener('click', () => {
+      this.renderer.colorClusters();
+    });
   }
   
   /**

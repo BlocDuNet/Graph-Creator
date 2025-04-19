@@ -552,4 +552,44 @@ export class GraphRenderer {
     this.svg.on('dblclick.zoom', null);
     this.svg.on('contextmenu', event => event.preventDefault());
   }
+
+  clearHighlights() {
+    this.g.selectAll('.node').classed('highlighted', false).attr('class','node');
+    this.g.selectAll('.link').classed('highlighted-link', false);
+  }
+
+  highlightNeighbors(node) {
+    this.clearHighlights();
+    if (!node) return;
+    const neigh = this.graphState.getNeighbors(node.id);
+    this.g.selectAll('.node')
+      .classed('highlighted', d => neigh.includes(d));
+    this.g.selectAll('.link')
+      .classed('highlighted-link', d =>
+        d.source.id === node.id || d.target.id === node.id
+      );
+  }
+
+  highlightHighDegree(minDegree = 2) {
+    this.clearHighlights();
+    const counts = {};
+    this.graphState.links.forEach(l => {
+      counts[l.source.id] = (counts[l.source.id] || 0) + 1;
+      counts[l.target.id] = (counts[l.target.id] || 0) + 1;
+    });
+    this.g.selectAll('.node')
+      .classed('highlighted', d => (counts[d.id]||0) >= minDegree);
+  }
+
+  colorClusters() {
+    this.clearHighlights();
+    const clusters = this.graphState.findClusters();
+    clusters.forEach((comp, idx) => {
+      comp.forEach(n => {
+        this.g.selectAll('.node')
+          .filter(d => d.id === n.id)
+          .classed(`cluster-${idx}`, true);
+      });
+    });
+  }
 }
