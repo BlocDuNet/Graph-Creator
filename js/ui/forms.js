@@ -64,16 +64,19 @@ export class FormManager {
   createFormInputs(data, formElement, inputObject) {
     if (!formElement) return;
     
-    // Vider le formulaire
+    // Vider le formulaire et les références précédentes
     while (formElement.firstChild) {
       formElement.removeChild(formElement.firstChild);
     }
-    
+    Object.keys(inputObject).forEach(key => delete inputObject[key]);
+
     // Récupérer les noms de champs
     const fieldNames = this.getFieldOptions(data);
     
     // Créer les champs
-    fieldNames.forEach(fieldName => this.createField(fieldName, formElement, inputObject, data));
+    fieldNames.forEach(fieldName =>
+      this.createField(fieldName, formElement, inputObject, data)
+    );
   }
   
   /**
@@ -303,25 +306,15 @@ export class FormManager {
    * Met à jour les valeurs du formulaire avec les données de l'élément
    */
   updateForm(inputObject, dataItem) {
-    if (!dataItem) {
-      console.error("Erreur: tentative de mise à jour du formulaire avec un élément null");
-      return;
-    }
+    if (!dataItem) return;
+    const idField = this.graphState.globalSettings.nodeIdField;
     
     Object.keys(inputObject).forEach(key => {
-      // Traitement spécial pour les propriétés source et target qui sont des objets
-      if (key === "source" || key === "target") {
-        // Vérifier si dataItem[key] existe ET a une propriété id
-        const hasValidReference = dataItem[key] && 
-                                typeof dataItem[key] === 'object' && 
-                                dataItem[key] !== null && 
-                                'id' in dataItem[key];
-                                
-        // Définir la valeur en conséquence
-        inputObject[key].value = hasValidReference ? dataItem[key].id : "";
+      if ((key === "source" || key === "target") && dataItem[key]) {
+        // utiliser le champ personnalisé pour l'ID
+        inputObject[key].value = dataItem[key][idField] ?? dataItem[key].id;
       } else {
-        // Pour les autres propriétés, utiliser la valeur directe ou chaîne vide
-        inputObject[key].value = dataItem[key] !== undefined && dataItem[key] !== null ? dataItem[key] : "";
+        inputObject[key].value = dataItem[key] != null ? dataItem[key] : "";
       }
     });
   }
@@ -385,22 +378,18 @@ export class FormManager {
    */
   addField(fieldName, target) {
     if (fieldName.trim() === '') return;
-    
     const isNodeField = target === 'node';
-    const data = isNodeField ? this.graphState.nodes : this.graphState.links;
     const formElement = isNodeField ? this.nodeForm : this.linkForm;
     const inputObject = isNodeField ? this.nodeInputs : this.linkInputs;
-    
+
     // Vérifier si le champ existe déjà
     if (Object.keys(inputObject).includes(fieldName)) return;
-    
-    // Ajouter le champ à tous les éléments
+
+    // Dispatch action via undo/redo, GraphState.addField émettra 'action-applied'
     this.graphState.addField(fieldName, target);
-    
-    // Mettre à jour le formulaire
-    this.createField(fieldName, formElement, inputObject, data);
-    
-    // Mettre à jour le graphe
+
+    // Rafraîchir formulaires et mise à jour du graphe
+    this.refreshForms();
     this.renderer.updateGraph();
   }
 

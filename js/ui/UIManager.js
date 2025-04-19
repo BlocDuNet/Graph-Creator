@@ -69,6 +69,22 @@ export class UIManager {
     if (changeLabelButton) {
       changeLabelButton.addEventListener("click", () => this.initializeLabels());
     }
+
+    // Ajouter des champs dynamiques
+    const addNodeBtn = document.getElementById('addNodeFieldButton');
+    if (addNodeBtn) {
+      addNodeBtn.addEventListener('click', () => {
+        const name = document.getElementById('addNodeFieldInput')?.value.trim();
+        if (name) this.formManager.addField(name, 'node');
+      });
+    }
+    const addLinkBtn = document.getElementById('addLinkFieldButton');
+    if (addLinkBtn) {
+      addLinkBtn.addEventListener('click', () => {
+        const name = document.getElementById('addLinkFieldInput')?.value.trim();
+        if (name) this.formManager.addField(name, 'link');
+      });
+    }
   }
   
   /**
@@ -76,11 +92,14 @@ export class UIManager {
    */
   setupGlobalSettingsListeners() {
     const mapping = [
-      { id: 'node-label',     event: 'change', field: 'nodeLabelField' },
-      { id: 'link-label',     event: 'change', field: 'linkLabelField' },
-      { id: 'node-size-field',event: 'change', field: 'nodeSizeField' },
-      { id: 'defaultNodeSizeInput', event: 'change', field: 'defaultNodeSize', parser: v=>+v||30 },
-      { id: 'defaultLinkWidthInput',event: 'change', field: 'defaultLinkWidth', parser: parseFloat }
+      { id: 'node-label',         event: 'change', field: 'nodeLabelField' },
+      { id: 'link-label',         event: 'change', field: 'linkLabelField' },
+      { id: 'node-size-field',    event: 'change', field: 'nodeSizeField' },
+      { id: 'node-id-field',      event: 'change', field: 'nodeIdField' },
+      { id: 'node-x-field',       event: 'change', field: 'xField' },
+      { id: 'node-y-field',       event: 'change', field: 'yField' },
+      { id: 'defaultNodeSizeInput',  event: 'change', field: 'defaultNodeSize', parser: v=>+v||30 },
+      { id: 'defaultLinkWidthInput', event: 'change', field: 'defaultLinkWidth', parser: parseFloat }
     ];
     mapping.forEach(({id,event,field,parser}) => {
       const elt = document.getElementById(id);
@@ -99,9 +118,12 @@ export class UIManager {
    */
   initFieldSelects() {
     const selects = [
-      { id: 'node-label',     opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeLabelField },
-      { id: 'link-label',     opts: this.graphState.getLinkFields(),  val: this.graphState.globalSettings.linkLabelField },
-      { id: 'node-size-field',opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeSizeField }
+      { id: 'node-label',      opts: this.graphState.getNodeFields(), val: this.graphState.globalSettings.nodeLabelField },
+      { id: 'link-label',      opts: this.graphState.getLinkFields(), val: this.graphState.globalSettings.linkLabelField },
+      { id: 'node-size-field', opts: this.graphState.getNodeFields(), val: this.graphState.globalSettings.nodeSizeField },
+      { id: 'node-id-field',   opts: this.graphState.getNodeFields(), val: this.graphState.globalSettings.nodeIdField },
+      { id: 'node-x-field',    opts: this.graphState.getNodeFields(), val: this.graphState.globalSettings.xField },
+      { id: 'node-y-field',    opts: this.graphState.getNodeFields(), val: this.graphState.globalSettings.yField }
     ];
     selects.forEach(({id,opts,val}) => {
       const sel = document.getElementById(id);
@@ -296,7 +318,10 @@ export class UIManager {
     const selects = [
       { id: 'node-label',     opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeLabelField },
       { id: 'link-label',     opts: this.graphState.getLinkFields(),  val: this.graphState.globalSettings.linkLabelField },
-      { id: 'node-size-field',opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeSizeField }
+      { id: 'node-size-field',opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeSizeField },
+      { id: 'node-id-field',  opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeIdField },
+      { id: 'node-x-field',   opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.xField },
+      { id: 'node-y-field',   opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.yField }
     ];
     selects.forEach(({id,opts,val}) => {
       const sel = document.getElementById(id);
@@ -340,6 +365,9 @@ export class UIManager {
     const nodeLabelSelect = document.getElementById('node-label');
     const linkLabelSelect = document.getElementById('link-label');
     const nodeSizeSelect = document.getElementById('node-size-field');
+    const nodeIdSelect = document.getElementById('node-id-field');
+    const nodeXSelect = document.getElementById('node-x-field');
+    const nodeYSelect = document.getElementById('node-y-field');
     
     if (nodeLabelSelect) {
       this.updateSelectOptions(nodeLabelSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.nodeLabelField);
@@ -351,6 +379,18 @@ export class UIManager {
     
     if (nodeSizeSelect) {
       this.updateSelectOptions(nodeSizeSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.nodeSizeField);
+    }
+
+    if (nodeIdSelect) {
+      this.updateSelectOptions(nodeIdSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.nodeIdField);
+    }
+
+    if (nodeXSelect) {
+      this.updateSelectOptions(nodeXSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.xField);
+    }
+
+    if (nodeYSelect) {
+      this.updateSelectOptions(nodeYSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.yField);
     }
   }
   
@@ -390,6 +430,12 @@ export class UIManager {
       if (type === "delete_node" || type === "delete_link") {
         this.formManager.hideAllForms();
       }
+
+      // ← Nouveau : après add_field ou remove_field, rafraîchir les dropdowns
+      if (type === "add_field" || type === "remove_field") {
+        this.formManager.refreshForms();
+        this.updateAllFieldSelects();
+      }
     });
   }
   
@@ -419,9 +465,12 @@ export class UIManager {
  */
 export function syncGlobalSettingsUI(state) {
   const entries = [
-    { id:'node-label',     value: state.globalSettings.nodeLabelField,  opts: state.getNodeFields() },
-    { id:'link-label',     value: state.globalSettings.linkLabelField,  opts: state.getLinkFields() },
-    { id:'node-size-field',value: state.globalSettings.nodeSizeField,  opts: state.getNodeFields() },
+    { id:'node-label',            value: state.globalSettings.nodeLabelField,  opts: state.getNodeFields() },
+    { id:'link-label',            value: state.globalSettings.linkLabelField,  opts: state.getLinkFields() },
+    { id:'node-size-field',       value: state.globalSettings.nodeSizeField,  opts: state.getNodeFields() },
+    { id:'node-id-field',         value: state.globalSettings.nodeIdField,    opts: state.getNodeFields() },
+    { id:'node-x-field',          value: state.globalSettings.xField,          opts: state.getNodeFields() },
+    { id:'node-y-field',          value: state.globalSettings.yField,          opts: state.getNodeFields() },
     { id:'defaultNodeSizeInput',  value: state.globalSettings.defaultNodeSize },
     { id:'defaultLinkWidthInput', value: state.globalSettings.defaultLinkWidth }
   ];

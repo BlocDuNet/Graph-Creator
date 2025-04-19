@@ -56,17 +56,41 @@ export class InteractionManager {
       })
       .on('end', (event, d) => {
         if (!event.active) this.renderer.simulation.alphaTarget(0);
-        if (d.initialPosition &&
-            (d.x !== d.initialPosition.x || d.y !== d.initialPosition.y)) {
-          performAction({
-            type: "move_node",
-            data: { 
-              nodeId: d.id, 
-              from: { ...d.initialPosition }, 
-              to: { x: d.x, y: d.y },
-              label: `Move node ${d.name}`
-            }
-          });
+        const pos0 = d.initialPosition;
+        if (pos0 && (d.x !== pos0.x || d.y !== pos0.y)) {
+          const { xField, yField } = this.graphState.globalSettings;
+          // mise à jour du champ X personnalisé
+          if (xField) {
+            const oldX = pos0.x;
+            const newX = d.x;
+            performAction({
+              type: "update_node",
+              data: {
+                nodeId: d.id,
+                field: xField,
+                from: oldX,
+                to: newX,
+                label: `Move node ${xField} (${oldX} → ${newX})`
+              }
+            });
+            d[xField] = newX;
+          }
+          // mise à jour du champ Y personnalisé
+          if (yField) {
+            const oldY = pos0.y;
+            const newY = d.y;
+            performAction({
+              type: "update_node",
+              data: {
+                nodeId: d.id,
+                field: yField,
+                from: oldY,
+                to: newY,
+                label: `Move node ${yField} (${oldY} → ${newY})`
+              }
+            });
+            d[yField] = newY;
+          }
         }
         delete d.initialPosition;
       });

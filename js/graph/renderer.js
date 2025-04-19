@@ -26,12 +26,13 @@ export class GraphRenderer {
    * Crée la simulation de forces D3
    */
   createForceSimulation() {
+    const idField = this.graphState.globalSettings.nodeIdField;
     const { linkStrength, linkDistance, chargeStrength, centerStrength } = graphConfig.forces;
     
     console.log(`Creating force simulation with: linkStrength=${linkStrength}, linkDistance=${linkDistance}, chargeStrength=${chargeStrength}, centerStrength=${centerStrength}`);
     
     const forceLink = d3.forceLink()
-      .id(d => d.id)
+      .id(d => d[idField] ?? d.id)     // ← use custom id field
       .distance(linkDistance)
       .strength(linkStrength);
       
@@ -142,25 +143,26 @@ export class GraphRenderer {
    * Calcule la courbure des liens
    */
   calculateLinkCurvature(source, target, linkId) {
+    const idField = this.graphState.globalSettings.nodeIdField;
     const { baseCurvature, loopCurvature, curvatureStep } = graphConfig.linkStyle;
     
     // Cas spécial pour les auto-liens (boucles)
-    if (source.id === target.id) {
+    if (source[idField] === target[idField]) {
       return loopCurvature;
     }
     
     // Déterminer la direction de ce lien
-    const isForward = source.id < target.id;
+    const isForward = source[idField] < target[idField];
     
     // Trouver tous les liens entre cette paire de nœuds
     const parallelLinks = this.graphState.links.filter(l => 
-      (l.source.id === source.id && l.target.id === target.id) || 
-      (l.source.id === target.id && l.target.id === source.id)
+      (l.source[idField] === source[idField] && l.target[idField] === target[idField]) || 
+      (l.source[idField] === target[idField] && l.target[idField] === source[idField])
     );
     
     // Séparer en deux groupes selon la direction
-    const forwardLinks = parallelLinks.filter(l => l.source.id < l.target.id);
-    const backwardLinks = parallelLinks.filter(l => l.source.id > l.target.id);
+    const forwardLinks = parallelLinks.filter(l => l.source[idField] < l.target[idField]);
+    const backwardLinks = parallelLinks.filter(l => l.source[idField] > l.target[idField]);
     
     // Si c'est le seul lien entre ces nœuds, appliquer la courbure de base
     if (parallelLinks.length === 1) {
@@ -182,7 +184,7 @@ export class GraphRenderer {
    * Met à jour les nœuds du graphe
    */
   updateNodes() {
-    const { nodeLabelField, nodeSizeField, defaultNodeSize } = this.graphState.globalSettings;
+    const { nodeLabelField, nodeSizeField, defaultNodeSize, nodeIdField } = this.graphState.globalSettings;
     
     // Sélection des nœuds avec correspondance de données
     const nodeSelection = this.g.selectAll('.node')
@@ -205,7 +207,11 @@ export class GraphRenderer {
            ? (Number(d[nodeSizeField]) + 5) 
            : 35)
       .attr('dy', 5)
-      .text(d => nodeLabelField === '' ? '' : (d[nodeLabelField] || ""));
+      .text(d => {
+        if (nodeLabelField) return d[nodeLabelField] || "";
+        // fallback to id‐field if label blank
+        return nodeIdField ? (d[nodeIdField] || "") : "";
+      });
     
     // Fusion et mise à jour des nœuds existants
     const merged = nodeSelection.merge(nodeEnter)
@@ -219,7 +225,10 @@ export class GraphRenderer {
     
     // Mise à jour du texte
     merged.select('text')
-      .text(d => nodeLabelField === '' ? '' : (d[nodeLabelField] || ""));
+      .text(d => {
+        if (nodeLabelField) return d[nodeLabelField] || "";
+        return nodeIdField ? (d[nodeIdField] || "") : "";
+      });
     
     // Suppression des nœuds qui ne sont plus dans les données
     nodeSelection.exit().remove();
@@ -231,6 +240,7 @@ export class GraphRenderer {
    * Met à jour les liens du graphe
    */
   updateLinks() {
+    const idField = this.graphState.globalSettings.nodeIdField;
     const { linkLabelField, defaultLinkWidth } = this.graphState.globalSettings;
     const { curvedLinks } = graphConfig.linkStyle;
     
@@ -244,7 +254,7 @@ export class GraphRenderer {
     // Précalculer les courbures pour chaque lien
     this.graphState.links.forEach(link => {
       // Vérifier si c'est un auto-lien
-      link.isLoop = link.source.id === link.target.id;
+      link.isLoop = link.source[idField] === link.target[idField];
       link.curvature = this.calculateLinkCurvature(link.source, link.target, link.id);
       
       // Toujours remplacer la largeur par la valeur par défaut si non définie
@@ -254,7 +264,11 @@ export class GraphRenderer {
     });
     
     // Sélectionner les liens avec un ID unique pour chaque lien
-    const getLinkId = link => `${link.source.id}-${link.target.id}-${link.id}`;
+    const getLinkId = link =>
+      `${link.source[idField] ?? link.source.id}` +
+      `-${link.target[idField] ?? link.target.id}` +
+      `-${link.id}`;              // ← include custom id in key
+
     const linkSelection = this.g.selectAll('.link').data(this.graphState.links, getLinkId);
     
     // Créer les nouveaux liens
@@ -295,11 +309,14 @@ export class GraphRenderer {
    * Met à jour les labels des liens
    */
   updateLinkLabels() {
+    const idField = this.graphState.globalSettings.nodeIdField;
     const { linkLabelField } = this.graphState.globalSettings;
     
     // Sélectionner les labels des liens
     const linkLabels = this.g.selectAll('.link-label')
-      .data(this.graphState.links, d => `${d.source.id}-${d.target.id}`);
+      .data(this.graphState.links, d =>
+        `${d.source[idField] ?? d.source.id}-${d.target[idField] ?? d.target.id}`
+      );  // ← use custom idField for positioning labels
     
     // Créer les nouveaux labels
     const labelEnter = linkLabels.enter()
@@ -466,6 +483,15 @@ export class GraphRenderer {
    * Met à jour l'affichage complet du graphe
    */
   updateGraph() {
+    // apply user‐selected x/y fields before simulation
+    const { xField, yField } = this.graphState.globalSettings;
+    if (xField || yField) {
+      this.graphState.nodes.forEach(d => {
+        if (xField && d[xField] != null) d.x = +d[xField];
+        if (yField && d[yField] != null) d.y = +d[yField];
+      });
+    }
+
     // Créer les définitions de marqueurs
     this.createArrowDefinitions();
     

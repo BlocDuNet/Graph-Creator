@@ -230,27 +230,44 @@
                         </div>
                         <!-- Labels et tailles -->
                         <div class="col-md-6">
+                          <!-- Labels et tailles -->
                           <div class="row mb-2">
-                            <div class="col-sm-6">
-                              <label for="node-label" class="small">Label noeud:</label>
+                            <div class="col-sm-4">
+                              <label for="node-label" class="small">Label nœud :</label>
                               <select id="node-label" class="form-control form-control-sm"></select>
                             </div>
                             <div class="col-sm-6">
-                              <label for="link-label" class="small">Label lien:</label>
+                              <label for="link-label" class="small">Label lien :</label>
                               <select id="link-label" class="form-control form-control-sm"></select>
                             </div>
                           </div>
-                          <div class="row">
+                          <!-- Champs ID/X/Y -->
+                          <div class="row mb-2">
                             <div class="col-sm-4">
-                              <label for="node-size-field" class="small">Champ de taille:</label>
+                              <label for="node-id-field" class="small">Champ ID :</label>
+                              <select id="node-id-field" class="form-control form-control-sm"></select>
+                            </div>
+                            <div class="col-sm-4">
+                              <label for="node-x-field" class="small">Champ X :</label>
+                              <select id="node-x-field" class="form-control form-control-sm"></select>
+                            </div>
+                            <div class="col-sm-4">
+                              <label for="node-y-field" class="small">Champ Y :</label>
+                              <select id="node-y-field" class="form-control form-control-sm"></select>
+                            </div>
+                          </div>
+                          <!-- Taille par défaut et largeur lien -->
+                          <div class="row mb-2">
+                            <div class="col-sm-4">
+                              <label for="node-size-field" class="small">Champ de taille :</label>
                               <select id="node-size-field" class="form-control form-control-sm"></select>
                             </div>
                             <div class="col-sm-4">
-                              <label for="defaultNodeSizeInput" class="small">Taille par défaut:</label>
+                              <label for="defaultNodeSizeInput" class="small">Taille des nœuds (par défaut) :</label>
                               <input type="number" id="defaultNodeSizeInput" class="form-control form-control-sm" value="30" min="0.1" step="0.1">
                             </div>
                             <div class="col-sm-4">
-                              <label for="defaultLinkWidthInput" class="small">Largeur lien:</label>
+                              <label for="defaultLinkWidthInput" class="small">Largeur des liens (par défaut) :</label>
                               <input type="number" id="defaultLinkWidthInput" class="form-control form-control-sm" 
                                      value="2" min="0.1" max="20" step="0.1"
                                      title="Entrez une valeur entre 0.1 et 20">
