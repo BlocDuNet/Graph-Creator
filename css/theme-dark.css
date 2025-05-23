@@ -1,0 +1,46 @@
+:root {
+  --color-bg: #181a1b;
+  --color-node-fill: #232b36ee;         /* bleu-gris foncé, opaque */
+  --color-node-stroke: #444c56;
+  --color-link: #b0bec5;
+  --color-link-selected: #ff5252;
+  --color-node-selected: #42a5f5;
+  --color-node-highlight: #ffd600;
+  --color-link-highlight: #ffd600;
+  --color-panel-bg: #181a1b;
+  --color-panel-header: #23272b;
+  --color-panel-border: #333a44;
+  --color-form-bg: #23272b;
+  --color-form-border: #333a44;
+  --color-form-label: #e0e0e0;
+  --color-form-input: #444c56;
+  --color-form-input-bg: #23272b;
+  --color-form-input-focus: #42a5f5;
+  --color-cluster-0: #ffb300;
+  --color-cluster-1: #1976d2;
+  --color-cluster-2: #388e3c;
+  --color-cluster-3: #d32f2f;
+
+  /* Contraste et lisibilité */
+  --color-card-bg: #23272b;              /* plus clair que le fond général */
+  --color-card-header-bg: #262b31;       /* un peu plus clair pour header */
+  --color-card-text: #f1f1f1;
+  --color-modal-bg: #23272b;
+  --color-modal-text: #f1f1f1;
+  --color-overlay-bg: rgba(24,26,27,0.85);
+  --color-table-bg: #23272b;
+  --color-table-header-bg: #262b31;
+  --color-table-border: #333a44;
+  --color-table-text: #f1f1f1;
+  --color-section-bg: #23272b;
+  --color-section-bg-hover: #31363b;
+  --color-section-sub-bg: #262b31;
+  --color-tab-active-bg: #31363b;
+  --color-tab-active-text: #fff;
+  --color-tab-inactive-bg: #23272b;
+  --color-tab-inactive-text: #b0bec5;
+  --color-btn-bg: #31363b;
+  --color-btn-bg-hover: #3a4047;
+  --color-btn-text: #f1f1f1;
+  --color-bg-light: #23272b; /* Pour .bg-light Bootstrap */
+}

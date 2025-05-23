@@ -1,0 +1,43 @@
+:root {
+  --color-bg: #fff;
+  --color-node-fill: #222c3a; /* noir/gris foncé pour bon contraste */
+  --color-node-stroke: #222c3a; /* gris foncé pour bon contraste */
+  --color-link: #222c3a;
+  --color-link-selected: #e53935;
+  --color-node-selected: #1976d2;
+  --color-node-highlight: #ff9800;
+  --color-link-highlight: #ff9800;
+  --color-panel-bg: #f8f9fa;
+  --color-panel-header: #f8f9fa;
+  --color-panel-border: #cfd8dc;
+  --color-form-bg: #f9f9f9;
+  --color-form-border: #cfd8dc;
+  --color-form-label: #222c3a;
+  --color-form-input: #b0bec5;
+  --color-form-input-bg: #fff;
+  --color-form-input-focus: #1976d2;
+  --color-cluster-0: #f28e2b;
+  --color-cluster-1: #4e79a7;
+  --color-cluster-2: #59a14f;
+  --color-cluster-3: #e15759;
+
+  /* Spécifique clair */
+  --color-card-bg: #fff;
+  --color-card-header-bg: #f8f9fa;
+  --color-card-text: #222c3a;
+  --color-modal-bg: #fff;
+  --color-modal-text: #222c3a;
+  --color-overlay-bg: rgba(255,255,255,0.85);
+  --color-table-bg: #fff;
+  --color-table-header-bg: #f8f9fa;
+  --color-table-border: #cfd8dc;
+  --color-table-text: #222c3a;
+  --color-section-bg: #f8f9fa;
+  --color-tab-active-bg: #fff;
+  --color-tab-active-text: #222c3a;
+  --color-tab-inactive-bg: #f8f9fa;
+  --color-tab-inactive-text: #4e79a7;
+  --color-btn-bg: #f8f9fa;
+  --color-btn-bg-hover: #e9ecef;
+  --color-btn-text: #222c3a;
+}
