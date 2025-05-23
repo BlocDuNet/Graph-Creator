@@ -3,14 +3,13 @@
 ====================================== */
 body {
   overflow: hidden;
-  background: var(--color-bg);
 }
 
 /* ======================================
    2. SVG ELEMENTS
 ====================================== */
 svg {
-  background-color: var(--color-bg);
+  background-color: #FFF;
   cursor: default;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -20,18 +19,15 @@ svg {
 
 /* Node styles */
 .node {
-  stroke: var(--color-node-stroke);
+  stroke: #ffffff00;
   stroke-width: 2px;
-  fill: var(--color-node-fill);
-}
-.node text {
-  fill: var(--color-node-text, var(--color-card-text));
+  fill: #000000bb;
 }
 
 /* Link styles */
 .link {
   fill: none;
-  stroke: var(--color-link);
+  stroke: #000;
   stroke-linecap: round;
   stroke-linejoin: round;
   cursor: pointer;
@@ -41,7 +37,7 @@ svg {
 }
 
 .link.selected {
-  stroke: var(--color-link-selected) !important;
+  stroke: #f00 !important;
 }
 
 /* Link labels */
@@ -59,34 +55,34 @@ svg {
 
 /* Selection styles */
 .selected {
-  stroke: var(--color-node-selected);
+  stroke: #0077ff;
 }
 
 .selected text {
   font-size: 2em;
-  fill: var(--color-node-selected-text, var(--color-node-selected));
+  fill: #0077ff;
 }
 
 .selected .link-label {
   font-size: 2em;
-  fill: var(--color-node-selected);
+  fill: #0077ff;
 }
 
 /* Highlighted styles */
 .highlighted {
-  stroke: var(--color-node-highlight) !important;
-  fill: var(--color-node-highlight) !important;
+  stroke: orange !important;
+  fill: orange !important;
 }
 
 .highlighted-link {
-  stroke: var(--color-link-highlight) !important;
+  stroke: orange !important;
 }
 
 /* Cluster styles */
-.cluster-0 { fill: var(--color-cluster-0); }
-.cluster-1 { fill: var(--color-cluster-1); }
-.cluster-2 { fill: var(--color-cluster-2); }
-.cluster-3 { fill: var(--color-cluster-3); }
+.cluster-0 { fill: #f28e2b; }
+.cluster-1 { fill: #4e79a7; }
+.cluster-2 { fill: #59a14f; }
+.cluster-3 { fill: #e15759; }
 /* … vous pouvez ajouter plus de classes cluster-N … */
 
 /* ======================================
@@ -101,8 +97,6 @@ svg {
   height: auto;
   max-height: 60vh;
   transition: all 0.3s ease;
-  background: var(--color-panel-bg);
-  color: var(--color-card-text);
 }
 
 #bottom-panel.collapsed {
@@ -146,30 +140,17 @@ svg {
 .table-container {
   max-width: 650px;
   margin: 0 auto;
-  background: var(--color-table-bg);
-  color: var(--color-table-text);
 }
 
 table {
   border-collapse: collapse;
   width: 100%;
-  background: var(--color-table-bg);
-  color: var(--color-table-text);
-  border-color: var(--color-table-border);
 }
 
 th, td {
-  border: 1px solid var(--color-table-border);
+  border: 1px solid black;
   padding: 8px;
   text-align: left;
-  background: var(--color-table-bg);
-  color: var(--color-table-text);
-}
-
-/* Table header */
-th {
-  background: var(--color-table-header-bg);
-  color: var(--color-table-text);
 }
 
 /* History select */
@@ -183,20 +164,12 @@ th {
 /* Collapsible sections */
 .section-header {
   padding: 0.5rem;
-  background-color: var(--color-section-bg, var(--color-panel-header));
-  border-bottom: 1px solid var(--color-panel-border);
-  color: var(--color-card-text);
-  transition: background 0.2s;
-}
-
-.section-header:hover,
-.section-header:focus {
-  background-color: var(--color-section-bg-hover, #31363b);
-  color: var(--color-card-text);
+  background-color: #f8f9fa;
+  border-bottom: 1px solid rgba(0,0,0,.125);
 }
 
 .section-header .btn-link {
-  color: var(--color-card-text);
+  color: #343a40;
   text-decoration: none;
   font-weight: 500;
   width: 100%;
@@ -207,7 +180,7 @@ th {
 .section-header .btn-link:hover,
 .section-header .btn-link:focus {
   text-decoration: none;
-  color: var(--color-card-text);
+  color: #007bff;
 }
 
 .section-header .btn-link::before {
@@ -222,31 +195,12 @@ th {
   transform: rotate(90deg);
 }
 
-/* Onglets du menu principal */
-.nav-tabs .nav-link {
-  background: var(--color-tab-inactive-bg, var(--color-panel-header));
-  color: var(--color-tab-inactive-text, #b0bec5);
-  border: none;
-  border-radius: 0.25rem 0.25rem 0 0;
-  transition: background 0.2s, color 0.2s;
-}
-.nav-tabs .nav-link.active,
-.nav-tabs .nav-link:focus,
-.nav-tabs .nav-link:hover {
-  background: var(--color-tab-active-bg, #31363b);
-  color: var(--color-tab-active-text, #fff);
-  border: none;
-}
-
 /* Cards */
-.card,
 .accordion .card {
   height: 100%;
   margin-bottom: 0.25rem;
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  background: var(--color-card-bg);
-  color: var(--color-card-text);
 }
 
 .accordion .card-body {
@@ -254,10 +208,9 @@ th {
 }
 
 .card-header.section-header {
-  background-color: var(--color-card-header-bg);
-  border-bottom: 1px solid var(--color-panel-border);
+  background-color: #f8f9fa;
+  border-bottom: 1px solid rgba(0,0,0,.125);
   padding: 0.5rem 1rem;
-  color: var(--color-card-text);
 }
 
 /* Forms */
@@ -269,13 +222,11 @@ th {
 }
 
 .form-container {
-  border: 1px solid var(--color-form-border);
+  border: 1px solid #e9ecef;
   border-radius: 4px;
   padding: 0.5rem;
   min-height: 100px;
   position: relative;
-  background: var(--color-form-bg);
-  color: var(--color-form-label);
 }
 
 /* Common form elements */
@@ -286,29 +237,15 @@ button, .btn {
   margin-bottom: 5px;
   padding: 0.25rem 0.5rem;
   transition: all 0.2s ease;
-  background: var(--color-btn-bg, var(--color-panel-bg));
-  color: var(--color-btn-text, var(--color-card-text));
-  border: 1px solid var(--color-form-input);
-}
-
-button:hover, .btn:hover {
-  background: var(--color-btn-bg-hover, var(--color-panel-header));
-  color: var(--color-btn-text, var(--color-card-text));
 }
 
 input, select, textarea {
-  border: 1px solid var(--color-form-input);
+  border: 1px solid #ced4da;
   border-radius: 4px;
-  background: var(--color-form-input-bg);
   padding: 0.25rem 0.5rem;
   margin-bottom: 0.5rem;
   width: 100%;
   font-size: 0.9rem;
-  color: var(--color-form-label);
-}
-
-input:focus, select:focus, textarea:focus {
-  outline: 1px solid var(--color-form-input-focus);
 }
 
 input[type="number"] {
@@ -348,10 +285,10 @@ input[type="checkbox"] {
 .section-title, .edit-title, h5 {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--color-form-label);
+  color: #495057;
   margin-bottom: 0.75rem;
   padding-bottom: 0.35rem;
-  border-bottom: 1px solid var(--color-form-border);
+  border-bottom: 1px solid #e9ecef;
 }
 
 /* Node/Link forms */
@@ -366,9 +303,9 @@ input[type="checkbox"] {
   flex-wrap: wrap;
   margin-top: 0;
   padding: 1rem;
-  border: 1px solid var(--color-form-border);
+  border: 1px solid #dee2e6;
   border-radius: 4px;
-  background-color: var(--color-form-bg);
+  background-color: #f9f9f9;
 }
 
 #node-form:not(.hidden) div,
@@ -407,7 +344,7 @@ input[type="checkbox"] {
   height: 24px;
   line-height: 1;
   background: #f1f1f1;
-  border: 1px solid var(--color-form-input);
+  border: 1px solid #ced4da;
   border-radius: 3px;
 }
 
@@ -416,7 +353,7 @@ input[type="checkbox"] {
   display: flex;
   align-items: center;
   margin-bottom: 20px;
-  background-color: var(--color-panel-header);
+  background-color: #f8f9fa;
   border-radius: 50px;
   padding: 5px 15px;
   justify-content: space-between;
@@ -467,11 +404,11 @@ input[type="checkbox"] {
 }
 
 input:checked + .slider {
-  background-color: var(--color-form-input-focus);
+  background-color: #2196F3;
 }
 
 input:focus + .slider {
-  box-shadow: 0 0 1px var(--color-form-input-focus);
+  box-shadow: 0 0 1px #2196F3;
 }
 
 input:checked + .slider:before {
@@ -516,13 +453,6 @@ input:checked + .slider:before {
   display: block;
   text-align: right;
   color: #6c757d;
-}
-
-/* Correction pour la sous-section "Paramètres de courbure" */
-#curvature-controls .card-header,
-#curvature-controls .bg-light {
-  background-color: var(--color-section-sub-bg, #262b31) !important;
-  color: var(--color-card-text) !important;
 }
 
 /* Force Parameters */
@@ -578,8 +508,8 @@ input:checked + .slider:before {
 
 /* AI Request Tab */
 #tab4 button {
-  background-color: var(--color-panel-header);
-  border: 1px solid var(--color-form-input);
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
 }
 
 #tab4 button:hover {
@@ -601,25 +531,18 @@ input:checked + .slider:before {
   overflow: auto;
 }
 
-/* Correction Bootstrap .bg-light pour le thème sombre */
-.bg-light {
-  background-color: var(--color-bg-light, #f8f9fa) !important;
-  color: var(--color-card-text, #222c3a) !important;
-}
-
 /* Confirmation personnalisée */
 .confirm-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: var(--color-overlay-bg);
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
 .confirm-modal {
-  background: var(--color-modal-bg);
-  color: var(--color-modal-text);
+  background: white;
   padding: 1rem;
   border-radius: 4px;
   text-align: center;
