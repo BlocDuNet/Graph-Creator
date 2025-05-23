@@ -13,6 +13,8 @@
       src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"
     ></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Ajout du lien de thème dynamique -->
+    <!-- <link id="theme-css" rel="stylesheet" href="css/theme-default.css" /> -->
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
@@ -41,6 +43,9 @@
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="#tab4" data-toggle="tab">AI Request</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#tab_theme" data-toggle="tab">Thème</a>
               </li>
             </ul>
             <span class="arrow arrow-down"></span>
@@ -133,6 +138,11 @@
             </div>
             <div class="tab-pane fade show active" id="tab1">
               <!-- Actions tab - organiser en sections repliables -->
+              <!-- Déplacement du sélecteur de thème ici -->
+              <div id="theme-selector-container" class="mb-2" style="text-align:right;">
+                <label for="theme-selector" style="margin-right:8px;">Thème :</label>
+                <select id="theme-selector" style="max-width:180px;display:inline-block;"></select>
+              </div>
               <div class="accordion" id="actionsAccordion">
                 <!-- Section 1: Undo/Redo -->
                 <div class="card">
@@ -558,6 +568,162 @@
                 </div>
               </div>
             </div>
+            <div class="tab-pane fade" id="tab_theme">
+              <div class="card">
+                <div class="card-header section-header">Personnalisation du thème</div>
+                <div class="card-body">
+                  <form id="theme-customizer-form">
+                    <div id="themeAccordion" class="accordion">
+
+                      <!-- Section Fond & Panneaux -->
+                      <div class="card mb-2">
+                        <div class="card-header section-header" id="headingThemeFond">
+                          <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseThemeFond"
+                            aria-expanded="true" aria-controls="collapseThemeFond">Fond & Panneaux</button>
+                        </div>
+                        <div id="collapseThemeFond" class="collapse show" aria-labelledby="headingThemeFond" data-parent="#themeAccordion">
+                          <div class="card-body">
+                            <div class="row mb-3">
+                              <div class="col-md-4">
+                                <label for="color-bg">Fond général</label>
+                                <input type="color" id="color-bg" name="color-bg">
+                              </div>
+                              <div class="col-md-4">
+                                <label for="color-panel-bg">Fond panneau</label>
+                                <input type="color" id="color-panel-bg" name="color-panel-bg">
+                              </div>
+                              <div class="col-md-4">
+                                <label for="color-panel-header">Fond header panneau</label>
+                                <input type="color" id="color-panel-header" name="color-panel-header">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Section Nœuds & Liens -->
+                      <div class="card mb-2">
+                        <div class="card-header section-header" id="headingThemeNodes">
+                          <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseThemeNodes"
+                            aria-expanded="false" aria-controls="collapseThemeNodes">Nœuds & Liens</button>
+                        </div>
+                        <div id="collapseThemeNodes" class="collapse" aria-labelledby="headingThemeNodes" data-parent="#themeAccordion">
+                          <div class="card-body">
+                            <div class="row mb-3">
+                              <div class="col-md-3">
+                                <label for="color-node-fill">Remplissage nœud</label>
+                                <input type="color" id="color-node-fill" name="color-node-fill">
+                              </div>
+                              <div class="col-md-3">
+                                <label for="color-node-stroke">Contour nœud</label>
+                                <input type="color" id="color-node-stroke" name="color-node-stroke">
+                              </div>
+                              <div class="col-md-3">
+                                <label for="color-link">Couleur lien</label>
+                                <input type="color" id="color-link" name="color-link">
+                              </div>
+                              <div class="col-md-3">
+                                <label for="color-link-selected">Lien sélectionné</label>
+                                <input type="color" id="color-link-selected" name="color-link-selected">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Section Texte & Sélection -->
+                      <div class="card mb-2">
+                        <div class="card-header section-header" id="headingThemeText">
+                          <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseThemeText"
+                            aria-expanded="false" aria-controls="collapseThemeText">Texte & Sélection</button>
+                        </div>
+                        <div id="collapseThemeText" class="collapse" aria-labelledby="headingThemeText" data-parent="#themeAccordion">
+                          <div class="card-body">
+                            <div class="row mb-3">
+                              <div class="col-md-4">
+                                <label for="color-node-text">Texte nœud</label>
+                                <input type="color" id="color-node-text" name="color-node-text">
+                              </div>
+                              <div class="col-md-4">
+                                <label for="color-node-selected-text">Texte sélectionné</label>
+                                <input type="color" id="color-node-selected-text" name="color-node-selected-text">
+                              </div>
+                              <div class="col-md-4">
+                                <label for="color-node-selected">Fond sélectionné</label>
+                                <input type="color" id="color-node-selected" name="color-node-selected">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Section Cartes & Modals -->
+                      <div class="card mb-2">
+                        <div class="card-header section-header" id="headingThemeCards">
+                          <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseThemeCards"
+                            aria-expanded="false" aria-controls="collapseThemeCards">Cartes & Modals</button>
+                        </div>
+                        <div id="collapseThemeCards" class="collapse" aria-labelledby="headingThemeCards" data-parent="#themeAccordion">
+                          <div class="card-body">
+                            <div class="row mb-3">
+                              <div class="col-md-4">
+                                <label for="color-card-bg">Fond carte</label>
+                                <input type="color" id="color-card-bg" name="color-card-bg">
+                              </div>
+                              <div class="col-md-4">
+                                <label for="color-card-header-bg">Fond header carte</label>
+                                <input type="color" id="color-card-header-bg" name="color-card-header-bg">
+                              </div>
+                              <div class="col-md-4">
+                                <label for="color-card-text">Texte carte</label>
+                                <input type="color" id="color-card-text" name="color-card-text">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Section Boutons & Formulaires -->
+                      <div class="card mb-2">
+                        <div class="card-header section-header" id="headingThemeButtons">
+                          <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseThemeButtons"
+                            aria-expanded="false" aria-controls="collapseThemeButtons">Boutons & Formulaires</button>
+                        </div>
+                        <div id="collapseThemeButtons" class="collapse" aria-labelledby="headingThemeButtons" data-parent="#themeAccordion">
+                          <div class="card-body">
+                            <div class="row mb-3">
+                              <div class="col-md-3">
+                                <label for="color-btn-bg">Fond bouton</label>
+                                <input type="color" id="color-btn-bg" name="color-btn-bg">
+                              </div>
+                              <div class="col-md-3">
+                                <label for="color-btn-bg-hover">Bouton hover</label>
+                                <input type="color" id="color-btn-bg-hover" name="color-btn-bg-hover">
+                              </div>
+                              <div class="col-md-3">
+                                <label for="color-btn-text">Texte bouton</label>
+                                <input type="color" id="color-btn-text" name="color-btn-text">
+                              </div>
+                              <div class="col-md-3">
+                                <label for="color-form-bg">Fond formulaire</label>
+                                <input type="color" id="color-form-bg" name="color-form-bg">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                    <div class="mt-3">
+                      <button type="button" id="reset-theme" class="btn btn-secondary">Réinitialiser</button>
+                      <button type="button" id="export-theme" class="btn btn-primary ml-2">Exporter thème</button>
+                      <button type="button" id="import-theme-btn" class="btn btn-primary ml-2">Importer thème</button>
+                      <input type="file" id="import-theme-file" accept=".json" style="display:none;">
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -565,5 +731,7 @@
     <script src="js/script.js"></script>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script type="module" src="js/app.js"></script>
+    <!-- Ajout du script de gestion des thèmes en module -->
+    <script type="module" src="js/theme-manager.js"></script>
   </body>
 </html>
