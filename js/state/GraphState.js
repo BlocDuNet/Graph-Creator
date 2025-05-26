@@ -34,7 +34,7 @@ export class GraphState {
       xField: "x",
       yField: "y",
       defaultNodeSize: 30,
-      defaultLinkWidth: 2,
+      defaultLinkWidth: 5,
       defaultFocusField: "name"
     };
     
@@ -51,8 +51,8 @@ export class GraphState {
     
     // Créer les liens avec références directes
     const linksData = [
-      { id: '1', name: 'Link1', description: 'Description1', source: '1', target: '2', width: 2 },
-      { id: '2', name: 'Link2', description: 'Description2', source: '2', target: '3', width: 2 }
+      { id: '1', name: 'Link1', description: 'Description1', source: '1', target: '2', width: this.globalSettings.defaultLinkWidth },
+      { id: '2', name: 'Link2', description: 'Description2', source: '2', target: '3', width: this.globalSettings.defaultLinkWidth }
     ];
     
     // Convertir les références d'ID en références d'objets

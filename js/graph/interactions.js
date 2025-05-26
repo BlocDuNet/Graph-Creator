@@ -240,8 +240,9 @@ export class InteractionManager {
    * Gère le double-clic sur le SVG
    */
   handleSvgDblClick(event) {
+    // Utiliser d3.pointer au lieu de event.clientX/clientY pour obtenir les coordonnées correctes
     const transform = d3.zoomTransform(this.svg.node());
-    const point = transform.invert([event.clientX, event.clientY]);
+    const point = transform.invert(d3.pointer(event));
     const newNode = this.graphState.createNode(point[0], point[1]);
     
     // Sélectionner explicitement le nouveau nœud
@@ -261,17 +262,23 @@ export class InteractionManager {
    */
   handleSvgMouseDown(event) {
     if (event.ctrlKey && this.graphState.selectedNode) {
-      const transform = d3.zoomTransform(this.svg.node());
-      const point = transform.invert(d3.pointer(event));
+      // Utiliser d3.pointer pour obtenir les coordonnées correctes dans l'espace SVG
+      const svgElement = this.svg.node();
+      const point = d3.pointer(event, svgElement);
+      
+      // Appliquer la transformation inverse du zoom/pan si elle existe
+      const transform = d3.zoomTransform(svgElement);
+      const adjustedPoint = transform.invert(point);
+      
       const defaultNodeSize = this.graphState.globalSettings.defaultNodeSize;
       
       // Vérifier s'il existe déjà un nœud à cet endroit
       const existing = this.graphState.nodes.find(node => 
-        Math.hypot(point[0] - node.x, point[1] - node.y) < defaultNodeSize
+        Math.hypot(adjustedPoint[0] - node.x, adjustedPoint[1] - node.y) < defaultNodeSize
       );
       
       if (!existing) {
-        const newNode = this.graphState.createNode(point[0], point[1]);
+        const newNode = this.graphState.createNode(adjustedPoint[0], adjustedPoint[1]);
         this.graphState.createLink(this.graphState.selectedNode, newNode);
         this.renderer.updateGraph();
         
