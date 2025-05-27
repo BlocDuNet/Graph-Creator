@@ -40,6 +40,15 @@ export class GraphState {
     
     // Initialiser les liens après avoir créé les nodes
     this.initializeLinks();
+
+    // -- ajout start --
+    // Mettre nextLinkId juste après le plus grand ID de lien existant
+    const maxId = this.links.reduce((max, l) => {
+      const n = parseInt(l.id, 10);
+      return isNaN(n) ? max : Math.max(max, n);
+    }, 0);
+    this.nextLinkId = maxId + 1;
+    // -- ajout end --
   }
   
   /**
