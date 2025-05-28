@@ -47,19 +47,19 @@ export class EventManager {
 
     // ----- 3) Import/Export de la configuration du graphe -----
     // Export config
-    document.getElementById('export-config')?.addEventListener('click', () => {
-      // reuse existing logic from setupConfigButtons
+    const exportCfgBtn = document.getElementById('export-config');
+    exportCfgBtn?.addEventListener('click', () => {
       const cfg = {
-        linkStrength: graphConfig.forces.linkStrength,
-        linkDistance: graphConfig.forces.linkDistance,
-        chargeStrength: graphConfig.forces.chargeStrength,
-        centerStrength: graphConfig.forces.centerStrength,
-        curvedLinks: graphConfig.linkStyle.curvedLinks,
+        linkStrength:  graphConfig.forces.linkStrength,
+        linkDistance:  graphConfig.forces.linkDistance,
+        chargeStrength:graphConfig.forces.chargeStrength,
+        centerStrength:graphConfig.forces.centerStrength,
+        curvedLinks:   graphConfig.linkStyle.curvedLinks,
         baseCurvature: graphConfig.linkStyle.baseCurvature,
         loopCurvature: graphConfig.linkStyle.loopCurvature,
         curvatureStep: graphConfig.linkStyle.curvatureStep
       };
-      const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(cfg, null,2)], { type:'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'config.json';
@@ -68,8 +68,10 @@ export class EventManager {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     });
+
     // Import config
-    document.getElementById('import-config')?.addEventListener('change', function() {
+    const importCfgInput = document.getElementById('import-config');
+    importCfgInput?.addEventListener('change', function() {
       const file = this.files[0];
       if (!file) return;
       const reader = new FileReader();
@@ -77,32 +79,11 @@ export class EventManager {
         try {
           const data = JSON.parse(e.target.result);
           updateGraphConfig(data, renderer);
-        } catch (err) {
+        } catch(err) {
           console.error('Erreur parsing config:', err);
         }
       };
       reader.readAsText(file);
     });
-
-    // ----- 4) Sélection d’un fichier de config JSON (liste déroulante) -----
-    document.getElementById('json-files')?.addEventListener('change', async function() {
-      const sel = this.value;
-      if (!sel) return;
-      try {
-        const resp = await fetch(graphConfig.paths.configDirectory + sel);
-        const json = await resp.json();
-        updateGraphConfig(json, renderer);
-      } catch (err) {
-        console.error('Chargement config err:', err);
-      }
-    });
-
-    // ----- 5) Wrapping unique de updateGraph (facultatif) -----
-    const orig = renderer.updateGraph.bind(renderer);
-    renderer.updateGraph = () => {
-      // pré-update hooks si besoin…
-      orig();
-      // post-update hooks si besoin…
-    };
   }
 }

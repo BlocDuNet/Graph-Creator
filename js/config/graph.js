@@ -43,6 +43,25 @@ export const graphConfig = {
 };
 
 /**
+ * Charge un fichier de configuration JSON
+ * @param {string} filePath - Chemin du fichier à charger
+ * @returns {Promise<Object>} - Données de configuration JSON
+ */
+async function loadConfigFile(filePath) {
+  try {
+    console.log(`Tentative de chargement du fichier: ${filePath}`);
+    const response = await fetch(filePath);
+    if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+    const jsonObj = await response.json();
+    console.log(`Fichier chargé avec succès: ${filePath}`, jsonObj);
+    return jsonObj;
+  } catch (error) {
+    console.error(`Erreur lors du chargement du fichier ${filePath}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Initialise la liste des fichiers de configuration disponibles
  * @param {Function} updateCallback - Fonction à appeler lors du changement de configuration
  */
@@ -122,25 +141,6 @@ export async function initConfigFilesList(updateCallback) {
     
   } catch (error) {
     console.error('Erreur lors de la récupération des fichiers JSON de configuration:', error);
-  }
-}
-
-/**
- * Charge un fichier de configuration JSON
- * @param {string} filePath - Chemin du fichier à charger
- * @returns {Promise<Object>} - Données de configuration JSON
- */
-async function loadConfigFile(filePath) {
-  try {
-    console.log(`Tentative de chargement du fichier: ${filePath}`);
-    const response = await fetch(filePath);
-    if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
-    const jsonObj = await response.json();
-    console.log(`Fichier chargé avec succès: ${filePath}`, jsonObj);
-    return jsonObj;
-  } catch (error) {
-    console.error(`Erreur lors du chargement du fichier ${filePath}:`, error);
-    throw error;
   }
 }
 
