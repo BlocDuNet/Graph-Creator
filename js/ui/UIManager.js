@@ -3,7 +3,7 @@
  */
 import { undo, redo, jumpToHistory } from '../state/undo_redo.js';
 import { FormManager } from './forms.js';
-import { uiConfig } from '../config/index.js';
+import { WindowEventManager } from '../services/WindowEventManager.js';  // ← import ajouté
 
 export class UIManager {
   constructor(graphState, renderer) {
@@ -39,7 +39,9 @@ export class UIManager {
     this.initHistoryPanel();
     this.initTabPanel();
     this.syncGlobalSettingsUI();
-    this.setupUIUpdateListeners();
+    
+    // 6) Lier tous les écouteurs window centralisés
+    WindowEventManager.bindAll(this);
   }
   
   /**
@@ -81,35 +83,6 @@ export class UIManager {
 
     // Configuration globale
     this.setupGlobalSettingsListeners();
-    
-    // Écouteurs d'événements personnalisés
-    window.addEventListener('undo-requested', () => undo());
-    window.addEventListener('redo-requested', () => redo());
-    window.addEventListener('node-selected', (event) => {
-      console.log("Événement node-selected reçu pour:", event.detail.node?.id);
-      if (event.detail.node) {
-        this.formManager.showNodeForm(event.detail.node);
-      }
-    });
-    window.addEventListener('link-selected', (event) => {
-      console.log("Événement link-selected reçu pour:", event.detail.link?.id);
-      if (event.detail.link) {
-        this.formManager.showLinkForm(event.detail.link);
-      }
-    });
-    
-    // Ajout d'un écouteur explicite pour masquer les formulaires lors d'une désélection
-    window.addEventListener('selection-cleared', () => {
-      console.log("Événement selection-cleared reçu");
-      this.formManager.hideAllForms();
-    });
-    
-    window.addEventListener('node-created', (event) => {
-      console.log("Événement node-created reçu pour:", event.detail.node?.id);
-      if (event.detail.node) {
-        this.formManager.showNodeForm(event.detail.node);
-      }
-    });
   }
   
   /**
@@ -413,51 +386,6 @@ export class UIManager {
     if (nodeYSelect) {
       this.updateSelectOptions(nodeYSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.yField);
     }
-  }
-  
-  /**
-   * Configure les écouteurs pour les mises à jour de l'interface
-   */
-  setupUIUpdateListeners() {
-    // Mise à jour après une action d'historique
-    const updateHistoryUI = () => {
-      this.formManager.refreshForms();
-      this.updateAllFieldSelects();
-    };
-    
-    window.addEventListener('undo-performed', updateHistoryUI);
-    window.addEventListener('redo-performed', updateHistoryUI);
-    
-    // Mise à jour après un import
-    window.addEventListener('graph-imported', (event) => {
-      console.log("Event 'graph-imported' reçu, rafraîchissement des formulaires...");
-      // Forcer le rafraîchissement des formulaires avec les nouveaux champs
-      this.formManager.refreshForms();
-      this.updateAllFieldSelects();
-      this.renderer.updateGraph();
-    });
-    
-    // Mettre à jour les formulaires après application d'une action
-    window.addEventListener('action-applied', (event) => {
-      const type = event.detail?.action?.type;
-
-      if (type === "import_graph") {
-        console.log("Action import_graph détectée, rafraîchissement des formulaires...");
-        this.formManager.refreshForms();
-        this.updateAllFieldSelects();
-      }
-
-      // Nouveau : masquer les formulaires après suppression
-      if (type === "delete_node" || type === "delete_link") {
-        this.formManager.hideAllForms();
-      }
-
-      // ← Nouveau : après add_field ou remove_field, rafraîchir les dropdowns
-      if (type === "add_field" || type === "remove_field") {
-        this.formManager.refreshForms();
-        this.updateAllFieldSelects();
-      }
-    });
   }
   
   /**
