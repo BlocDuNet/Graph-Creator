@@ -10,16 +10,35 @@ export class UIManager {
     this.graphState = graphState;
     this.renderer = renderer;
     
-    // Création du gestionnaire de formulaires
-    this.formManager = new FormManager(graphState, renderer);
+    // 1) Récupérer et stocker toutes les références DOM
+    this.el = {
+      undoBtn:               document.getElementById('undoButton'),
+      redoBtn:               document.getElementById('redoButton'),
+      updateBtn:             document.getElementById('update'),
+      changeLabelBtn:        document.getElementById('changeLabelButton'),
+      addNodeFieldBtn:       document.getElementById('addNodeFieldButton'),
+      addNodeFieldInput:     document.getElementById('addNodeFieldInput'),
+      addLinkFieldBtn:       document.getElementById('addLinkFieldButton'),
+      addLinkFieldInput:     document.getElementById('addLinkFieldInput'),
+      highlightNeighborsBtn: document.getElementById('btn-highlight-neighbors'),
+      clearHighlightsBtn:    document.getElementById('btn-clear-highlights'),
+      highlightHighDegreeBtn:document.getElementById('btn-high-degree'),
+      colorClustersBtn:      document.getElementById('btn-color-clusters'),
+      nodeLabelSelect:       document.getElementById('node-label'),
+      linkLabelSelect:       document.getElementById('link-label'),
+      nodeSizeFieldSelect:   document.getElementById('node-size-field'),
+      defaultNodeSizeInput:  document.getElementById('defaultNodeSizeInput'),
+      defaultLinkWidthInput: document.getElementById('defaultLinkWidthInput'),
+      historySelect:         document.getElementById('historySelect')
+      // …ajouter d’autres références si nécessaire…
+    };
     
-    // Initialisation des écouteurs d'événements
+    // 2) Initialiser
+    this.formManager = new FormManager(graphState, renderer);
     this.initEventListeners();
     this.initHistoryPanel();
     this.initTabPanel();
-    this.syncGlobalSettingsUI();  // remplace initFieldSelects() + setupGlobalSettingsListeners()
-    
-    // Écouteurs d'événements pour les mises à jour de l'interface
+    this.syncGlobalSettingsUI();
     this.setupUIUpdateListeners();
   }
   
@@ -28,10 +47,38 @@ export class UIManager {
    */
   initEventListeners() {
     // Undo/Redo
-    document.getElementById('undoButton')?.addEventListener('click', () => undo());
-    document.getElementById('redoButton')?.addEventListener('click', () => redo());
-    document.getElementById('update')?.addEventListener('click', () => this.renderer.updateGraph());
+    this.el.undoBtn?.addEventListener('click', () => undo());
+    this.el.redoBtn?.addEventListener('click', () => redo());
+    this.el.updateBtn?.addEventListener('click', () => this.renderer.updateGraph());
     
+    // Label reset
+    this.el.changeLabelBtn?.addEventListener('click', () => this.initializeLabels());
+    
+    // Champs dynamiques
+    this.el.addNodeFieldBtn?.addEventListener('click', () => {
+      const name = this.el.addNodeFieldInput.value.trim();
+      if (name) this.formManager.addField(name, 'node');
+    });
+    this.el.addLinkFieldBtn?.addEventListener('click', () => {
+      const name = this.el.addLinkFieldInput.value.trim();
+      if (name) this.formManager.addField(name, 'link');
+    });
+    
+    // Actions avancées
+    this.el.highlightNeighborsBtn?.addEventListener('click', () =>
+      this.renderer.highlightNeighbors(this.graphState.selectedNode)
+    );
+    this.el.clearHighlightsBtn?.addEventListener('click', () => {
+      this.renderer.clearHighlights();
+      this.renderer.updateGraph();
+    });
+    this.el.highlightHighDegreeBtn?.addEventListener('click', () =>
+      this.renderer.highlightHighDegree(2)
+    );
+    this.el.colorClustersBtn?.addEventListener('click', () =>
+      this.renderer.colorClusters()
+    );
+
     // Configuration globale
     this.setupGlobalSettingsListeners();
     
@@ -63,42 +110,6 @@ export class UIManager {
         this.formManager.showNodeForm(event.detail.node);
       }
     });
-    
-    // Initialisation des labels par défaut
-    const changeLabelButton = document.getElementById("changeLabelButton");
-    if (changeLabelButton) {
-      changeLabelButton.addEventListener("click", () => this.initializeLabels());
-    }
-
-    // Ajouter des champs dynamiques
-    const addNodeBtn = document.getElementById('addNodeFieldButton');
-    if (addNodeBtn) {
-      addNodeBtn.addEventListener('click', () => {
-        const name = document.getElementById('addNodeFieldInput')?.value.trim();
-        if (name) this.formManager.addField(name, 'node');
-      });
-    }
-    const addLinkBtn = document.getElementById('addLinkFieldButton');
-    if (addLinkBtn) {
-      addLinkBtn.addEventListener('click', () => {
-        const name = document.getElementById('addLinkFieldInput')?.value.trim();
-        if (name) this.formManager.addField(name, 'link');
-      });
-    }
-
-    document.getElementById('btn-highlight-neighbors')?.addEventListener('click', () => {
-      this.renderer.highlightNeighbors(this.graphState.selectedNode);
-    });
-    document.getElementById('btn-clear-highlights')?.addEventListener('click', () => {
-      this.renderer.clearHighlights();
-      this.renderer.updateGraph();
-    });
-    document.getElementById('btn-high-degree')?.addEventListener('click', () => {
-      this.renderer.highlightHighDegree(2);
-    });
-    document.getElementById('btn-color-clusters')?.addEventListener('click', () => {
-      this.renderer.colorClusters();
-    });
   }
   
   /**
@@ -106,17 +117,13 @@ export class UIManager {
    */
   setupGlobalSettingsListeners() {
     const mapping = [
-      { id: 'node-label',         event: 'change', field: 'nodeLabelField' },
-      { id: 'link-label',         event: 'change', field: 'linkLabelField' },
-      { id: 'node-size-field',    event: 'change', field: 'nodeSizeField' },
-      { id: 'node-id-field',      event: 'change', field: 'nodeIdField' },
-      { id: 'node-x-field',       event: 'change', field: 'xField' },
-      { id: 'node-y-field',       event: 'change', field: 'yField' },
-      { id: 'defaultNodeSizeInput',  event: 'change', field: 'defaultNodeSize', parser: v=>+v||30 },
-      { id: 'defaultLinkWidthInput', event: 'change', field: 'defaultLinkWidth', parser: parseFloat }
+      { elt: this.el.nodeLabelSelect,      event:'change', field:'nodeLabelField' },
+      { elt: this.el.linkLabelSelect,      event:'change', field:'linkLabelField' },
+      { elt: this.el.nodeSizeFieldSelect,  event:'change', field:'nodeSizeField' },
+      { elt: this.el.defaultNodeSizeInput, event:'change', field:'defaultNodeSize', parser: v=>+v||30 },
+      { elt: this.el.defaultLinkWidthInput,event:'change', field:'defaultLinkWidth', parser: parseFloat }
     ];
-    mapping.forEach(({id,event,field,parser}) => {
-      const elt = document.getElementById(id);
+    mapping.forEach(({elt,event,field,parser}) => {
       if (!elt) return;
       elt.addEventListener(event, () => {
         const raw = elt.value;
