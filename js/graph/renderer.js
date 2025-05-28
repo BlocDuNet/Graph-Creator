@@ -533,6 +533,9 @@ export class GraphRenderer {
       this.simulation.alpha(0.3).restart();
     }
     
+    // notifier la mise à jour du graphe
+    window.dispatchEvent(new CustomEvent('graph-updated'));
+    
     return {
       nodeEnter,
       linkEnter,

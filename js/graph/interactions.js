@@ -13,6 +13,10 @@ export class InteractionManager {
     this.initClickHandlers();
     this.initKeyboardHandlers();
     
+    // attacher handlers immédiatement et après chaque updateGraph
+    this.attachInteractionHandlers();
+    window.addEventListener('graph-updated', () => this.attachInteractionHandlers());
+    
     // Activer le zoom
     this.renderer.enableZoom();
     
@@ -28,17 +32,44 @@ export class InteractionManager {
     
     // Appliquer le comportement de drag aux nœuds existants et futurs
     this.svg.selectAll('.node').call(drag);
+  }
+  
+  /**
+   * Initialise les gestionnaires de clic
+   */
+  initClickHandlers() {
+    // Double-clic sur une zone vide pour créer un nœud
+    this.svg.on('dblclick', event => {
+      // Vérifier si l'événement provient d'un nœud
+      if (event.target.closest('.node')) {
+        event.stopPropagation();
+        return;
+      }
+      this.handleSvgDblClick(event);
+    });
     
-    // Observer les nouveaux nœuds pour leur ajouter le comportement de drag
-    this.renderer.updateGraph = (originalMethod => {
-      return function() {
-        const result = originalMethod.apply(this, arguments);
-        if (result && result.nodeEnter) {
-          result.nodeEnter.call(drag);
-        }
-        return result;
-      };
-    })(this.renderer.updateGraph);
+    // CTRL+clic pour créer un nœud et le relier
+    this.svg.on('mousedown', event => this.handleSvgMouseDown(event));
+  }
+  
+  /**
+   * Applique drag, click et dblclick aux éléments SVG
+   */
+  attachInteractionHandlers() {
+    const drag = this.createDragBehavior();
+    this.svg.selectAll('.node')
+      .call(drag)
+      .on('click', (event, d) => this.handleNodeClick(event, d))
+      .on('dblclick', (event, d) => {
+        event.stopPropagation();
+        this.nodeDoubleClicked = true;
+        setTimeout(() => { this.nodeDoubleClicked = false; }, 300);
+        console.log("Node double-clicked");
+      });
+    this.svg.selectAll('.link')
+      .on('click',   (event, d) => this.handleLinkClick(event, d));
+    this.svg.selectAll('.link-label')
+      .on('click',   (event, d) => this.handleLinkClick(event, d));
   }
   
   /**
@@ -94,65 +125,6 @@ export class InteractionManager {
         }
         delete d.initialPosition;
       });
-  }
-  
-  /**
-   * Initialise les gestionnaires de clic
-   */
-  initClickHandlers() {
-    // IMPORTANT: Conserver une référence à l'instance courante pour les callbacks
-    const self = this;
-    
-    // Observer les nouveaux nœuds et liens pour leur ajouter les gestionnaires
-    this.renderer.updateGraph = (originalMethod => {
-      return function() {
-        const result = originalMethod.apply(this, arguments);
-        
-        if (result) {
-          if (result.nodeEnter) {
-            // Gérer le simple clic
-            result.nodeEnter.on('click', function(event, d) {
-              self.handleNodeClick(event, d);
-            });
-            
-            // Gérer le double clic sur les nœuds
-            result.nodeEnter.on('dblclick', function(event, d) {
-              event.stopPropagation(); // Empêcher la propagation au SVG
-              self.nodeDoubleClicked = true;
-              setTimeout(() => { self.nodeDoubleClicked = false; }, 300);
-              console.log("Node double-clicked");
-            });
-          }
-          
-          if (result.linkEnter) {
-            result.linkEnter.on('click', function(event, d) {
-              self.handleLinkClick(event, d);
-            });
-          }
-          
-          if (result.labelEnter) {
-            result.labelEnter.on('click', function(event, d) {
-              self.handleLinkClick(event, d);
-            });
-          }
-        }
-        
-        return result;
-      };
-    })(this.renderer.updateGraph);
-    
-    // Double-clic sur une zone vide pour créer un nœud
-    this.svg.on('dblclick', event => {
-      // Vérifier si l'événement provient d'un nœud
-      if (event.target.closest('.node')) {
-        event.stopPropagation();
-        return;
-      }
-      this.handleSvgDblClick(event);
-    });
-    
-    // CTRL+clic pour créer un nœud et le relier
-    this.svg.on('mousedown', event => this.handleSvgMouseDown(event));
   }
   
   /**
