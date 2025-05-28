@@ -10,7 +10,8 @@ import { AIManager } from './ai/AIManager.js';
 import { registerGraphState, registerUpdateCallback } from './state/undo_redo.js';
 import { initLayoutManager } from './services/layoutManager.js';
 import { initIOServices } from './services/io.js';
-import { graphConfig, initConfigFilesList, updateGraphConfig, toggleCurvedLinks } from './config/graph.js';
+import { graphConfig, initConfigFilesList, updateGraphConfig } from './config/graph.js';
+import { EventManager } from './services/EventManager.js';  // ← nouveau
 
 // Attend que le DOM soit complètement chargé pour initialiser l'application
 document.addEventListener('DOMContentLoaded', () => {
@@ -46,42 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
     updateGraphConfig(configData, renderer);
   });
   
-  // 10. Configurer l'écouteur d'événement pour le toggle de liens courbes
-  const curvedLinksToggle = document.getElementById('curved-links');
-  if (curvedLinksToggle) {
-    curvedLinksToggle.addEventListener('change', () => {
-      graphConfig.linkStyle.curvedLinks = curvedLinksToggle.checked;
-      console.log("Change curvedLinks to:", graphConfig.linkStyle.curvedLinks);
-      // Mettre à jour la visibilité des contrôles
-      const curvatureControls = document.getElementById('curvature-controls');
-      if (curvatureControls) {
-        curvatureControls.style.display = graphConfig.linkStyle.curvedLinks ? 'block' : 'none';
-      }
-      renderer.updateGraph();
-    });
-    
-    // S'assurer que la valeur initiale est correcte
-    curvedLinksToggle.checked = graphConfig.linkStyle.curvedLinks;
-  }
-  
-  // 11. Écouter les événements de changement de configuration
-  window.addEventListener('graph-config-changed', (event) => {
-    console.log('Configuration du graphe mise à jour manuellement:', event.detail);
-    if (event.detail && event.detail.config) {
-      updateGraphConfig(event.detail.config, renderer);
-    } else {
-      // Si aucune configuration n'est fournie, mettre à jour avec la configuration actuelle
-      updateGraphConfig(graphConfig, renderer);
-    }
-  });
-  
-  // 12. Initialisation des boutons d'export/import de configuration
+  // 10. Initialisation des boutons d'export/import de configuration
   setupConfigButtons(renderer);
   
-  // 13. Affichage initial du graphe
+  // 11. Affichage initial du graphe
   renderer.updateGraph();
   
-  // 14. Exporter les objets clés dans window pour le débogage
+  // 12. Exporter les objets clés dans window pour le débogage
   const isDebugMode = window.location.search.includes('debug=true');
   if (isDebugMode) {
     window.app = {
@@ -94,6 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   console.log('Graph-Creator a été initialisé avec succès');
+  
+  // Initialiser le gestionnaire d'événements
+  EventManager.init(graphState, renderer);
 });
 
 /**

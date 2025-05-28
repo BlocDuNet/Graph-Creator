@@ -17,42 +17,7 @@ export function initIOServices(state, graphRenderer) {
   graphState = state;
   renderer = graphRenderer;
   
-  setupEventListeners();
   initJSONModelsList();
-}
-
-/**
- * Configure les écouteurs d'événements pour l'import/export
- */
-function setupEventListeners() {
-  // Export JSON
-  const exportJsonButton = document.getElementById('export-json');
-  if (exportJsonButton) {
-    exportJsonButton.addEventListener('click', exportJson);
-  }
-  
-  // Import JSON (bouton visible)
-  const importJsonButton = document.getElementById('import-json');
-  if (importJsonButton) {
-    importJsonButton.addEventListener('click', () => {
-      document.getElementById('json-file')?.click();
-    });
-  }
-  
-  // Import JSON (élément file input)
-  const jsonFileInput = document.getElementById('json-file');
-  if (jsonFileInput) {
-    jsonFileInput.addEventListener('change', function() {
-      const file = this.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          loadJSONGraph(event.target.result);
-        };
-        reader.readAsText(file);
-      }
-    });
-  }
 }
 
 /**

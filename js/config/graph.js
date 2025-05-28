@@ -337,7 +337,7 @@ function updateCurvatureDisplays() {
 }
 
 // Ajouter les écouteurs d'événements pour les contrôles de configuration
-function addGraphConfigListeners() {
+export function addGraphConfigListeners() {
   // Force controls
   const linkForceCheck = document.getElementById('link-force');
   const linkDistanceInput = document.getElementById('link-distance');
@@ -368,51 +368,6 @@ function addGraphConfigListeners() {
   if (centerForceCheck) {
     centerForceCheck.addEventListener('change', (event) => {
       graphConfig.forces.centerStrength = event.target.checked ? 1 : 0;
-      updateGraphFromConfig();
-    });
-  }
-  
-  // Link style controls
-  const curvedLinksCheck = document.getElementById('curved-links');
-  const baseCurvatureInput = document.getElementById('base-curvature');
-  const loopCurvatureInput = document.getElementById('loop-curvature');
-  const curvatureStepInput = document.getElementById('curvature-step');
-  
-  if (curvedLinksCheck) {
-    curvedLinksCheck.addEventListener('change', (event) => {
-      graphConfig.linkStyle.curvedLinks = event.target.checked;
-      // Afficher/masquer les contrôles de courbure selon l'état
-      const curvatureControls = document.getElementById('curvature-controls');
-      if (curvatureControls) {
-        curvatureControls.style.display = event.target.checked ? 'block' : 'none';
-      }
-      updateGraphFromConfig();
-    });
-  }
-  
-  if (baseCurvatureInput) {
-    baseCurvatureInput.addEventListener('input', (event) => {
-      graphConfig.linkStyle.baseCurvature = parseFloat(event.target.value);
-      const display = document.getElementById('base-curvature-value');
-      if (display) display.textContent = event.target.value;
-      updateGraphFromConfig();
-    });
-  }
-  
-  if (loopCurvatureInput) {
-    loopCurvatureInput.addEventListener('input', (event) => {
-      graphConfig.linkStyle.loopCurvature = parseFloat(event.target.value);
-      const display = document.getElementById('loop-curvature-value');
-      if (display) display.textContent = event.target.value;
-      updateGraphFromConfig();
-    });
-  }
-  
-  if (curvatureStepInput) {
-    curvatureStepInput.addEventListener('input', (event) => {
-      graphConfig.linkStyle.curvatureStep = parseFloat(event.target.value);
-      const display = document.getElementById('curvature-step-value');
-      if (display) display.textContent = event.target.value;
       updateGraphFromConfig();
     });
   }
