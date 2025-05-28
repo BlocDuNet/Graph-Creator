@@ -4,6 +4,7 @@
 import { undo, redo, jumpToHistory } from '../state/undo_redo.js';
 import { FormManager } from './forms.js';
 import { WindowEventManager } from '../services/WindowEventManager.js';  // ← import ajouté
+import { syncGlobalSettingsUI as refreshFieldSelects } from './FieldSelectService.js';
 
 export class UIManager {
   constructor(graphState, renderer) {
@@ -38,9 +39,11 @@ export class UIManager {
     this.initEventListeners();
     this.initHistoryPanel();
     this.initTabPanel();
-    this.syncGlobalSettingsUI();
-    
-    // 6) Lier tous les écouteurs window centralisés
+
+    // 3) Synchroniser immédiatement les selects/inputs
+    refreshFieldSelects(this.graphState);
+
+    // 4) Lier tous les écouteurs window centralisés
     WindowEventManager.bindAll(this);
   }
   
@@ -90,49 +93,23 @@ export class UIManager {
    */
   setupGlobalSettingsListeners() {
     const mapping = [
-      { elt: this.el.nodeLabelSelect,      event:'change', field:'nodeLabelField' },
-      { elt: this.el.linkLabelSelect,      event:'change', field:'linkLabelField' },
-      { elt: this.el.nodeSizeFieldSelect,  event:'change', field:'nodeSizeField' },
-      { elt: this.el.defaultNodeSizeInput, event:'change', field:'defaultNodeSize', parser: v=>+v||30 },
-      { elt: this.el.defaultLinkWidthInput,event:'change', field:'defaultLinkWidth', parser: parseFloat }
+      { id:'node-label',      event:'change', field:'nodeLabelField',  parser: v=>v },
+      { id:'link-label',      event:'change', field:'linkLabelField',  parser: v=>v },
+      { id:'node-size-field', event:'change', field:'nodeSizeField',   parser: v=>v },
+      { id:'defaultNodeSizeInput', event:'change', field:'defaultNodeSize', parser: v=>+v||30 },
+      { id:'defaultLinkWidthInput', event:'change', field:'defaultLinkWidth', parser: parseFloat }
     ];
-    mapping.forEach(({elt,event,field,parser}) => {
+    mapping.forEach(({id,event,field,parser}) => {
+      const elt = document.getElementById(id);
       if (!elt) return;
       elt.addEventListener(event, () => {
-        const raw = elt.value;
-        const val = parser ? parser(raw) : raw;
+        const val = parser(elt.value);
         this.graphState.updateGlobalSetting(field, val);
         this.renderer.updateGraph();
+        // mettre à jour les selects/inputs si besoin
+        refreshFieldSelects(this.graphState);
       });
     });
-  }
-  
-  /**
-   * Met à jour les options de tous les <select> et inputs de config
-   */
-  initFieldSelects() {
-    const selects = [
-      { id: 'node-label',      opts: this.graphState.getNodeFields(), val: this.graphState.globalSettings.nodeLabelField },
-      { id: 'link-label',      opts: this.graphState.getLinkFields(), val: this.graphState.globalSettings.linkLabelField },
-      { id: 'node-size-field', opts: this.graphState.getNodeFields(), val: this.graphState.globalSettings.nodeSizeField },
-      { id: 'node-id-field',   opts: this.graphState.getNodeFields(), val: this.graphState.globalSettings.nodeIdField },
-      { id: 'node-x-field',    opts: this.graphState.getNodeFields(), val: this.graphState.globalSettings.xField },
-      { id: 'node-y-field',    opts: this.graphState.getNodeFields(), val: this.graphState.globalSettings.yField }
-    ];
-    selects.forEach(({id,opts,val}) => {
-      const sel = document.getElementById(id);
-      if (sel) this.updateSelectOptions(sel, opts, val);
-    });
-    document.getElementById('defaultNodeSizeInput').value = this.graphState.globalSettings.defaultNodeSize;
-    document.getElementById('defaultLinkWidthInput').value = this.graphState.globalSettings.defaultLinkWidth;
-  }
-  
-  /**
-   * Exécute la synchro UI globale (listeners + valeurs initiales)
-   */
-  syncGlobalSettingsUI() {
-    this.setupGlobalSettingsListeners();
-    this.initFieldSelects();
   }
   
   /**
@@ -306,26 +283,6 @@ export class UIManager {
   }
   
   /**
-   * Initialise les sélecteurs de champs
-   */
-  initFieldSelects() {
-    const selects = [
-      { id: 'node-label',     opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeLabelField },
-      { id: 'link-label',     opts: this.graphState.getLinkFields(),  val: this.graphState.globalSettings.linkLabelField },
-      { id: 'node-size-field',opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeSizeField },
-      { id: 'node-id-field',  opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.nodeIdField },
-      { id: 'node-x-field',   opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.xField },
-      { id: 'node-y-field',   opts: this.graphState.getNodeFields(),  val: this.graphState.globalSettings.yField }
-    ];
-    selects.forEach(({id,opts,val}) => {
-      const sel = document.getElementById(id);
-      if (sel) this.updateSelectOptions(sel, opts, val);
-    });
-    document.getElementById('defaultNodeSizeInput').value = this.graphState.globalSettings.defaultNodeSize;
-    document.getElementById('defaultLinkWidthInput').value = this.graphState.globalSettings.defaultLinkWidth;
-  }
-  
-  /**
    * Met à jour les options d'un sélecteur
    */
   updateSelectOptions(selectElem, optionsArr, selectedValue) {
@@ -353,42 +310,6 @@ export class UIManager {
   }
   
   /**
-   * Mettre à jour tous les sélecteurs de champs
-   */
-  updateAllFieldSelects() {
-    const nodeLabelSelect = document.getElementById('node-label');
-    const linkLabelSelect = document.getElementById('link-label');
-    const nodeSizeSelect = document.getElementById('node-size-field');
-    const nodeIdSelect = document.getElementById('node-id-field');
-    const nodeXSelect = document.getElementById('node-x-field');
-    const nodeYSelect = document.getElementById('node-y-field');
-    
-    if (nodeLabelSelect) {
-      this.updateSelectOptions(nodeLabelSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.nodeLabelField);
-    }
-    
-    if (linkLabelSelect) {
-      this.updateSelectOptions(linkLabelSelect, this.graphState.getLinkFields(), this.graphState.globalSettings.linkLabelField);
-    }
-    
-    if (nodeSizeSelect) {
-      this.updateSelectOptions(nodeSizeSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.nodeSizeField);
-    }
-
-    if (nodeIdSelect) {
-      this.updateSelectOptions(nodeIdSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.nodeIdField);
-    }
-
-    if (nodeXSelect) {
-      this.updateSelectOptions(nodeXSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.xField);
-    }
-
-    if (nodeYSelect) {
-      this.updateSelectOptions(nodeYSelect, this.graphState.getNodeFields(), this.graphState.globalSettings.yField);
-    }
-  }
-  
-  /**
    * Initialise les valeurs des champs de label
    */
   initializeLabels() {
@@ -413,26 +334,5 @@ export class UIManager {
  * Helper testable: met à jour l’UI des paramètres globaux à partir d’un GraphState donné
  */
 export function syncGlobalSettingsUI(state) {
-  const entries = [
-    { id:'node-label',            value: state.globalSettings.nodeLabelField,  opts: state.getNodeFields() },
-    { id:'link-label',            value: state.globalSettings.linkLabelField,  opts: state.getLinkFields() },
-    { id:'node-size-field',       value: state.globalSettings.nodeSizeField,  opts: state.getNodeFields() },
-    { id:'node-id-field',         value: state.globalSettings.nodeIdField,    opts: state.getNodeFields() },
-    { id:'node-x-field',          value: state.globalSettings.xField,          opts: state.getNodeFields() },
-    { id:'node-y-field',          value: state.globalSettings.yField,          opts: state.getNodeFields() },
-    { id:'defaultNodeSizeInput',  value: state.globalSettings.defaultNodeSize },
-    { id:'defaultLinkWidthInput', value: state.globalSettings.defaultLinkWidth }
-  ];
-  entries.forEach(({id,value,opts}) => {
-    const elt = document.getElementById(id);
-    if (!elt) return;
-    if (elt.tagName === 'SELECT') {
-      // reset et remplir
-      elt.innerHTML = '<option value=""></option>' +
-        opts.map(o=>`<option value="${o}">${o}</option>`).join('');
-      elt.value = value;
-    } else {
-      elt.value = value;
-    }
-  });
+  refreshFieldSelects(state);
 }
