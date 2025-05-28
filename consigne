@@ -1,0 +1,29 @@
+1) Séparation des responsabilités
+   - UIManager doit uniquement gérer les liaisons d’événements et déléguer le DOM/données à des services dédiés.
+   - InteractionManager ne réaffecte PAS renderer.updateGraph dans plusieurs closures ; utiliser un seul hook / événement.
+
+2) Centralisation de la mise à jour graphique
+   - Ne pas imbriquer plusieurs surcharges de updateGraph.
+   - Émettre un événement 'graph-updated' après updateGraph() pour attacher les handlers de manière unique.
+
+3) Gestion DRY des selects et inputs
+   - Extraire la logique de génération et de synchro des <select> et inputs dans FieldSelectService (syncGlobalSettingsUI).
+
+4) Événements globaux
+   - Utiliser WindowEventManager.bindAll / unbindAll pour lier et délier proprement les events sur window.
+   - Préférer un bus interne ou CustomEvent plutôt que de polluer window avec des écouteurs ad-hoc.
+
+5) Nettoyage et performance
+   - Ne pas recréer inutilement les marqueurs ou recalculer la courbure à chaque tick si non nécessaire.
+   - Un seul point d’entrée pour initConfigFilesList et loadConfigFile dans config/graph.js.
+
+6) Undo/Redo et historique
+   - Encapsuler le state et le callback dans un singleton plutôt que de diffuser des variables globales.
+   - Mettre à jour l’historique via performAction(), undo(), redo() et window.dispatchEvent('action-applied').
+
+7) Tests et maintenance
+   - Ajouter des tests unitaires pour GraphState, FormManager, FieldSelectService.
+   - Prévoir un unbindAll() en cas de réinitialisation de l’UIManager.
+
+8) Documentation
+   - Tenir à jour ce fichier consigne pour toute nouvelle règle de refactor ou optimisation.
