@@ -19,6 +19,9 @@ export class GraphRenderer {
     // Création des définitions de marqueurs (flèches)
     this.createArrowDefinitions();
     
+    // Mémorisation de la dernière configuration de marqueurs
+    this._lastMarkerConfig = null;
+    
     console.log("Renderer initialized with graph config:", graphConfig);
   }
   
@@ -77,9 +80,15 @@ export class GraphRenderer {
    * Crée les définitions de marqueurs (flèches) pour les liens
    */
   createArrowDefinitions() {
-    // Supprimer les anciennes définitions
-    d3.select("svg defs").selectAll("*").remove();
+    // Sérialiser la config courante
+    const currentConfig = JSON.stringify(graphConfig.markers);
+    // Ne rien faire si inchangé
+    if (this._lastMarkerConfig === currentConfig) return;
+    // Mettre à jour le cache
+    this._lastMarkerConfig = currentConfig;
     
+    // Supprimer et recréer les définitions
+    d3.select("svg defs").selectAll("*").remove();
     const defs = d3.select("svg defs");
     
     // Créer un marqueur de flèche standard
