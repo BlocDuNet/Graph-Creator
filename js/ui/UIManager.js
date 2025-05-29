@@ -5,32 +5,33 @@ import { undo, redo, jumpToHistory } from '../state/undo_redo.js';
 import { FormManager } from './forms.js';
 import { WindowEventManager } from '../services/WindowEventManager.js';  // ← import ajouté
 import { syncGlobalSettingsUI as refreshFieldSelects } from './FieldSelectService.js';
+import UIContext from './UIContext.js';    // ← import ajouté
 
 export class UIManager {
   constructor(graphState, renderer) {
     this.graphState = graphState;
     this.renderer = renderer;
     
-    // 1) Récupérer et stocker toutes les références DOM
+    // 1) Récupérer et stocker toutes les références DOM (via UIContext)
     this.el = {
-      undoBtn:               document.getElementById('undoButton'),
-      redoBtn:               document.getElementById('redoButton'),
-      updateBtn:             document.getElementById('update'),
-      changeLabelBtn:        document.getElementById('changeLabelButton'),
-      addNodeFieldBtn:       document.getElementById('addNodeFieldButton'),
-      addNodeFieldInput:     document.getElementById('addNodeFieldInput'),
-      addLinkFieldBtn:       document.getElementById('addLinkFieldButton'),
-      addLinkFieldInput:     document.getElementById('addLinkFieldInput'),
-      highlightNeighborsBtn: document.getElementById('btn-highlight-neighbors'),
-      clearHighlightsBtn:    document.getElementById('btn-clear-highlights'),
-      highlightHighDegreeBtn:document.getElementById('btn-high-degree'),
-      colorClustersBtn:      document.getElementById('btn-color-clusters'),
-      nodeLabelSelect:       document.getElementById('node-label'),
-      linkLabelSelect:       document.getElementById('link-label'),
-      nodeSizeFieldSelect:   document.getElementById('node-size-field'),
-      defaultNodeSizeInput:  document.getElementById('defaultNodeSizeInput'),
-      defaultLinkWidthInput: document.getElementById('defaultLinkWidthInput'),
-      historySelect:         document.getElementById('historySelect')
+      undoBtn:               UIContext.get('#undoButton'),
+      redoBtn:               UIContext.get('#redoButton'),
+      updateBtn:             UIContext.get('#update'),
+      changeLabelBtn:        UIContext.get('#changeLabelButton'),
+      addNodeFieldBtn:       UIContext.get('#addNodeFieldButton'),
+      addNodeFieldInput:     UIContext.get('#addNodeFieldInput'),
+      addLinkFieldBtn:       UIContext.get('#addLinkFieldButton'),
+      addLinkFieldInput:     UIContext.get('#addLinkFieldInput'),
+      highlightNeighborsBtn: UIContext.get('#btn-highlight-neighbors'),
+      clearHighlightsBtn:    UIContext.get('#btn-clear-highlights'),
+      highlightHighDegreeBtn:UIContext.get('#btn-high-degree'),
+      colorClustersBtn:      UIContext.get('#btn-color-clusters'),
+      nodeLabelSelect:       UIContext.get('#node-label'),
+      linkLabelSelect:       UIContext.get('#link-label'),
+      nodeSizeFieldSelect:   UIContext.get('#node-size-field'),
+      defaultNodeSizeInput:  UIContext.get('#defaultNodeSizeInput'),
+      defaultLinkWidthInput: UIContext.get('#defaultLinkWidthInput'),
+      historySelect:         UIContext.get('#historySelect')
       // …ajouter d’autres références si nécessaire…
     };
     

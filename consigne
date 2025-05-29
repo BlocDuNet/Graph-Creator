@@ -27,3 +27,8 @@
 
 8) Documentation
    - Tenir à jour ce fichier consigne pour toute nouvelle règle de refactor ou optimisation.
+
+9) DOM & Sélecteurs
+   - Centraliser tous les accès DOM via UIContext.get('idOuSélecteur') pour mettre en cache les éléments,
+     éviter les lectures répétées et faciliter le mock en test unitaire.
+
