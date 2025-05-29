@@ -46,6 +46,9 @@ export class UIManager {
 
     // 4) Lier tous les écouteurs window centralisés
     WindowEventManager.bindAll(this);
+
+    // 5) Nettoyer les écouteurs sur window à la fermeture de la page
+    window.addEventListener('unload', () => WindowEventManager.unbindAll());
   }
   
   /**
