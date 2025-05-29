@@ -250,7 +250,7 @@ export class GraphRenderer {
    */
   updateLinks() {
     const idField = this.graphState.globalSettings.nodeIdField;
-    const { defaultLinkWidth } = this.graphState.globalSettings;
+    const { defaultLinkWidth } = this.graphState.globalSettings; // ← utilisation unique
     const { curvedLinks } = graphConfig.linkStyle;
     
     // Précalculer les courbures pour chaque lien
@@ -280,7 +280,7 @@ export class GraphRenderer {
     
     // Fusion et mise à jour
     const allLinks = linkSelection.merge(linkEnter)
-      .attr('stroke-width', d => parseFloat(d.width) || parseFloat(defaultLinkWidth) || 2)
+      .attr('stroke-width', d => parseFloat(d.width) || defaultLinkWidth)
       .attr('stroke', d => d === this.graphState.selectedLink ? '#f00' : '#000')
       .attr('marker-end', d => {
         if (d.isLoop) {

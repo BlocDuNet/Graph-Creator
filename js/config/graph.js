@@ -30,10 +30,6 @@ export const graphConfig = {
   // Option pour forcer la recréation des liens
   forceRecreateLinks: true,
   
-  // Configuration de la taille des éléments
-  defaultNodeRadius: 30,
-  defaultLinkWidth: 2,
-  
   // Configuration des marqueurs (flèches)
   markers: {
     arrowWidth: 8,
