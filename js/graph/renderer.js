@@ -250,15 +250,8 @@ export class GraphRenderer {
    */
   updateLinks() {
     const idField = this.graphState.globalSettings.nodeIdField;
-    const { linkLabelField, defaultLinkWidth } = this.graphState.globalSettings;
+    const { defaultLinkWidth } = this.graphState.globalSettings;
     const { curvedLinks } = graphConfig.linkStyle;
-    
-    console.log("Update links with curvedLinks:", curvedLinks);
-    
-    // Suppression complète des anciens liens si l'option est activée
-    if (graphConfig.forceRecreateLinks) {
-      this.g.selectAll('.link').remove();
-    }
     
     // Précalculer les courbures pour chaque lien
     this.graphState.links.forEach(link => {
@@ -279,22 +272,15 @@ export class GraphRenderer {
       `-${link.id}`;              // ← include custom id in key
 
     const linkSelection = this.g.selectAll('.link').data(this.graphState.links, getLinkId);
-    
-    // Créer les nouveaux liens
     const linkEnter = linkSelection.enter()
       .append('path')
       .attr('class', 'link')
       .attr('fill', 'none')
-      .attr('stroke-linecap', 'round')
-      .attr('stroke-linejoin', 'round')
       .attr('vector-effect', 'non-scaling-stroke');
     
-    // Fusion et mise à jour de tous les liens
+    // Fusion et mise à jour
     const allLinks = linkSelection.merge(linkEnter)
-      .attr('stroke-width', d => {
-        const width = parseFloat(d.width) || parseFloat(defaultLinkWidth) || 2;
-        return width;
-      })
+      .attr('stroke-width', d => parseFloat(d.width) || parseFloat(defaultLinkWidth) || 2)
       .attr('stroke', d => d === this.graphState.selectedLink ? '#f00' : '#000')
       .attr('marker-end', d => {
         if (d.isLoop) {
@@ -308,9 +294,11 @@ export class GraphRenderer {
         }
       });
     
-    // Suppression des liens qui ne sont plus dans les données
     linkSelection.exit().remove();
-    
+
+    // Stocker la sélection pour le ticked()
+    this.linkPaths = allLinks;
+
     return linkEnter;
   }
   
@@ -349,11 +337,10 @@ export class GraphRenderer {
    */
   ticked() {
     const { nodeSizeField, defaultNodeSize } = this.graphState.globalSettings;
-    // Important: récupérer curvedLinks directement de la configuration à chaque ticked()
     const { curvedLinks } = graphConfig.linkStyle;
     
-    // Mise à jour des liens
-    this.g.selectAll('.link')
+    // Utiliser la sélection mise en cache au lieu de relancer selectAll
+    (this.linkPaths || this.g.selectAll('.link'))
       .attr('d', d => {
         // Récupérer les rayons des nœuds
         const rSource = (nodeSizeField && d.source[nodeSizeField]) 
