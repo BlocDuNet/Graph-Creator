@@ -1,0 +1,23 @@
+<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="25" cy="25" r="8" fill="#4285f4"/>
+  <path d="M25,17 Q38,12 38,25 Q38,38 25,33" fill="none" stroke="#ea4335" stroke-width="2" stroke-linecap="round">
+    <animate 
+      attributeName="stroke-dasharray"
+      values="0 100; 100 0"
+      dur="2s"
+      repeatCount="indefinite"/>
+    <animate 
+      attributeName="stroke-dashoffset"
+      values="100;0"
+      dur="2s"
+      repeatCount="indefinite"/>
+  </path>
+  <path d="M25,33 L29,30 L27,35 Z" fill="#ea4335">
+    <animate
+      attributeName="opacity"
+      values="0; 0; 1"
+      keyTimes="0; 0.9; 1"
+      dur="2s"
+      repeatCount="indefinite"/>
+  </path>
+</svg>

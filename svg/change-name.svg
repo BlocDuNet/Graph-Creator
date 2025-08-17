@@ -1,0 +1,10 @@
+<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="20" cy="25" r="8" fill="#4285f4"/>
+  <rect x="15" y="15" width="25" height="10" rx="2" fill="white" stroke="#333" stroke-width="1"/>
+  <text x="27.5" y="22.5" font-size="7" fill="#333" text-anchor="middle">
+    <tspan>
+      <animate attributeName="textLength" values="0;25" dur="2s" repeatCount="indefinite" fill="freeze"/>
+      graph
+    </tspan>
+  </text>
+</svg>

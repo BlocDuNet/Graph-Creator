@@ -1,0 +1,24 @@
+<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <g>
+    <animateTransform 
+      attributeName="transform" 
+      type="translate" 
+      values="0,0;10,-5;0,0;-10,5;0,0" 
+      dur="4s" 
+      repeatCount="indefinite" 
+      attributeType="XML"
+      calcMode="spline"
+      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
+      
+    <circle cx="25" cy="15" r="5" fill="#4285f4"/>
+    <circle cx="15" cy="30" r="5" fill="#34a853"/>
+    <circle cx="35" cy="30" r="5" fill="#fbbc05"/>
+    
+    <line x1="25" y1="15" x2="15" y2="30" stroke="#333" stroke-width="1.5"/>
+    <line x1="25" y1="15" x2="35" y2="30" stroke="#333" stroke-width="1.5"/>
+    <line x1="15" y1="30" x2="35" y2="30" stroke="#333" stroke-width="1.5"/>
+  </g>
+  
+  <path d="M40,40 L43,43 L41,45 L46,42 L44,40 Z" fill="#333"/>
+  <circle cx="43" cy="43" r="2" fill="#ea4335" stroke="#333" stroke-width="0.5"/>
+</svg>

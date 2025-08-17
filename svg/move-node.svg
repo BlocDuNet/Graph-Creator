@@ -1,0 +1,55 @@
+<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="15" cy="20" r="5" fill="#4285f4"/>
+  <circle cx="35" cy="20" r="5" fill="#34a853"/>
+  
+  <circle cx="25" cy="30" r="5" fill="#fbbc05">
+    <animate 
+      attributeName="cx" 
+      values="25;35;25;15;25" 
+      dur="4s" 
+      repeatCount="indefinite"
+      calcMode="spline"
+      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
+    <animate 
+      attributeName="cy" 
+      values="30;35;30;35;30" 
+      dur="4s" 
+      repeatCount="indefinite"
+      calcMode="spline"
+      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
+  </circle>
+  
+  <line x1="15" y1="20" x2="35" y2="20" stroke="#333" stroke-width="1.5"/>
+  <line x1="15" y1="20" x2="25" y2="30" stroke="#333" stroke-width="1.5">
+    <animate 
+      attributeName="x2" 
+      values="25;35;25;15;25" 
+      dur="4s" 
+      repeatCount="indefinite"
+      calcMode="spline"
+      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
+    <animate 
+      attributeName="y2" 
+      values="30;35;30;35;30" 
+      dur="4s" 
+      repeatCount="indefinite"
+      calcMode="spline"
+      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
+  </line>
+  <line x1="35" y1="20" x2="25" y2="30" stroke="#333" stroke-width="1.5">
+    <animate 
+      attributeName="x2" 
+      values="25;35;25;15;25" 
+      dur="4s" 
+      repeatCount="indefinite"
+      calcMode="spline"
+      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
+    <animate 
+      attributeName="y2" 
+      values="30;35;30;35;30" 
+      dur="4s" 
+      repeatCount="indefinite"
+      calcMode="spline"
+      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
+  </line>
+</svg>

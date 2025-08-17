@@ -1,0 +1,612 @@
+/* ======================================
+   1. BASE & RESET
+====================================== */
+body {
+  overflow: hidden;
+}
+
+/* ======================================
+   2. SVG ELEMENTS
+====================================== */
+svg {
+  background-color: #FFF;
+  cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Node styles */
+.node {
+  stroke: #ffffff00;
+  stroke-width: 2px;
+  fill: #000000bb;
+}
+
+/* Link styles */
+.link {
+  fill: none;
+  stroke: #000;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  cursor: pointer;
+  marker-end: url(#arrowhead);
+  pointer-events: stroke;
+  vector-effect: non-scaling-stroke; /* Prevent zoom affecting stroke width */
+}
+
+.link.selected {
+  stroke: #f00 !important;
+}
+
+/* Link labels */
+.link-label {
+  font-family: sans-serif;
+  font-size: 11px;
+  pointer-events: auto;  /* enable clicking on link labels */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  background-color: rgba(255, 255, 255, 0.5);
+  padding: 2px;
+}
+
+/* Selection styles */
+.selected {
+  stroke: #0077ff;
+}
+
+.selected text {
+  font-size: 2em;
+  fill: #0077ff;
+}
+
+.selected .link-label {
+  font-size: 2em;
+  fill: #0077ff;
+}
+
+/* Highlighted styles */
+.highlighted {
+  stroke: orange !important;
+  fill: orange !important;
+}
+
+.highlighted-link {
+  stroke: orange !important;
+}
+
+/* Cluster styles */
+.cluster-0 { fill: #f28e2b; }
+.cluster-1 { fill: #4e79a7; }
+.cluster-2 { fill: #59a14f; }
+.cluster-3 { fill: #e15759; }
+/* … vous pouvez ajouter plus de classes cluster-N … */
+
+/* ======================================
+   3. LAYOUT COMPONENTS
+====================================== */
+/* Bottom panel */
+#bottom-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  max-height: 60vh;
+  transition: all 0.3s ease;
+}
+
+#bottom-panel.collapsed {
+  height: 60px;
+  max-height: 60px;
+  overflow: hidden;
+}
+
+.card-body {
+  overflow-y: auto;
+}
+
+.card-header {
+  cursor: pointer;
+  padding-top: 0px;
+}
+
+.header-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* Panel control arrows */
+.arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 5px;
+  margin-bottom: -10px;
+  vertical-align: middle;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+.arrow-up { border-bottom: 4px solid currentColor; }
+.arrow-down { border-top: 4px solid currentColor; }
+
+/* Help table */
+.table-container {
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid black;
+  padding: 8px;
+  text-align: left;
+}
+
+/* History select */
+#historySelect {
+  width: 100%;
+}
+
+/* ======================================
+   4. UI COMPONENTS
+====================================== */
+/* Collapsible sections */
+.section-header {
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid rgba(0,0,0,.125);
+}
+
+.section-header .btn-link {
+  color: #343a40;
+  text-decoration: none;
+  font-weight: 500;
+  width: 100%;
+  text-align: left;
+  padding: 0;
+}
+
+.section-header .btn-link:hover,
+.section-header .btn-link:focus {
+  text-decoration: none;
+  color: #007bff;
+}
+
+.section-header .btn-link::before {
+  content: "▶";
+  margin-right: 0.5rem;
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.section-header .btn-link[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+
+/* Cards */
+.accordion .card {
+  height: 100%;
+  margin-bottom: 0.25rem;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.accordion .card-body {
+  padding: 0.75rem;
+}
+
+.card-header.section-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid rgba(0,0,0,.125);
+  padding: 0.5rem 1rem;
+}
+
+/* Forms */
+.action-group, .field-group {
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+.form-container {
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 0.5rem;
+  min-height: 100px;
+  position: relative;
+}
+
+/* Common form elements */
+button, .btn {
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+}
+
+input, select, textarea {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.5rem;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+input[type="number"] {
+  max-width: 100px;
+}
+
+input[type="checkbox"] {
+  width: auto;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.form-field {
+  margin-bottom: 0.75rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.compact-control {
+  margin-bottom: 0.5rem;
+}
+
+.compact-control label {
+  display: inline-block;
+  margin-bottom: 0.2rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.small {
+  margin-bottom: 0.1rem;
+  display: inline-block;
+}
+
+/* Style for sections titles */
+.section-title, .edit-title, h5 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+/* Node/Link forms */
+#node-form, #link-form {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#node-form:not(.hidden),
+#link-form:not(.hidden) {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 0;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+#node-form:not(.hidden) div,
+#link-form:not(.hidden) div {
+  flex: 1 0 100%; /* Take full width */
+  margin-bottom: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+#node-form div, 
+#link-form div {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+#node-form label,
+#link-form label {
+  min-width: 100px;
+  margin-right: 10px;
+  margin-bottom: 0;
+}
+
+#node-form input,
+#link-form input {
+  flex: 1;
+  margin-bottom: 0;
+  margin-right: 5px;
+}
+
+#node-form button,
+#link-form button {
+  padding: 0 6px;
+  margin: 0;
+  min-width: 24px;
+  height: 24px;
+  line-height: 1;
+  background: #f1f1f1;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+}
+
+/* Toggle Switch Component */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  background-color: #f8f9fa;
+  border-radius: 50px;
+  padding: 5px 15px;
+  justify-content: space-between;
+}
+
+.toggle-label {
+  font-size: 0.9rem;
+  margin: 0 15px;
+  font-weight: 500;
+  color: #6c757d;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 30px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.2);
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  transform: translateX(30px);
+}
+
+.slider.round {
+  border-radius: 30px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Curvature Controls */
+#curvature-controls {
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+#curvature-controls .card-header {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+#curvature-controls label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+#curvature-controls p {
+  margin-bottom: 1rem;
+}
+
+#curvature-controls .form-control-range {
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+
+#curvature-controls small {
+  display: block;
+  text-align: right;
+  color: #6c757d;
+}
+
+/* Force Parameters */
+.control-group {
+  display: table;
+  width: 100%;
+}
+
+.control-group .form-field {
+  display: table-row;
+  margin-bottom: 0;
+}
+
+.control-group .form-field label,
+.control-group .form-field input,
+.control-group .form-field .custom-control,
+.control-group .form-field .compact-control {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 3px 5px;
+}
+
+.control-group .form-field label {
+  min-width: 140px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.control-group .custom-control {
+  padding-left: 0;
+}
+
+.control-group .custom-control-label {
+  margin-left: 1.5rem;
+}
+
+/* Configuration Import/Export */
+#collapseConfigIO input,
+#collapseConfigIO select,
+#collapseConfigIO button {
+  max-width: 180px;
+  display: inline-block;
+}
+
+#collapseConfigIO p {
+  margin-bottom: 0.5rem;
+}
+
+#collapseConfigIO label {
+  display: inline-block;
+  min-width: 100px;
+}
+
+/* AI Request Tab */
+#tab4 button {
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+}
+
+#tab4 button:hover {
+  background-color: #e9ecef;
+}
+
+.prompt-textarea {
+  height: 100px;
+}
+
+.log-textarea {
+  height: 150px;
+}
+
+.log-result {
+  background: #f8f8f8;
+  padding: 10px;
+  max-height: 200px;
+  overflow: auto;
+}
+
+/* Confirmation personnalisée */
+.confirm-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.confirm-modal {
+  background: white;
+  padding: 1rem;
+  border-radius: 4px;
+  text-align: center;
+}
+.confirm-modal p {
+  margin-bottom: 1rem;
+}
+.confirm-modal .btn-yes,
+.confirm-modal .btn-no {
+  margin: 0 0.5rem;
+  padding: 0.3rem 0.8rem;
+}
+
+/* ======================================
+   5. UTILITY CLASSES
+====================================== */
+.hidden {
+  display: none;
+}
+
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 1rem !important; }
+.mt-2 { margin-top: 5px; }
+.mt-3 { margin-top: 10px; }
+.ml-2 { margin-left: 10px; }
+.w-100 { width: 100%; }
+
+/* Accessibility helper class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ======================================
+   6. RESPONSIVE
+====================================== */
+@media (max-width: 767.98px) {
+  /* Compact styles for small screens */
+  button, .btn {
+    font-size: 0.85rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .card-body {
+    padding: 0.5rem;
+  }
+  
+  .card {
+    margin-bottom: 1rem;
+  }
+  
+  .form-container {
+    margin-bottom: 1rem;
+  }
+  
+  #node-form:not(.hidden) div,
+  #link-form:not(.hidden) div {
+    flex: 1 0 100%;
+  }
+}

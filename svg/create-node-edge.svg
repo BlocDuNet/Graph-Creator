@@ -1,0 +1,11 @@
+<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="15" cy="25" r="8" fill="#4285f4"/>
+  <circle cx="35" cy="25" r="0" fill="#34a853">
+    <animate attributeName="r" values="0;0;8;8;8;0;0" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <line x1="23" y1="25" x2="35" y2="25" stroke="#ea4335" stroke-width="2" opacity="0">
+    <animate attributeName="x2" values="23;23;27;27;27;23;23" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0;1;1;0;0" dur="4s" repeatCount="indefinite"/>
+  </line>
+  <text x="25" y="15" text-anchor="middle" font-size="8" fill="#333">CTRL</text>
+</svg>
