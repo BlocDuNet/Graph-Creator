@@ -99,6 +99,9 @@ export class UIManager {
     const mapping = [
       { id:'node-label',      event:'change', field:'nodeLabelField',  parser: v=>v },
       { id:'link-label',      event:'change', field:'linkLabelField',  parser: v=>v },
+      { id:'node-id-field',   event:'change', field:'nodeIdField',     parser: v=>v },
+      { id:'node-x-field',    event:'change', field:'xField',          parser: v=>v },
+      { id:'node-y-field',    event:'change', field:'yField',          parser: v=>v },
       { id:'node-size-field', event:'change', field:'nodeSizeField',   parser: v=>v },
       { id:'defaultNodeSizeInput', event:'change', field:'defaultNodeSize', parser: v=>+v||30 },
       { id:'defaultLinkWidthInput', event:'change', field:'defaultLinkWidth', parser: parseFloat }
@@ -108,6 +111,18 @@ export class UIManager {
       if (!elt) return;
       elt.addEventListener(event, () => {
         const val = parser(elt.value);
+        // Validate nodeIdField: must exist on all nodes and be unique
+        if (field === 'nodeIdField' && val) {
+          const ids = this.graphState.nodes.map(n => n[val]);
+          const hasMissing = ids.some(v => v === undefined || v === null || v === '');
+          const uniq = new Set(ids.map(v => String(v)));
+          if (hasMissing || uniq.size !== ids.length) {
+            alert("Le champ ID sélectionné doit être présent et unique pour tous les noeuds.");
+            // revert to previous value
+            elt.value = this.graphState.globalSettings.nodeIdField;
+            return;
+          }
+        }
         this.graphState.updateGlobalSetting(field, val);
         this.renderer.updateGraph();
         // mettre à jour les selects/inputs si besoin

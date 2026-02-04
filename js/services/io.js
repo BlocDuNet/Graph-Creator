@@ -58,36 +58,7 @@ function exportJson() {
 function loadJSONGraph(jsonContent) {
   try {
     const jsonData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
-    
-    // Valider la structure du JSON
-    if (!Array.isArray(jsonData.nodes) || !Array.isArray(jsonData.links)) {
-      throw new Error("Format JSON invalide: les tableaux 'nodes' et 'links' sont requis");
-    }
-    
-    // Préparer les nœuds en préservant tous les champs personnalisés
-    const nodes = jsonData.nodes.map(node => ({
-      ...node,  // Conserver tous les champs personnalisés
-      id: String(node.id) // S'assurer que l'ID est une chaîne
-    }));
-    
-    // Préparer les liens en convertissant les références source/target en objets
-    const links = jsonData.links.map(link => {
-      const sourceNode = nodes.find(n => String(n.id) === String(link.source));
-      const targetNode = nodes.find(n => String(n.id) === String(link.target));
-      
-      if (!sourceNode || !targetNode) {
-        console.warn(`Lien ignoré: source=${link.source}, target=${link.target} (nœuds non trouvés)`);
-        return null;
-      }
-      
-      // Conserver tous les champs personnalisés tout en normalisant les références
-      return {
-        ...link,  // Préserver tous les champs personnalisés
-        id: String(link.id),
-        source: sourceNode,
-        target: targetNode
-      };
-    }).filter(Boolean); // Ignorer les liens avec source/target invalides
+    const { nodes, links } = normalizeImportedGraph(jsonData);
     
     // Sauvegarder l'état précédent
     const oldState = {
@@ -117,6 +88,146 @@ function loadJSONGraph(jsonContent) {
     console.error("Erreur lors du chargement du graphe:", error);
     alert(`Erreur lors du chargement du graphe: ${error.message}`);
   }
+}
+
+/**
+ * Normalise et valide un JSON de graphes provenant de schémas variés.
+ * Objectif: accepter plusieurs formats tout en garantissant des données sûres.
+ */
+function normalizeImportedGraph(raw) {
+  if (!raw || typeof raw !== 'object') {
+    throw new Error("Format JSON invalide: objet requis.");
+  }
+
+  // Supporter les wrappers fréquents
+  let data = raw;
+  if (raw.graph && typeof raw.graph === 'object') data = raw.graph;
+  if (raw.data && typeof raw.data === 'object') data = raw.data;
+
+  // Détecter les tableaux de noeuds/liens avec plusieurs noms possibles
+  const nodesArray =
+    data.nodes || data.vertices || data.items || data.nodeList || data.node || null;
+  const linksArray =
+    data.links || data.edges || data.relations || data.connections || data.link || null;
+
+  // Cas: tableau direct de noeuds
+  const nodesRaw = Array.isArray(data) ? data : nodesArray;
+  let linksRaw = Array.isArray(linksArray) ? linksArray : [];
+
+  if (!Array.isArray(nodesRaw)) {
+    throw new Error("Format JSON invalide: aucun tableau de noeuds détecté.");
+  }
+
+  // Normaliser les noeuds
+  const nodes = nodesRaw.map((node, idx) => {
+    if (!node || typeof node !== 'object') {
+      throw new Error(`Noeud invalide à l'index ${idx}: objet requis.`);
+    }
+    const id = extractNodeId(node, idx);
+    return { ...node, id: String(id) };
+  });
+
+  // Index par id
+  const nodeById = new Map(nodes.map(n => [String(n.id), n]));
+
+  // Si pas de liens fournis, tenter de dériver depuis les noeuds (adjacence)
+  if (!linksRaw.length) {
+    linksRaw = deriveLinksFromNodes(nodes);
+  }
+
+  // Normaliser les liens
+  const links = linksRaw.map((link, idx) => {
+    if (!link || typeof link !== 'object') {
+      throw new Error(`Lien invalide à l'index ${idx}: objet requis.`);
+    }
+
+    const { sourceId, targetId } = extractLinkEndpoints(link);
+    if (sourceId == null || targetId == null) {
+      console.warn("Lien ignoré (source/target manquant):", link);
+      return null;
+    }
+
+    // Créer les noeuds manquants si besoin (schémas “liens uniquement”)
+    if (!nodeById.has(String(sourceId))) {
+      const newNode = { id: String(sourceId), name: String(sourceId), description: "" };
+      nodeById.set(String(sourceId), newNode);
+      nodes.push(newNode);
+    }
+    if (!nodeById.has(String(targetId))) {
+      const newNode = { id: String(targetId), name: String(targetId), description: "" };
+      nodeById.set(String(targetId), newNode);
+      nodes.push(newNode);
+    }
+
+    return {
+      ...link,
+      id: String(link.id ?? `${sourceId}-${targetId}-${idx}`),
+      source: nodeById.get(String(sourceId)),
+      target: nodeById.get(String(targetId))
+    };
+  }).filter(Boolean);
+
+  return { nodes, links };
+}
+
+function extractNodeId(node, idx) {
+  const candidate =
+    node.id ?? node.key ?? node.uuid ?? node.uid ??
+    node.name ?? node.label ?? node.title;
+  if (candidate == null || candidate === '') {
+    return `node-${idx + 1}`;
+  }
+  return candidate;
+}
+
+function extractLinkEndpoints(link) {
+  const src =
+    link.source ?? link.from ?? link.src ?? link.sourceId ?? link.origin ?? link.start;
+  const tgt =
+    link.target ?? link.to ?? link.dst ?? link.targetId ?? link.destination ?? link.end;
+
+  const sourceId = normalizeEndpoint(src);
+  const targetId = normalizeEndpoint(tgt);
+  return { sourceId, targetId };
+}
+
+function normalizeEndpoint(value) {
+  if (value == null) return null;
+  if (typeof value === 'object') {
+    return value.id ?? value.key ?? value.uuid ?? value.name ?? value.label ?? null;
+  }
+  return value;
+}
+
+function deriveLinksFromNodes(nodes) {
+  const links = [];
+  nodes.forEach((node, idx) => {
+    const edgeLists = [
+      node.links,
+      node.edges,
+      node.relations,
+      node.connections,
+      node.neighbors,
+      node.targets,
+      node.children
+    ].filter(Boolean);
+
+    edgeLists.forEach(list => {
+      if (!Array.isArray(list)) return;
+      list.forEach((edge, eIdx) => {
+        const targetId = normalizeEndpoint(edge?.target ?? edge ?? null);
+        if (targetId == null) return;
+        links.push({
+          id: `${node.id}-${targetId}-${idx}-${eIdx}`,
+          source: node.id,
+          target: targetId,
+          name: edge?.name ?? `Link ${node.id} -> ${targetId}`,
+          description: edge?.description ?? ""
+        });
+      });
+    });
+  });
+  return links;
 }
 
 /**

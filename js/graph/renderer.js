@@ -312,8 +312,8 @@ export class GraphRenderer {
     // Sélectionner les labels des liens
     const linkLabels = this.g.selectAll('.link-label')
       .data(this.graphState.links, d =>
-        `${d.source[idField] ?? d.source.id}-${d.target[idField] ?? d.target.id}`
-      );  // ← use custom idField for positioning labels
+        `${d.source[idField] ?? d.source.id}-${d.target[idField] ?? d.target.id}-${d.id}`
+      );  // ← include link id to disambiguate parallel links
     
     // Créer les nouveaux labels
     const labelEnter = linkLabels.enter()
