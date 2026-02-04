@@ -26,31 +26,97 @@ export function initIOServices(state, graphRenderer) {
  * Exporte le graphe actuel en JSON
  */
 function exportJson() {
+  exportJsonAdvanced({ format: 'auto' });
+}
+
+function exportJsonAdvanced(options = {}) {
+  const format = options.format || 'auto';
+  const langs = parseLangs(options.langs || graphState?.globalSettings?.multilingualLangs || 'fr,en');
+  const singleLang = (options.lang || '').trim();
+  const includeXY = options.includeXY || 'auto';
+  const { xField, yField, nodeIdField } = graphState.globalSettings;
+
   const exportData = {
     nodes: graphState.nodes.map(node => {
       const { vx, vy, fx, fy, ...rest } = node;
-      return rest;
+      let out = { ...rest };
+
+      if (format === 'auto') {
+        out = autoConvertMultilang(out, langs);
+      } else if (format === 'object') {
+        out = convertSuffixToObject(out, langs);
+      } else if (format === 'suffix') {
+        out = convertObjectToSuffix(out, langs);
+      } else if (format === 'single') {
+        out = convertToSingleLang(out, langs, singleLang);
+      } else if (format === 'raw') {
+        // no conversion
+      }
+
+      // Gestion x/y à l'export
+      if (includeXY === 'no' || (includeXY === 'auto' && ((xField && xField !== 'x') || (yField && yField !== 'y')))) {
+        if (xField !== 'x') delete out.x;
+        if (yField !== 'y') delete out.y;
+      }
+
+      return out;
     }),
     links: graphState.links.map(link => {
       const { source, target, ...rest } = link;
-      return { 
-        ...rest, 
-        source: source.id, 
-        target: target.id 
+      let out = { ...rest };
+
+      if (format === 'auto') {
+        out = autoConvertMultilang(out, langs);
+      } else if (format === 'object') {
+        out = convertSuffixToObject(out, langs);
+      } else if (format === 'suffix') {
+        out = convertObjectToSuffix(out, langs);
+      } else if (format === 'single') {
+        out = convertToSingleLang(out, langs, singleLang);
+      } else if (format === 'raw') {
+        // no conversion
+      }
+
+      return {
+        ...out,
+        source: source[nodeIdField] ?? source.id,
+        target: target[nodeIdField] ?? target.id
       };
     })
   };
-  
+
+  if (format === 'csv_nodes') {
+    downloadDelimited(exportData.nodes, 'nodes.csv', ',');
+    return;
+  }
+  if (format === 'csv_links') {
+    downloadDelimited(exportData.links, 'links.csv', ',');
+    return;
+  }
+  if (format === 'tsv_nodes') {
+    downloadDelimited(exportData.nodes, 'nodes.tsv', '\t');
+    return;
+  }
+  if (format === 'tsv_links') {
+    downloadDelimited(exportData.links, 'links.tsv', '\t');
+    return;
+  }
+  if (format === 'xls_nodes') {
+    downloadExcel(exportData.nodes, 'nodes.xls');
+    return;
+  }
+  if (format === 'xls_links') {
+    downloadExcel(exportData.links, 'links.xls');
+    return;
+  }
+
   const jsonStr = JSON.stringify(exportData, null, 2);
   const blob = new Blob([jsonStr], { type: "application/json" });
   const url = URL.createObjectURL(blob);
-  
   const a = document.createElement("a");
   a.href = url;
   a.download = "graph.json";
   a.click();
-  
-  // Nettoyer l'URL
   setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
@@ -105,18 +171,23 @@ function prepareAdvancedImport(jsonContent) {
   }
 }
 
+// expose for other modules if needed
+
 function applyAdvancedImport() {
   if (!pendingAdvancedImport?.raw) return;
   const mapping = readAdvancedMapping();
   try {
     const { nodes, links } = normalizeImportedGraph(pendingAdvancedImport.raw, mapping);
     const oldState = { nodes: [...graphState.nodes], links: [...graphState.links] };
-    performAction({
-      type: "import_graph",
-      data: { oldState, newState: { nodes, links }, label: "Import JSON graph (advanced)" }
+    performAction({ 
+      type: "import_graph", 
+      data: { oldState, newState: { nodes, links }, label: "Import JSON graph (advanced)" } 
     });
     renderer.updateGraph();
     eventBus.emit('graph-imported', { nodes, links });
+    // ensure UI selects are refreshed
+    // compatibility: some UI code still listens on window
+    window.dispatchEvent(new CustomEvent('graph-imported', { detail: { nodes, links } }));
     showAdvancedImportPanel(false);
     pendingAdvancedImport = null;
   } catch (error) {
@@ -136,6 +207,47 @@ function showAdvancedImportPanel(show) {
   overlay.classList.toggle('hidden', !show);
 }
 
+function showAdvancedExportPanel(show) {
+  const overlay = document.getElementById('advanced-export-overlay');
+  if (!overlay) return;
+  overlay.classList.toggle('hidden', !show);
+}
+
+function exportImage() {
+  const svg = document.querySelector('svg');
+  if (!svg) return;
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svg);
+  const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+
+  const img = new Image();
+  const width = svg.clientWidth || +svg.getAttribute('width') || 1000;
+  const height = svg.clientHeight || +svg.getAttribute('height') || 1000;
+
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    URL.revokeObjectURL(url);
+
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      const pngUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = pngUrl;
+      a.download = 'graph.png';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(pngUrl), 100);
+    });
+  };
+  img.src = url;
+}
+
 function populateAdvancedImportUI(raw) {
   const rootKeys = Object.keys(raw || {});
   const nodeKeyGuess = guessNodesKey(raw);
@@ -143,19 +255,28 @@ function populateAdvancedImportUI(raw) {
   const nodes = resolveRootArray(raw, nodeKeyGuess) || [];
   const links = resolveRootArray(raw, linkKeyGuess) || [];
 
-  const nodeFields = collectKeysFromArray(nodes);
-  const linkFields = collectKeysFromArray(links);
+  const nodeFields = expandFieldsWithMultilang(collectKeysFromArray(nodes), nodes);
+  const linkFields = expandFieldsWithMultilang(collectKeysFromArray(links), links);
+  const detectedLangs = detectLangsFromItems(nodes.length ? nodes : links);
+  const defaultLang = detectedLangs[0] || '';
 
   fillInputWithDatalist('advanced-nodes-key', rootKeys, nodeKeyGuess || '');
   fillInputWithDatalist('advanced-links-key', rootKeys, linkKeyGuess || '');
 
   fillInputWithDatalist('advanced-node-id', nodeFields, guessField(nodeFields, ['id', 'key', 'uuid', 'uid']));
-  fillInputWithDatalist('advanced-node-label', nodeFields, guessField(nodeFields, ['name', 'label', 'title']));
-  fillInputWithDatalist('advanced-node-desc', nodeFields, guessField(nodeFields, ['description', 'desc', 'details']));
+  fillInputWithDatalist('advanced-node-label', nodeFields, guessField(nodeFields, defaultLang ? [`name_${defaultLang}`, `name.${defaultLang}`, 'name', 'label', 'title'] : ['name', 'label', 'title']));
+  fillInputWithDatalist('advanced-node-desc', nodeFields, guessField(nodeFields, defaultLang ? [`description_${defaultLang}`, `description.${defaultLang}`, 'description', 'desc', 'details'] : ['description', 'desc', 'details']));
 
   fillInputWithDatalist('advanced-link-source', linkFields, guessField(linkFields, ['source', 'from', 'src', 'origin', 'start']));
   fillInputWithDatalist('advanced-link-target', linkFields, guessField(linkFields, ['target', 'to', 'dst', 'destination', 'end']));
-  fillInputWithDatalist('advanced-link-label', linkFields, guessField(linkFields, ['name', 'label', 'type']));
+  fillInputWithDatalist('advanced-link-label', linkFields, guessField(linkFields, defaultLang ? [`name_${defaultLang}`, `name.${defaultLang}`, 'name', 'label', 'type'] : ['name', 'label', 'type']));
+
+  const preview = document.getElementById('advanced-import-preview');
+  if (preview) {
+    const nodePreview = (nodes || []).slice(0, 10).map(n => JSON.stringify(n, null, 0)).join('\n');
+    const linkPreview = (links || []).slice(0, 15).map(l => JSON.stringify(l, null, 0)).join('\n');
+    preview.textContent = `NODES (10 max)\n${nodePreview}\n\nLINKS (15 max)\n${linkPreview}`;
+  }
 }
 
 function readAdvancedMapping() {
@@ -175,6 +296,11 @@ function readAdvancedMapping() {
 function fillInputWithDatalist(inputId, options, value) {
   const input = document.getElementById(inputId);
   if (!input) return;
+  if (input.tagName === 'SELECT') {
+    input.innerHTML = [''].concat(options || []).map(o => `<option value="${o}">${o}</option>`).join('');
+    if (value != null) input.value = value;
+    return;
+  }
   const listId = `${inputId}-list`;
   let list = document.getElementById(listId);
   if (!list) {
@@ -282,6 +408,10 @@ function normalizeImportedGraph(raw, mapping = null) {
     return normalized;
   }).filter(Boolean);
 
+  // Détection multilingue (objets) -> suffixes
+  expandMultilangObjectsToSuffix(nodes, ['name', 'description']);
+  expandMultilangObjectsToSuffix(links, ['name', 'description']);
+
   return { nodes, links };
 }
 
@@ -317,6 +447,15 @@ function extractLinkEndpoints(link) {
 function resolveValue(obj, path, langKey) {
   if (!path) return null;
   let value = getByPath(obj, path);
+  if (value == null && path.includes('_')) {
+    const parts = path.split('_');
+    const maybeLang = parts.pop();
+    const base = parts.join('_');
+    const baseVal = obj?.[base];
+    if (baseVal && typeof baseVal === 'object' && baseVal[maybeLang] != null) {
+      value = baseVal[maybeLang];
+    }
+  }
   if (value && typeof value === 'object' && langKey) {
     if (value[langKey] != null) return value[langKey];
   }
@@ -374,6 +513,206 @@ function deriveLinksFromNodes(nodes) {
   return links;
 }
 
+function parseLangs(value) {
+  return (value || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function convertSuffixToObject(obj, langs) {
+  if (!langs.length) return obj;
+  const out = { ...obj };
+  const groups = {};
+
+  Object.keys(out).forEach(key => {
+    const match = langs.find(l => key.endsWith(`_${l}`));
+    if (!match) return;
+    const base = key.slice(0, -1 * (match.length + 1));
+    if (!groups[base]) groups[base] = {};
+    groups[base][match] = out[key];
+    delete out[key];
+  });
+
+  Object.keys(groups).forEach(base => {
+    out[base] = groups[base];
+  });
+
+  return out;
+}
+
+function autoConvertMultilang(obj, langs) {
+  const hasSuffix = hasSuffixFields(obj, langs);
+  const hasObject = hasObjectLangFields(obj);
+  if (hasSuffix && !hasObject) return convertSuffixToObject(obj, langs);
+  return obj;
+}
+
+function hasSuffixFields(obj, langs) {
+  if (!langs.length) return false;
+  return Object.keys(obj).some(key => langs.some(l => key.endsWith(`_${l}`)));
+}
+
+function hasObjectLangFields(obj) {
+  return Object.keys(obj).some(key => {
+    const val = obj[key];
+    if (!val || typeof val !== 'object') return false;
+    return Object.keys(val).length > 0;
+  });
+}
+
+function convertObjectToSuffix(obj, langs) {
+  if (!langs.length) return obj;
+  const out = { ...obj };
+  Object.keys(out).forEach(key => {
+    const val = out[key];
+    if (!val || typeof val !== 'object') return;
+    let hasLang = false;
+    langs.forEach(l => {
+      if (val[l] != null) {
+        out[`${key}_${l}`] = val[l];
+        hasLang = true;
+      }
+    });
+    if (hasLang) delete out[key];
+  });
+  return out;
+}
+
+function convertToSingleLang(obj, langs, lang) {
+  const chosen = lang || langs[0] || '';
+  if (!chosen) return obj;
+  let out = { ...obj };
+
+  // objects -> single value
+  Object.keys(out).forEach(key => {
+    const val = out[key];
+    if (val && typeof val === 'object' && val[chosen] != null) {
+      out[key] = val[chosen];
+    }
+  });
+
+  // suffix -> base
+  const suffix = `_${chosen}`;
+  Object.keys(out).forEach(key => {
+    if (key.endsWith(suffix)) {
+      const base = key.slice(0, -suffix.length);
+      out[base] = out[key];
+      delete out[key];
+    }
+  });
+
+  return out;
+}
+
+function expandMultilangObjectsToSuffix(items, fields) {
+  const detectedLangs = new Set();
+  items.forEach(item => {
+    fields.forEach(field => {
+      const val = item[field];
+      if (!val || typeof val !== 'object') return;
+      Object.keys(val).forEach(lang => detectedLangs.add(lang));
+    });
+  });
+  const langs = Array.from(detectedLangs);
+  if (!langs.length) return;
+
+  items.forEach(item => {
+    fields.forEach(field => {
+      const val = item[field];
+      if (!val || typeof val !== 'object') return;
+      langs.forEach(lang => {
+        const key = `${field}_${lang}`;
+        if (item[key] == null && val[lang] != null) {
+          item[key] = val[lang];
+        }
+      });
+    });
+  });
+}
+
+function downloadDelimited(items, filename, delimiter) {
+  if (!items.length) return;
+  const keys = Array.from(new Set(items.flatMap(item => Object.keys(item))));
+  const rows = [
+    keys.join(delimiter),
+    ...items.map(item => keys.map(k => csvValue(item[k], delimiter)).join(delimiter))
+  ];
+  const csv = rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+function csvValue(val, delimiter) {
+  if (val == null) return '';
+  const s = typeof val === 'object' ? JSON.stringify(val) : String(val);
+  if (s.includes(delimiter) || s.includes('"') || s.includes('\n')) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+function downloadExcel(items, filename) {
+  if (!items.length) return;
+  const keys = Array.from(new Set(items.flatMap(item => Object.keys(item))));
+  const header = `<tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
+  const rows = items.map(item =>
+    `<tr>${keys.map(k => `<td>${escapeHtml(item[k])}</td>`).join('')}</tr>`
+  ).join('');
+  const html = `
+    <html><head><meta charset="utf-8"></head>
+    <body><table>${header}${rows}</table></body></html>
+  `;
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+function escapeHtml(value) {
+  if (value == null) return '';
+  const s = typeof value === 'object' ? JSON.stringify(value) : String(value);
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function detectLangsFromGraph(state) {
+  const langs = new Set();
+  let format = '';
+  const collect = item => {
+    Object.keys(item || {}).forEach(key => {
+      const val = item[key];
+      if (val && typeof val === 'object') {
+        Object.keys(val).forEach(l => langs.add(l));
+        format = format || 'object';
+      }
+      if (key.includes('_')) {
+        const parts = key.split('_');
+        const maybeLang = parts[parts.length - 1];
+        if (maybeLang.length <= 5) {
+          langs.add(maybeLang);
+          format = format || 'suffix';
+        }
+      }
+    });
+  };
+  state?.nodes?.forEach(collect);
+  state?.links?.forEach(collect);
+  return { langs: Array.from(langs), format };
+}
+
 function collectKeysFromArray(arr) {
   const set = new Set();
   (arr || []).forEach(item => {
@@ -381,6 +720,32 @@ function collectKeysFromArray(arr) {
     Object.keys(item).forEach(k => set.add(k));
   });
   return Array.from(set);
+}
+
+function expandFieldsWithMultilang(fields, items) {
+  const langs = detectLangsFromItems(items);
+  if (!langs.length) return fields;
+  const expanded = new Set(fields);
+  fields.forEach(f => {
+    langs.forEach(lang => {
+      expanded.add(`${f}_${lang}`);
+      expanded.add(`${f}.${lang}`);
+    });
+  });
+  return Array.from(expanded);
+}
+
+function detectLangsFromItems(items) {
+  const langs = new Set();
+  (items || []).forEach(item => {
+    Object.keys(item || {}).forEach(key => {
+      const val = item[key];
+      if (val && typeof val === 'object') {
+        Object.keys(val).forEach(l => langs.add(l));
+      }
+    });
+  });
+  return Array.from(langs);
 }
 
 function guessNodesKey(raw) {
@@ -461,6 +826,9 @@ async function loadJSONModelFile(file) {
 // Export des fonctions pour utilisation externe
 export { 
   exportJson, 
+  exportJsonAdvanced,
+  exportImage,
+  detectLangsFromGraph,
   loadJSONGraph,
   loadJSONModelFile,
   prepareAdvancedImport,

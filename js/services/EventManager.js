@@ -1,4 +1,5 @@
-import { exportJson, loadJSONGraph, prepareAdvancedImport, applyAdvancedImport, cancelAdvancedImport } from './io.js';
+import { exportJson, exportImage, loadJSONGraph, prepareAdvancedImport, applyAdvancedImport, cancelAdvancedImport } from './io.js';
+import eventBus from './EventBus.js';
 import { graphConfig } from '../config/index.js';
 import { updateGraphConfig } from '../config/graph.js';
 
@@ -55,6 +56,13 @@ export class EventManager {
     // ----- 2) Import/Export du graphe (JSON) -----
     document.getElementById('export-json')?.addEventListener('click', () => {
       exportJson();
+    });
+    document.getElementById('export-json-advanced')?.addEventListener('click', () => {
+      alert("Export avancé : à faire plus tard.");
+    });
+
+    document.getElementById('export-image')?.addEventListener('click', () => {
+      exportImage();
     });
     document.getElementById('import-json')?.addEventListener('click', () => {
       document.getElementById('json-file')?.click();

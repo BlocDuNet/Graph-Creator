@@ -153,6 +153,12 @@ th, td {
   text-align: left;
 }
 
+.sheet-input {
+  width: 100%;
+  min-width: 140px;
+  font-size: 0.85rem;
+}
+
 /* History select */
 #historySelect {
   width: 100%;
@@ -564,7 +570,7 @@ input:checked + .slider:before {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1200;
 }
 
 .advanced-import-modal {
@@ -574,6 +580,18 @@ input:checked + .slider:before {
   width: 90%;
   max-width: 720px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.pre-scroll {
+  max-height: 200px;
+  overflow: auto;
+  background: #f8f8f8;
+  border: 1px solid #e1e1e1;
+  padding: 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre;
 }
 
 /* ======================================

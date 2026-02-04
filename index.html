@@ -42,6 +42,9 @@
               <li class="nav-item">
                 <a class="nav-link" href="#tab4" data-toggle="tab">AI Request</a>
               </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#tab5" data-toggle="tab">Tableur</a>
+              </li>
             </ul>
             <span class="arrow arrow-down"></span>
           </div>
@@ -188,9 +191,11 @@
                           <div class="action-group">
                             <h5>Import/Export</h5>
                             <div class="d-flex flex-wrap">
-                              <button id="export-json" class="btn btn-sm btn-outline-primary m-1">Export JSON</button>
                               <button id="import-json" class="btn btn-sm btn-outline-primary m-1">Import JSON</button>
                               <button id="import-json-advanced" class="btn btn-sm btn-outline-primary m-1">Import avancé</button>
+                              <button id="export-json" class="btn btn-sm btn-outline-primary m-1">Export JSON</button>
+                              <button id="export-image" class="btn btn-sm btn-outline-primary m-1">Export image</button>
+                              <button id="export-json-advanced" class="btn btn-sm btn-outline-primary m-1">Export avancé (à faire)</button>
                               <button id="changeLabelButton" class="btn btn-sm btn-outline-secondary m-1">Initialize Labels</button>
                             </div>
                             <div class="mt-2">
@@ -210,27 +215,27 @@
                                 <div class="row">
                                   <div class="col-md-6">
                                     <label class="small">Clé des noeuds (root)</label>
-                                    <input id="advanced-nodes-key" class="form-control form-control-sm">
+                                    <select id="advanced-nodes-key" class="form-control form-control-sm"></select>
                                   </div>
                                   <div class="col-md-6">
                                     <label class="small">Clé des liens (root)</label>
-                                    <input id="advanced-links-key" class="form-control form-control-sm">
+                                    <select id="advanced-links-key" class="form-control form-control-sm"></select>
                                   </div>
                                 </div>
                                 <div class="row mt-2">
                                   <div class="col-md-6">
                                     <label class="small">Champ ID noeud</label>
-                                    <input id="advanced-node-id" class="form-control form-control-sm">
+                                    <select id="advanced-node-id" class="form-control form-control-sm"></select>
                                   </div>
                                   <div class="col-md-6">
                                     <label class="small">Champ label noeud (ex: name ou name.fr)</label>
-                                    <input id="advanced-node-label" class="form-control form-control-sm">
+                                    <select id="advanced-node-label" class="form-control form-control-sm"></select>
                                   </div>
                                 </div>
                                 <div class="row mt-2">
                                   <div class="col-md-6">
                                     <label class="small">Champ description noeud (ex: description ou description.fr)</label>
-                                    <input id="advanced-node-desc" class="form-control form-control-sm">
+                                    <select id="advanced-node-desc" class="form-control form-control-sm"></select>
                                   </div>
                                   <div class="col-md-6">
                                     <label class="small">Langue (optionnel, ex: fr)</label>
@@ -240,15 +245,21 @@
                                 <div class="row mt-2">
                                   <div class="col-md-4">
                                     <label class="small">Champ source lien</label>
-                                    <input id="advanced-link-source" class="form-control form-control-sm">
+                                    <select id="advanced-link-source" class="form-control form-control-sm"></select>
                                   </div>
                                   <div class="col-md-4">
                                     <label class="small">Champ target lien</label>
-                                    <input id="advanced-link-target" class="form-control form-control-sm">
+                                    <select id="advanced-link-target" class="form-control form-control-sm"></select>
                                   </div>
                                   <div class="col-md-4">
                                     <label class="small">Champ label lien (ex: name ou name.fr)</label>
-                                    <input id="advanced-link-label" class="form-control form-control-sm">
+                                    <select id="advanced-link-label" class="form-control form-control-sm"></select>
+                                  </div>
+                                </div>
+                                <div class="row mt-2">
+                                  <div class="col-md-12">
+                                    <label class="small">Prévisualisation (10 noeuds / 15 liens)</label>
+                                    <div id="advanced-import-preview" class="pre-scroll"></div>
                                   </div>
                                 </div>
                                 <div class="mt-2 d-flex flex-wrap">
@@ -297,6 +308,20 @@
                                 </div>
                               </div>
                             </div>
+                            <div class="row mb-2">
+                              <div class="col-sm-6">
+                                <div class="custom-control custom-checkbox">
+                                  <input type="checkbox" class="custom-control-input" id="multilingual-enabled">
+                                  <label class="custom-control-label" for="multilingual-enabled">Multilingue</label>
+                                </div>
+                              </div>
+                              <div class="col-sm-6">
+                                <input type="text" id="multilingual-langs" class="form-control form-control-sm" placeholder="Langues (ex: fr,en)">
+                              </div>
+                              <div class="col-sm-6 mt-2">
+                                <button id="multilingual-convert" class="btn btn-sm btn-outline-secondary">Conversion multilingue</button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                         <!-- Labels et tailles -->
@@ -342,6 +367,12 @@
                               <input type="number" id="defaultLinkWidthInput" class="form-control form-control-sm" 
                                      value="5" min="0.1" max="20" step="0.1"
                                      title="Entrez une valeur entre 0.1 et 20">
+                            </div>
+                          </div>
+                          <div class="row mb-2">
+                            <div class="col-sm-4">
+                              <label for="current-language" class="small">Langue active :</label>
+                              <select id="current-language" class="form-control form-control-sm"></select>
                             </div>
                           </div>
                         </div>
@@ -593,6 +624,26 @@
                     </div>
                   </div>
                   
+                  <!-- Section 2bis: Traduction -->
+                  <div class="col-12 col-md-6 mb-3">
+                    <div class="card">
+                      <div class="card-header section-header" id="headingTranslate">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTranslate" aria-expanded="true" aria-controls="collapseTranslate">
+                          Traduction (sélection)
+                        </button>
+                      </div>
+                      <div id="collapseTranslate" class="collapse show" aria-labelledby="headingTranslate">
+                        <div class="card-body">
+                          <label for="translateField">Champ à traduire (ex: name_fr)</label>
+                          <input id="translateField" class="form-control form-control-sm" placeholder="ex: name_fr">
+                          <label for="translateTarget" class="mt-2">Langue cible (ex: en)</label>
+                          <input id="translateTarget" class="form-control form-control-sm" placeholder="ex: en">
+                          <button id="translateBtn" class="btn btn-sm btn-outline-primary mt-2">Traduire le champ</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <!-- Section 3: Logs - prend toute la largeur -->
                   <div class="col-12 mb-3">
                     <div class="card">
@@ -616,11 +667,170 @@
                 </div>
               </div>
             </div>
+            <div class="tab-pane fade" id="tab5">
+              <div class="card">
+                <div class="card-header section-header">
+                  <button class="btn btn-link" type="button">
+                    Tableur multilingue
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <label class="small">Source</label>
+                      <input id="sheet-lang-source" class="form-control form-control-sm" placeholder="ex: fr">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="small">Cible</label>
+                      <input id="sheet-lang-target" class="form-control form-control-sm" placeholder="ex: en">
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-md-12">
+                      <div class="d-flex align-items-center">
+                        <div class="mr-3">
+                          <input type="checkbox" id="sheet-field-name"> <label for="sheet-field-name">name</label>
+                        </div>
+                        <div class="mr-3">
+                          <input type="checkbox" id="sheet-field-description"> <label for="sheet-field-description">description</label>
+                        </div>
+                        <button id="sheet-open-convert" class="btn btn-sm btn-outline-secondary ml-2">Conversion</button>
+                        <button id="sheet-refresh" class="btn btn-sm btn-outline-secondary ml-auto">Rafraîchir</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-md-4">
+                      <label class="small">Rechercher</label>
+                      <input id="sheet-find" class="form-control form-control-sm" placeholder="texte à chercher">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="small">Remplacer</label>
+                      <input id="sheet-replace" class="form-control form-control-sm" placeholder="remplacement">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                      <button id="sheet-find-replace" class="btn btn-sm btn-outline-primary">Remplacer tout</button>
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-md-3">
+                      <label class="small">Filtre texte</label>
+                      <input id="sheet-filter" class="form-control form-control-sm" placeholder="filtrer...">
+                    </div>
+                    <div class="col-md-3">
+                      <label class="small">Filtre type</label>
+                      <select id="sheet-filter-type" class="form-control form-control-sm">
+                        <option value="">Tous</option>
+                        <option value="node">Noeud</option>
+                        <option value="link">Lien</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="small">Filtre champ</label>
+                      <select id="sheet-filter-field" class="form-control form-control-sm">
+                        <option value="">Tous</option>
+                        <option value="name">name</option>
+                        <option value="description">description</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="small">Filtre langue</label>
+                      <input id="sheet-filter-lang" class="form-control form-control-sm" placeholder="ex: fr">
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-md-4">
+                      <label class="small">Trier par</label>
+                      <select id="sheet-sort" class="form-control form-control-sm">
+                        <option value="type">Type</option>
+                        <option value="id">ID</option>
+                        <option value="field">Champ</option>
+                        <option value="lang">Langue</option>
+                        <option value="value">Valeur</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="small">Sélection colonne</label>
+                      <div class="d-flex">
+                        <select id="sheet-column-field" class="form-control form-control-sm mr-2">
+                          <option value="name">name</option>
+                          <option value="description">description</option>
+                        </select>
+                        <input id="sheet-column-lang" class="form-control form-control-sm" placeholder="langue">
+                      </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                      <button id="sheet-select-column" class="btn btn-sm btn-outline-secondary">Cocher colonne</button>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <table class="table table-sm table-bordered">
+                      <thead>
+                        <tr>
+                          <th>Type</th>
+                          <th>ID</th>
+                          <th>Champ</th>
+                          <th>Langue</th>
+                          <th>Valeur</th>
+                          <th>Traduire</th>
+                        </tr>
+                      </thead>
+                      <tbody id="multilingual-sheet-body"></tbody>
+                    </table>
+                  </div>
+                  <div class="mt-2 d-flex flex-wrap">
+                    <button id="sheet-select-all" class="btn btn-sm btn-outline-secondary m-1">Tout cocher</button>
+                    <button id="sheet-apply" class="btn btn-sm btn-outline-primary m-1">Appliquer modifications</button>
+                    <button id="sheet-translate" class="btn btn-sm btn-success m-1">Traduire la sélection</button>
+                    <button id="sheet-export-csv" class="btn btn-sm btn-outline-primary m-1">Exporter CSV</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <script src="js/script.js"></script>
+    <div id="multilingual-convert-overlay" class="advanced-import-overlay hidden">
+      <div class="advanced-import-modal">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Conversion multilingue</h6>
+          <button id="multilingual-convert-cancel" class="btn btn-sm btn-outline-secondary">Fermer</button>
+        </div>
+        <p class="small text-muted mb-2">
+          Par défaut, les champs convertis sont supprimés (ex: <code>name</code>).
+        </p>
+        <div class="row">
+          <div class="col-md-6">
+            <label class="small">Mode</label>
+            <select id="multilingual-convert-mode" class="form-control form-control-sm">
+              <option value="to-multi">Unilingue → Multilingue</option>
+              <option value="to-uni">Multilingue → Unilingue</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="small">Langues (ex: fr,en)</label>
+            <input id="multilingual-convert-langs" class="form-control form-control-sm" placeholder="fr,en">
+          </div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-md-6">
+            <label class="small">Langue de conversion (ex: fr)</label>
+            <input id="multilingual-convert-lang" class="form-control form-control-sm" placeholder="fr">
+          </div>
+          <div class="col-md-6">
+            <label class="small">Conserver les champs d'origine</label>
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" class="custom-control-input" id="multilingual-convert-keep">
+              <label class="custom-control-label" for="multilingual-convert-keep">Oui (ne pas supprimer)</label>
+            </div>
+          </div>
+        </div>
+        <div class="mt-2 d-flex flex-wrap">
+          <button id="multilingual-convert-apply" class="btn btn-sm btn-success m-1">Appliquer</button>
+        </div>
+      </div>
+    </div>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script type="module" src="js/app.js"></script>
   </body>

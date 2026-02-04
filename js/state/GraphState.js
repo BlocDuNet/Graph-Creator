@@ -35,7 +35,10 @@ export class GraphState {
       yField: "y",
       defaultNodeSize: 30,
       defaultLinkWidth: 5,
-      defaultFocusField: "name"
+      defaultFocusField: "name",
+      multilingualEnabled: false,
+      multilingualLangs: "fr,en",
+      currentLanguage: "fr"
     };
     
     // Initialiser les liens après avoir créé les nodes
@@ -202,20 +205,120 @@ export class GraphState {
    */
   addField(fieldName, target) {
     if (fieldName.trim() === '') return;
-    
+
     const data = target === 'node' ? this.nodes : this.links;
     const existingKeys = data.length > 0 ? Object.keys(data[0]) : [];
-    
+
+    const languages = (this.globalSettings.multilingualLangs || "")
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (this.globalSettings.multilingualEnabled && languages.length > 0) {
+      const fieldsToAdd = languages
+        .map(lang => `${fieldName}_${lang}`)
+        .filter(f => !existingKeys.includes(f));
+
+      if (fieldsToAdd.length === 0) return;
+
+      const actions = fieldsToAdd.map(f => ({
+        type: "add_field",
+        data: {
+          field: f,
+          target,
+          label: `Add field ${f} to ${target}s`
+        }
+      }));
+      performAction({ type: "composite", actions });
+      return;
+    }
+
     if (existingKeys.includes(fieldName)) return;
-    
-    performAction({ 
-      type: "add_field", 
-      data: { 
-        field: fieldName, 
-        target, 
-        label: `Add field ${fieldName} to ${target}s` 
-      } 
+
+    performAction({
+      type: "add_field",
+      data: {
+        field: fieldName,
+        target,
+        label: `Add field ${fieldName} to ${target}s`
+      }
     });
+  }
+
+  /**
+   * Convertit des champs existants vers des variantes multilingues (suffixes)
+   */
+  convertFieldsToMultilingual(fields, target, baseLang = "") {
+    const langs = (this.globalSettings.multilingualLangs || "")
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    if (!langs.length) return;
+
+    const data = target === 'node' ? this.nodes : this.links;
+    const existingKeys = data.length > 0 ? Object.keys(data[0]) : [];
+
+    const actions = [];
+    fields.forEach(base => {
+      langs.forEach(lang => {
+        const fieldLang = `${base}_${lang}`;
+        if (!existingKeys.includes(fieldLang)) {
+          actions.push({
+            type: "add_field",
+            data: { field: fieldLang, target, label: `Add field ${fieldLang} to ${target}s` }
+          });
+        }
+      });
+    });
+
+    const copyLang = baseLang && langs.includes(baseLang) ? baseLang : langs[0];
+    data.forEach(item => {
+      fields.forEach(base => {
+        const baseVal = item[base];
+        if (baseVal == null || baseVal === '') return;
+        const fieldLang = `${base}_${copyLang}`;
+        if (item[fieldLang] == null || item[fieldLang] === '') {
+          actions.push({
+            type: target === 'node' ? "update_node" : "update_link",
+            data: target === 'node'
+              ? { nodeId: item.id, field: fieldLang, from: "", to: baseVal, label: `Set ${fieldLang}` }
+              : { linkId: item.id, field: fieldLang, from: "", to: baseVal, label: `Set ${fieldLang}` }
+          });
+        }
+      });
+    });
+
+    if (actions.length) {
+      performAction({ type: "composite", actions, label: "Convert fields to multilingual" });
+    }
+  }
+
+  /**
+   * Convertit des champs multilingues (suffixes) vers un champ unilingue
+   */
+  convertFieldsToUnilingual(fields, target, lang) {
+    const chosen = (lang || "").trim();
+    if (!chosen) return;
+
+    const data = target === 'node' ? this.nodes : this.links;
+    const actions = [];
+
+    data.forEach(item => {
+      fields.forEach(base => {
+        const src = item[`${base}_${chosen}`];
+        if (src == null) return;
+        actions.push({
+          type: target === 'node' ? "update_node" : "update_link",
+          data: target === 'node'
+            ? { nodeId: item.id, field: base, from: item[base] ?? "", to: src, label: `Set ${base} from ${base}_${chosen}` }
+            : { linkId: item.id, field: base, from: item[base] ?? "", to: src, label: `Set ${base} from ${base}_${chosen}` }
+        });
+      });
+    });
+
+    if (actions.length) {
+      performAction({ type: "composite", actions, label: "Convert fields to unilingual" });
+    }
   }
   
   /**

@@ -72,7 +72,7 @@ export class OllamaProvider {
       return JSON.parse(text);
     } catch (err) {
       // Tenter d'extraire JSON du texte qui pourrait avoir d'autres parties
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonMatch = text.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
       }

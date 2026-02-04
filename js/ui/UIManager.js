@@ -31,7 +31,11 @@ export class UIManager {
       nodeSizeFieldSelect:   UIContext.get('#node-size-field'),
       defaultNodeSizeInput:  UIContext.get('#defaultNodeSizeInput'),
       defaultLinkWidthInput: UIContext.get('#defaultLinkWidthInput'),
-      historySelect:         UIContext.get('#historySelect')
+      historySelect:         UIContext.get('#historySelect'),
+      multilingualEnabled:   UIContext.get('#multilingual-enabled'),
+      multilingualLangs:     UIContext.get('#multilingual-langs'),
+      currentLanguage:       UIContext.get('#current-language'),
+      multilingualConvert:   UIContext.get('#multilingual-convert')
       // …ajouter d’autres références si nécessaire…
     };
     
@@ -105,7 +109,9 @@ export class UIManager {
       { id:'node-y-field',    event:'change', field:'yField',          parser: v=>v },
       { id:'node-size-field', event:'change', field:'nodeSizeField',   parser: v=>v },
       { id:'defaultNodeSizeInput', event:'change', field:'defaultNodeSize', parser: v=>+v||30 },
-      { id:'defaultLinkWidthInput', event:'change', field:'defaultLinkWidth', parser: parseFloat }
+      { id:'defaultLinkWidthInput', event:'change', field:'defaultLinkWidth', parser: parseFloat },
+      { id:'multilingual-enabled', event:'change', field:'multilingualEnabled', parser: v=> !!document.getElementById('multilingual-enabled')?.checked },
+      { id:'multilingual-langs', event:'change', field:'multilingualLangs', parser: v=>v }
     ];
     mapping.forEach(({id,event,field,parser}) => {
       const elt = document.getElementById(id);
@@ -130,6 +136,128 @@ export class UIManager {
         refreshFieldSelects(this.graphState);
       });
     });
+
+    // Langue active
+    const langSelect = document.getElementById('current-language');
+    if (langSelect) {
+      langSelect.addEventListener('change', () => {
+        const val = langSelect.value;
+        this.graphState.updateGlobalSetting('currentLanguage', val);
+        // If label fields are suffix-based, switch to selected language
+        if ((this.graphState.globalSettings.nodeLabelField || '').startsWith('name_')) {
+          this.graphState.updateGlobalSetting('nodeLabelField', `name_${val}`);
+        }
+        if ((this.graphState.globalSettings.linkLabelField || '').startsWith('name_')) {
+          this.graphState.updateGlobalSetting('linkLabelField', `name_${val}`);
+        }
+        refreshFieldSelects(this.graphState);
+        this.renderer.updateGraph();
+      });
+    }
+
+    // Conversion multilingue explicite (modal)
+    this.el.multilingualConvert?.addEventListener('click', () => {
+      this.openMultilingualConvertOverlay();
+    });
+    document.getElementById('multilingual-convert-cancel')?.addEventListener('click', () => {
+      document.getElementById('multilingual-convert-overlay')?.classList.add('hidden');
+    });
+    document.getElementById('multilingual-convert-apply')?.addEventListener('click', () => {
+      const mode = document.getElementById('multilingual-convert-mode')?.value || 'to-multi';
+      const lang = document.getElementById('multilingual-convert-lang')?.value || '';
+      const langs = document.getElementById('multilingual-convert-langs')?.value || this.graphState.globalSettings.multilingualLangs;
+      this.graphState.updateGlobalSetting('multilingualLangs', langs);
+
+      const fieldsToConvert = new Set([
+        'name',
+        'description',
+        this.graphState.globalSettings.nodeLabelField,
+        this.graphState.globalSettings.linkLabelField
+      ]);
+
+      if (mode === 'to-multi') {
+        if (!lang) {
+          alert("Veuillez choisir la langue source (ex: fr) pour la conversion.");
+          return;
+        }
+        const keepBase = !!document.getElementById('multilingual-convert-keep')?.checked;
+        const removeBase = !keepBase;
+        this.graphState.convertFieldsToMultilingual(
+          Array.from(fieldsToConvert).filter(Boolean),
+          'node',
+          lang
+        );
+        this.graphState.convertFieldsToMultilingual(
+          Array.from(fieldsToConvert).filter(Boolean),
+          'link',
+          lang
+        );
+        if (removeBase) {
+          Array.from(fieldsToConvert).filter(Boolean).forEach(field => {
+            this.graphState.removeField(field, 'node');
+            this.graphState.removeField(field, 'link');
+          });
+          alert("Conversion appliquée. Les champs d'origine ont été supprimés.");
+        }
+        // update label fields to default language if needed
+        const firstLang = (langs || '').split(',')[0]?.trim();
+        if (firstLang) {
+          if (this.graphState.globalSettings.nodeLabelField === 'name') {
+            this.graphState.updateGlobalSetting('nodeLabelField', `name_${firstLang}`);
+          }
+          if (this.graphState.globalSettings.linkLabelField === 'name') {
+            this.graphState.updateGlobalSetting('linkLabelField', `name_${firstLang}`);
+          }
+        }
+      } else {
+        const keepMulti = !!document.getElementById('multilingual-convert-keep')?.checked;
+        this.graphState.convertFieldsToUnilingual(
+          Array.from(fieldsToConvert).filter(Boolean),
+          'node',
+          lang
+        );
+        this.graphState.convertFieldsToUnilingual(
+          Array.from(fieldsToConvert).filter(Boolean),
+          'link',
+          lang
+        );
+        if (!keepMulti) {
+          const langsList = (langs || '').split(',').map(s => s.trim()).filter(Boolean);
+          Array.from(fieldsToConvert).filter(Boolean).forEach(base => {
+            langsList.forEach(l => {
+              this.graphState.removeField(`${base}_${l}`, 'node');
+              this.graphState.removeField(`${base}_${l}`, 'link');
+            });
+          });
+          alert("Conversion appliquée. Les champs multilingues ont été supprimés.");
+        }
+        // revert label fields to base name if they were suffixes
+        if ((this.graphState.globalSettings.nodeLabelField || '').startsWith('name_')) {
+          this.graphState.updateGlobalSetting('nodeLabelField', 'name');
+        }
+        if ((this.graphState.globalSettings.linkLabelField || '').startsWith('name_')) {
+          this.graphState.updateGlobalSetting('linkLabelField', 'name');
+        }
+      }
+
+      refreshFieldSelects(this.graphState);
+      this.renderer.updateGraph();
+      document.getElementById('multilingual-convert-overlay')?.classList.add('hidden');
+    });
+
+    // hide/show conversion language input depending on mode
+    const modeSelect = document.getElementById('multilingual-convert-mode');
+    if (modeSelect) {
+      const updateModeUI = () => {
+        const langInput = document.getElementById('multilingual-convert-lang');
+        const langCol = langInput?.closest('.col-md-6');
+        if (langCol) {
+          langCol.style.display = modeSelect.value === 'to-multi' ? '' : 'none';
+        }
+      };
+      modeSelect.addEventListener('change', updateModeUI);
+      updateModeUI();
+    }
   }
   
   /**
@@ -300,6 +428,19 @@ export class UIManager {
     d3.select('#curvature-step').on('input', function() {
       document.getElementById('curvature-step-value').textContent = this.value;
     });
+
+    // allow other modules to open conversion overlay
+    window.openMultilingualConvertOverlay = this.openMultilingualConvertOverlay.bind(this);
+  }
+
+  openMultilingualConvertOverlay() {
+    const overlay = document.getElementById('multilingual-convert-overlay');
+    if (!overlay) return;
+    const langsInput = document.getElementById('multilingual-convert-langs');
+    const langInput = document.getElementById('multilingual-convert-lang');
+    if (langsInput) langsInput.value = this.graphState.globalSettings.multilingualLangs || 'fr,en';
+    if (langInput) langInput.value = this.graphState.globalSettings.currentLanguage || 'fr';
+    overlay.classList.remove('hidden');
   }
 
   /**

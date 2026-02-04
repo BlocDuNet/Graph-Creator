@@ -218,7 +218,7 @@ export class GraphRenderer {
            : 35)
       .attr('dy', 5)
       .text(d => {
-        if (nodeLabelField) return d[nodeLabelField] || "";
+        if (nodeLabelField) return this.resolveLangValue(d[nodeLabelField]) || "";
         // fallback to id‐field if label blank
         return nodeIdField ? (d[nodeIdField] || "") : "";
       });
@@ -236,7 +236,7 @@ export class GraphRenderer {
     // Mise à jour du texte
     merged.select('text')
       .text(d => {
-        if (nodeLabelField) return d[nodeLabelField] || "";
+        if (nodeLabelField) return this.resolveLangValue(d[nodeLabelField]) || "";
         return nodeIdField ? (d[nodeIdField] || "") : "";
       });
     
@@ -325,7 +325,7 @@ export class GraphRenderer {
     // Fusion et mise à jour
     labelEnter.merge(linkLabels)
       .classed('selected', d => d === this.graphState.selectedLink)
-      .text(d => linkLabelField === '' ? '' : (d[linkLabelField] || ""));
+      .text(d => linkLabelField === '' ? '' : (this.resolveLangValue(d[linkLabelField]) || ""));
     
     // Suppression des labels qui ne sont plus dans les données
     linkLabels.exit().remove();
@@ -551,6 +551,16 @@ export class GraphRenderer {
     
     this.svg.on('dblclick.zoom', null);
     this.svg.on('contextmenu', event => event.preventDefault());
+  }
+
+  resolveLangValue(value) {
+    if (value && typeof value === 'object') {
+      const lang = this.graphState.globalSettings.currentLanguage;
+      if (lang && value[lang] != null) return value[lang];
+      const firstKey = Object.keys(value)[0];
+      return value[firstKey];
+    }
+    return value;
   }
 
   clearHighlights() {

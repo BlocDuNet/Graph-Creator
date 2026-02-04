@@ -41,7 +41,33 @@ export class AIManager {
       proposalsBtn: document.getElementById("ollamaSendProposals"),
       rejectBtn: document.getElementById("ollamaRejectProposals"),
       proposalNodes: document.getElementById("proposalNodes"),
-      proposalLinks: document.getElementById("proposalLinks")
+      proposalLinks: document.getElementById("proposalLinks"),
+      translateField: document.getElementById("translateField"),
+      translateTarget: document.getElementById("translateTarget"),
+      translateBtn: document.getElementById("translateBtn")
+      ,
+      sheetRefresh: document.getElementById("sheet-refresh"),
+      sheetSelectAll: document.getElementById("sheet-select-all"),
+      sheetTranslate: document.getElementById("sheet-translate"),
+      sheetApply: document.getElementById("sheet-apply"),
+      sheetExportCsv: document.getElementById("sheet-export-csv"),
+      sheetFind: document.getElementById("sheet-find"),
+      sheetReplace: document.getElementById("sheet-replace"),
+      sheetFindReplace: document.getElementById("sheet-find-replace"),
+      sheetOpenConvert: document.getElementById("sheet-open-convert"),
+      sheetFilter: document.getElementById("sheet-filter"),
+      sheetFilterType: document.getElementById("sheet-filter-type"),
+      sheetFilterField: document.getElementById("sheet-filter-field"),
+      sheetFilterLang: document.getElementById("sheet-filter-lang"),
+      sheetSort: document.getElementById("sheet-sort"),
+      sheetColumnField: document.getElementById("sheet-column-field"),
+      sheetColumnLang: document.getElementById("sheet-column-lang"),
+      sheetSelectColumn: document.getElementById("sheet-select-column"),
+      sheetBody: document.getElementById("multilingual-sheet-body"),
+      sheetLangSource: document.getElementById("sheet-lang-source"),
+      sheetLangTarget: document.getElementById("sheet-lang-target"),
+      sheetFieldName: document.getElementById("sheet-field-name"),
+      sheetFieldDesc: document.getElementById("sheet-field-description")
     };
     
     // Initialiser la liste des modèles
@@ -116,6 +142,44 @@ export class AIManager {
     if (this.elements.rejectBtn) {
       this.elements.rejectBtn.addEventListener("click", () => this.handleClearProposals());
     }
+    if (this.elements.translateBtn) {
+      this.elements.translateBtn.addEventListener("click", () => this.handleTranslateSelected());
+    }
+    this.elements.sheetRefresh?.addEventListener("click", () => this.refreshTranslationSheet());
+    this.elements.sheetSelectAll?.addEventListener("click", () => this.toggleAllSheetChecks(true));
+    this.elements.sheetTranslate?.addEventListener("click", () => this.translateSheetSelection());
+    this.elements.sheetApply?.addEventListener("click", () => this.applySheetEdits());
+    this.elements.sheetFindReplace?.addEventListener("click", () => this.applySheetFindReplace());
+    this.elements.sheetExportCsv?.addEventListener("click", () => this.exportSheetCsv());
+    this.elements.sheetOpenConvert?.addEventListener("click", () => {
+      if (window.openMultilingualConvertOverlay) {
+        window.openMultilingualConvertOverlay();
+      } else {
+        document.getElementById('multilingual-convert-overlay')?.classList.remove('hidden');
+      }
+    });
+    // auto refresh when switching to Tableur tab
+    document.querySelector('a[href="#tab5"]')?.addEventListener('shown.bs.tab', () => {
+      this.refreshTranslationSheet();
+    });
+    this.elements.sheetFilter?.addEventListener("input", () => this.refreshTranslationSheet());
+    this.elements.sheetFilterType?.addEventListener("change", () => this.refreshTranslationSheet());
+    this.elements.sheetFilterField?.addEventListener("change", () => this.refreshTranslationSheet());
+    this.elements.sheetFilterLang?.addEventListener("input", () => this.refreshTranslationSheet());
+    this.elements.sheetSort?.addEventListener("change", () => this.refreshTranslationSheet());
+    this.elements.sheetSelectColumn?.addEventListener("click", () => this.selectColumn());
+    // inline edit -> sync to graph on blur/change
+    document.getElementById('multilingual-sheet-body')?.addEventListener('change', (e) => {
+      const input = e.target;
+      if (input && input.classList && input.classList.contains('sheet-input')) {
+        this.updateFromSheetInput(input);
+      }
+    });
+
+    eventBus.on('multilingual-sheet-refresh', () => this.refreshTranslationSheet());
+    eventBus.on('graph-updated', () => this.refreshTranslationSheet());
+    eventBus.on('graph-imported', () => this.refreshTranslationSheet());
+    eventBus.on('action-performed', () => this.refreshTranslationSheet());
   }
   
   /**
@@ -495,4 +559,461 @@ export class AIManager {
     if (this.elements.proposalNodes) this.elements.proposalNodes.innerHTML = "";
     if (this.elements.proposalLinks) this.elements.proposalLinks.innerHTML = "";
   }
+
+  /**
+   * Traduire un champ pour le noeud/lien sélectionné
+   */
+  handleTranslateSelected() {
+    const field = this.elements.translateField?.value?.trim();
+    const targetLang = this.elements.translateTarget?.value?.trim();
+    if (!field || !targetLang) {
+      alert("Veuillez choisir un champ et une langue cible.");
+      return;
+    }
+
+    const selectedNode = this.graphState.selectedNode;
+    const selectedLink = this.graphState.selectedLink;
+    const item = selectedNode || selectedLink;
+    if (!item) {
+      alert("Sélectionnez un noeud ou un lien.");
+      return;
+    }
+
+    let value = item[field] ?? item[field.replace(/\.[a-z]+$/i, '')] ?? '';
+    if (value && typeof value === 'object') {
+      const lang = this.graphState.globalSettings.currentLanguage;
+      if (lang && value[lang] != null) value = value[lang];
+      else {
+        const firstKey = Object.keys(value)[0];
+        value = value[firstKey] ?? '';
+      }
+    }
+    if (!value) {
+      alert("Champ vide, rien à traduire.");
+      return;
+    }
+
+    this.currentAbortController = new AbortController();
+    const model = this.elements.model?.value.trim() || aiConfig.ollama.api.defaultModel;
+    const prompt = `Traduire en ${targetLang}. Répondre uniquement avec la traduction.\nTexte:\n${value}`;
+
+    this.ollamaProvider.sendRequest({
+      prompt,
+      model,
+      abortController: this.currentAbortController,
+      onComplete: (translation) => {
+        const newValue = typeof translation === 'string' ? translation : (translation?.text || "");
+        if (!newValue) return;
+
+        if (selectedNode) {
+          performAction({
+            type: "update_node",
+            data: {
+              nodeId: selectedNode.id,
+              field: field,
+              from: selectedNode[field] ?? "",
+              to: newValue,
+              label: `Translate ${field} to ${targetLang}`
+            }
+          });
+        } else if (selectedLink) {
+          performAction({
+            type: "update_link",
+            data: {
+              linkId: selectedLink.id,
+              field: field,
+              from: selectedLink[field] ?? "",
+              to: newValue,
+              label: `Translate ${field} to ${targetLang}`
+            }
+          });
+        }
+        this.renderer.updateGraph();
+      },
+      onError: (error) => {
+        console.error("Translate error:", error);
+        alert(`Erreur de traduction: ${error.message}`);
+      }
+    });
+  }
+
+  refreshTranslationSheet() {
+    const body = this.elements.sheetBody;
+    if (!body) return;
+    body.innerHTML = '';
+
+    const defaultSource = this.graphState.globalSettings.currentLanguage || 'fr';
+    if (this.elements.sheetLangSource && !this.elements.sheetLangSource.value) {
+      this.elements.sheetLangSource.value = defaultSource;
+    }
+    const sourceLang = (this.elements.sheetLangSource?.value || defaultSource).trim();
+    if (this.elements.sheetLangTarget && !this.elements.sheetLangTarget.value) {
+      const langs = (this.graphState.globalSettings.multilingualLangs || 'fr,en')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+      this.elements.sheetLangTarget.value = langs.find(l => l !== sourceLang) || 'en';
+    }
+    const targetLang = (this.elements.sheetLangTarget?.value || '').trim();
+    const scope = 'both';
+    const fields = this.collectAllFields();
+    this.populateSheetFieldOptions(fields);
+
+    const langs = (this.graphState.globalSettings.multilingualLangs || 'fr,en')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const addRow = (type, id, field, lang, value) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${type}</td>
+        <td>${id}</td>
+        <td>${field}</td>
+        <td>${lang}</td>
+        <td>
+          <input class="sheet-input" type="text"
+            data-type="${type}"
+            data-id="${id}"
+            data-field="${field}"
+            data-lang="${lang}"
+            value="${escapeHtml(String(value ?? ""))}">
+        </td>
+        <td><input type="checkbox" class="sheet-check"
+          data-type="${type}"
+          data-id="${id}"
+          data-field="${field}"
+          data-lang="${lang}"
+          data-source="${escapeHtml(String(value ?? ""))}"
+          data-targetlang="${targetLang}"></td>
+      `;
+      body.appendChild(tr);
+    };
+
+    const rows = [];
+    const addItems = (items, type) => {
+      items.forEach(item => {
+        fields.forEach(base => {
+          const hasLang = langs.some(l => item[`${base}_${l}`] != null) ||
+            (item[base] && typeof item[base] === 'object');
+          if (hasLang) {
+            langs.forEach(lang => {
+              const val = this.resolveLangField(item, base, lang);
+              if (val != null && val !== '') {
+                rows.push({ type, id: item.id, field: base, lang, value: val });
+              }
+            });
+          } else {
+            const val = item[base];
+            if (val != null && val !== '') {
+              rows.push({ type, id: item.id, field: base, lang: '', value: val });
+            }
+          }
+        });
+      });
+    };
+
+    if (scope === 'nodes' || scope === 'both') addItems(this.graphState.nodes, 'node');
+    if (scope === 'links' || scope === 'both') addItems(this.graphState.links, 'link');
+
+    const filterText = (this.elements.sheetFilter?.value || '').toLowerCase();
+    const filterType = this.elements.sheetFilterType?.value || '';
+    const filterField = this.elements.sheetFilterField?.value || '';
+    const filterLang = (this.elements.sheetFilterLang?.value || '').toLowerCase();
+
+    const filtered = rows.filter(r => {
+      if (filterType && r.type !== filterType) return false;
+      if (filterField && r.field !== filterField) return false;
+      if (filterLang && String(r.lang).toLowerCase() !== filterLang) return false;
+      if (filterText) {
+        const hay = `${r.type} ${r.id} ${r.field} ${r.lang} ${r.value}`.toLowerCase();
+        if (!hay.includes(filterText)) return false;
+      }
+      return true;
+    });
+
+    const sortKey = this.elements.sheetSort?.value || 'type';
+    filtered.sort((a, b) => {
+      const av = String(a[sortKey] ?? '');
+      const bv = String(b[sortKey] ?? '');
+      return av.localeCompare(bv);
+    });
+
+    filtered.forEach(r => addRow(r.type, r.id, r.field, r.lang, r.value));
+  }
+
+  resolveLangField(item, base, lang) {
+    const suffix = `${base}_${lang}`;
+    if (item[suffix] != null) return item[suffix];
+    const obj = item[base];
+    if (obj && typeof obj === 'object' && obj[lang] != null) return obj[lang];
+    if (!lang) return item[base];
+    // fallback: any available suffix
+    const any = Object.keys(item || {}).find(k => k.startsWith(`${base}_`));
+    if (any) return item[any];
+    return '';
+  }
+
+  collectAllFields() {
+    const exclude = new Set(['vx','vy','fx','fy','index','source','target']);
+    const fields = new Set();
+    const addFrom = items => {
+      items.forEach(item => {
+        Object.keys(item || {}).forEach(k => {
+          if (exclude.has(k)) return;
+          const base = k.includes('_') ? k.split('_').slice(0, -1).join('_') : k;
+          fields.add(base || k);
+        });
+      });
+    };
+    addFrom(this.graphState.nodes);
+    addFrom(this.graphState.links);
+    return Array.from(fields);
+  }
+
+  populateSheetFieldOptions(fields) {
+    if (this.elements.sheetFilterField) {
+      const options = [''].concat(fields);
+      this.elements.sheetFilterField.innerHTML = options
+        .map(f => `<option value="${f}">${f || 'Tous'}</option>`)
+        .join('');
+    }
+    if (this.elements.sheetColumnField) {
+      this.elements.sheetColumnField.innerHTML = fields
+        .map(f => `<option value="${f}">${f}</option>`)
+        .join('');
+    }
+  }
+
+  toggleAllSheetChecks(value) {
+    document.querySelectorAll('.sheet-check').forEach(cb => {
+      cb.checked = value;
+    });
+  }
+
+  translateSheetSelection() {
+    const selected = Array.from(document.querySelectorAll('.sheet-check'))
+      .filter(cb => cb.checked)
+      .map(cb => ({
+        type: cb.dataset.type,
+        id: cb.dataset.id,
+        field: cb.dataset.field,
+        source: cb.closest('tr')?.querySelector('.sheet-input')?.value ?? cb.dataset.source,
+        lang: cb.dataset.lang,
+        targetLang: cb.dataset.targetlang
+      }));
+
+    if (!selected.length) {
+      alert("Aucune case cochée.");
+      return;
+    }
+
+    const targetLang = selected[0].targetLang || '';
+    if (!targetLang) {
+      alert("Veuillez définir une langue cible.");
+      return;
+    }
+
+    this.currentAbortController = new AbortController();
+    const model = this.elements.model?.value.trim() || aiConfig.ollama.api.defaultModel;
+    const payload = selected.map((s, idx) => ({
+      index: idx,
+      type: s.type,
+      id: s.id,
+      field: s.field,
+      lang: s.lang,
+      text: s.source
+    }));
+    const prompt = `
+Tu es un traducteur. Traduis chaque élément en ${targetLang}.
+Réponds uniquement avec un JSON valide au format:
+[
+  {"index":0,"translation":"..."},
+  ...
+]
+Entrée:
+${JSON.stringify(payload, null, 2)}
+`;
+
+    this.ollamaProvider.sendRequest({
+      prompt,
+      model,
+      abortController: this.currentAbortController,
+      onComplete: (result) => {
+        let parsed = result;
+        try {
+          if (typeof result === 'string') parsed = JSON.parse(result);
+        } catch (e) {
+          alert("Réponse IA invalide (JSON attendu).");
+          return;
+        }
+        if (!Array.isArray(parsed)) {
+          alert("Réponse IA invalide (tableau attendu).");
+          return;
+        }
+
+        const actions = [];
+        parsed.forEach(item => {
+          const src = selected.find(s => String(s.index) === String(item.index) || Number(s.index) === Number(item.index));
+          if (!src || !item.translation) return;
+          const field = `${src.field}_${targetLang}`;
+          if (src.type === 'node') {
+            actions.push({
+              type: "update_node",
+              data: { nodeId: src.id, field, from: "", to: item.translation, label: `Translate ${src.field} to ${targetLang}` }
+            });
+          } else {
+            actions.push({
+              type: "update_link",
+              data: { linkId: src.id, field, from: "", to: item.translation, label: `Translate ${src.field} to ${targetLang}` }
+            });
+          }
+        });
+
+        if (actions.length) {
+          performAction({ type: "composite", actions, label: "Batch translate" });
+          this.renderer.updateGraph();
+          this.refreshTranslationSheet();
+        }
+      },
+      onError: (error) => {
+        console.error("Batch translate error:", error);
+        alert(`Erreur de traduction: ${error.message}`);
+      }
+    });
+  }
+
+  applySheetEdits() {
+    const inputs = Array.from(document.querySelectorAll('.sheet-input'));
+    const actions = [];
+    inputs.forEach(input => {
+      const type = input.dataset.type;
+      const id = input.dataset.id;
+      const field = input.dataset.field;
+      const lang = input.dataset.lang;
+      const fullField = `${field}_${lang}`;
+      const newValue = input.value;
+      if (type === 'node') {
+        const node = this.graphState.nodes.find(n => String(n.id) === String(id));
+        if (!node) return;
+        const oldValue = node[fullField] ?? "";
+        if (newValue !== oldValue) {
+          actions.push({
+            type: "update_node",
+            data: { nodeId: node.id, field: fullField, from: oldValue, to: newValue, label: `Edit ${fullField}` }
+          });
+        }
+      } else {
+        const link = this.graphState.links.find(l => String(l.id) === String(id));
+        if (!link) return;
+        const oldValue = link[fullField] ?? "";
+        if (newValue !== oldValue) {
+          actions.push({
+            type: "update_link",
+            data: { linkId: link.id, field: fullField, from: oldValue, to: newValue, label: `Edit ${fullField}` }
+          });
+        }
+      }
+    });
+    if (actions.length) {
+      performAction({ type: "composite", actions, label: "Spreadsheet edits" });
+      this.renderer.updateGraph();
+      this.refreshTranslationSheet();
+    }
+  }
+
+  updateFromSheetInput(input) {
+    const type = input.dataset.type;
+    const id = input.dataset.id;
+    const field = input.dataset.field;
+    const lang = input.dataset.lang;
+    const fullField = `${field}_${lang}`;
+    const newValue = input.value;
+    if (type === 'node') {
+      const node = this.graphState.nodes.find(n => String(n.id) === String(id));
+      if (!node) return;
+      const oldValue = node[fullField] ?? "";
+      if (newValue !== oldValue) {
+        performAction({
+          type: "update_node",
+          data: { nodeId: node.id, field: fullField, from: oldValue, to: newValue, label: `Edit ${fullField}` }
+        });
+        this.renderer.updateGraph();
+      }
+    } else {
+      const link = this.graphState.links.find(l => String(l.id) === String(id));
+      if (!link) return;
+      const oldValue = link[fullField] ?? "";
+      if (newValue !== oldValue) {
+        performAction({
+          type: "update_link",
+          data: { linkId: link.id, field: fullField, from: oldValue, to: newValue, label: `Edit ${fullField}` }
+        });
+        this.renderer.updateGraph();
+      }
+    }
+  }
+
+  applySheetFindReplace() {
+    const find = this.elements.sheetFind?.value || '';
+    const replace = this.elements.sheetReplace?.value || '';
+    if (!find) return;
+    const inputs = Array.from(document.querySelectorAll('.sheet-input'));
+    inputs.forEach(input => {
+      if (input.value.includes(find)) {
+        input.value = input.value.split(find).join(replace);
+      }
+    });
+  }
+
+  selectColumn() {
+    const field = this.elements.sheetColumnField?.value || '';
+    const lang = (this.elements.sheetColumnLang?.value || '').trim();
+    document.querySelectorAll('.sheet-check').forEach(cb => {
+      if (cb.dataset.field === field && (!lang || cb.dataset.lang === lang)) {
+        cb.checked = true;
+      }
+    });
+  }
+
+  exportSheetCsv() {
+    const rows = Array.from(document.querySelectorAll('#multilingual-sheet-body tr')).map(tr => {
+      const tds = tr.querySelectorAll('td');
+      if (tds.length < 6) return null;
+      return {
+        type: tds[0].textContent.trim(),
+        id: tds[1].textContent.trim(),
+        field: tds[2].textContent.trim(),
+        lang: tds[3].textContent.trim(),
+        value: tr.querySelector('.sheet-input')?.value ?? ''
+      };
+    }).filter(Boolean);
+
+    if (!rows.length) return;
+    const header = "type,id,field,lang,value\n";
+    const body = rows.map(r => {
+      const vals = [r.type, r.id, r.field, r.lang, r.value].map(v => {
+        const s = String(v ?? '');
+        return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g, '""')}"` : s;
+      });
+      return vals.join(',');
+    }).join('\n');
+    const csv = header + body;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tableur.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

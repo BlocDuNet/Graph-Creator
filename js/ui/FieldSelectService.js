@@ -20,6 +20,20 @@ export function syncGlobalSettingsUI(state) {
   // inputs
   const defSize = document.getElementById('defaultNodeSizeInput');
   const defLink = document.getElementById('defaultLinkWidthInput');
+  const multiEnabled = document.getElementById('multilingual-enabled');
+  const multiLangs = document.getElementById('multilingual-langs');
+  const currentLang = document.getElementById('current-language');
   if (defSize) defSize.value = state.globalSettings.defaultNodeSize;
   if (defLink) defLink.value = state.globalSettings.defaultLinkWidth;
+  if (multiEnabled) multiEnabled.checked = !!state.globalSettings.multilingualEnabled;
+  if (multiLangs) multiLangs.value = state.globalSettings.multilingualLangs || '';
+  if (currentLang) {
+    const langs = (state.globalSettings.multilingualLangs || 'fr,en')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    currentLang.innerHTML = '<option value=""></option>' 
+      + langs.map(l => `<option value="${l}">${l}</option>`).join('');
+    currentLang.value = state.globalSettings.currentLanguage || langs[0] || '';
+  }
 }
