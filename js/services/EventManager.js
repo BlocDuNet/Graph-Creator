@@ -1,4 +1,4 @@
-import { exportJson, loadJSONGraph } from './io.js';
+import { exportJson, loadJSONGraph, prepareAdvancedImport, applyAdvancedImport, cancelAdvancedImport } from './io.js';
 import { graphConfig } from '../config/index.js';
 import { updateGraphConfig } from '../config/graph.js';
 
@@ -65,6 +65,24 @@ export class EventManager {
       const reader = new FileReader();
       reader.onload = e => loadJSONGraph(e.target.result);
       reader.readAsText(file);
+    });
+
+    // Import avancé (mapping)
+    document.getElementById('import-json-advanced')?.addEventListener('click', () => {
+      document.getElementById('json-file-advanced')?.click();
+    });
+    document.getElementById('json-file-advanced')?.addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => prepareAdvancedImport(e.target.result);
+      reader.readAsText(file);
+    });
+    document.getElementById('advanced-import-apply')?.addEventListener('click', () => {
+      applyAdvancedImport();
+    });
+    document.getElementById('advanced-import-cancel')?.addEventListener('click', () => {
+      cancelAdvancedImport();
     });
 
     // ----- 3) Import/Export de la configuration du graphe -----

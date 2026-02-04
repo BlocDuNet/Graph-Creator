@@ -43,7 +43,7 @@ export class UIManager {
 
     // 3) Synchroniser immédiatement les selects/inputs
     refreshFieldSelects(this.graphState);
-    this.initSearchableSelects();
+    // keeps standard selects
 
     // 4) Lier tous les écouteurs window centralisés
     WindowEventManager.bindAll(this);
@@ -307,94 +307,25 @@ export class UIManager {
    */
   updateAllFieldSelects() {
     refreshFieldSelects(this.graphState);
-    this.applySelectFilters();
-  }
-
-  /**
-   * Ajoute un champ de recherche au-dessus des selects pour filtrer les options
-   */
-  initSearchableSelects() {
-    const selectIds = [
-      'node-label',
-      'link-label',
-      'node-id-field',
-      'node-x-field',
-      'node-y-field',
-      'node-size-field'
-    ];
-
-    selectIds.forEach(id => {
-      const sel = document.getElementById(id);
-      if (!sel || sel.dataset.searchableInit === 'true') return;
-
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'form-control form-control-sm select-filter';
-      input.placeholder = 'Rechercher...';
-      input.setAttribute('data-for', id);
-
-      sel.parentNode.insertBefore(input, sel);
-      sel.dataset.searchableInit = 'true';
-
-      input.addEventListener('input', () => this.filterSelectOptions(id, input.value));
-    });
-  }
-
-  /**
-   * Réapplique les filtres existants après mise à jour des options
-   */
-  applySelectFilters() {
-    const inputs = document.querySelectorAll('.select-filter[data-for]');
-    inputs.forEach(input => {
-      const id = input.getAttribute('data-for');
-      this.filterSelectOptions(id, input.value);
-    });
-  }
-
-  /**
-   * Filtre les options d'un select par texte
-   */
-  filterSelectOptions(selectId, query) {
-    const sel = document.getElementById(selectId);
-    if (!sel) return;
-    const all = sel._allOptions || Array.from(sel.options)
-      .map(o => o.value)
-      .filter(v => v !== '');
-
-    const q = (query || '').toLowerCase();
-    const filtered = all.filter(opt => opt.toLowerCase().includes(q));
-
-    const selected = sel.value;
-    const final = filtered.slice();
-    if (selected && !final.includes(selected)) final.unshift(selected);
-
-    this.updateSelectOptions(sel, final, selected);
   }
   
   /**
    * Met à jour les options d'un sélecteur
    */
   updateSelectOptions(selectElem, optionsArr, selectedValue) {
-    // Nettoyer les options existantes
     while (selectElem.firstChild) {
       selectElem.removeChild(selectElem.firstChild);
     }
-    
-    // Ajouter option vide
     const emptyOption = document.createElement('option');
     emptyOption.value = '';
     emptyOption.textContent = '';
     selectElem.appendChild(emptyOption);
-    
-    // Ajouter les nouvelles options
     optionsArr.forEach(opt => {
       const option = document.createElement('option');
       option.value = opt;
       option.textContent = opt;
       selectElem.appendChild(option);
     });
-    
-    // Définir la valeur sélectionnée
     selectElem.value = selectedValue;
   }
   

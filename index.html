@@ -190,6 +190,7 @@
                             <div class="d-flex flex-wrap">
                               <button id="export-json" class="btn btn-sm btn-outline-primary m-1">Export JSON</button>
                               <button id="import-json" class="btn btn-sm btn-outline-primary m-1">Import JSON</button>
+                              <button id="import-json-advanced" class="btn btn-sm btn-outline-primary m-1">Import avancé</button>
                               <button id="changeLabelButton" class="btn btn-sm btn-outline-secondary m-1">Initialize Labels</button>
                             </div>
                             <div class="mt-2">
@@ -198,6 +199,63 @@
                             </div>
                             <label for="json-file" class="sr-only">Import JSON file</label>
                             <input type="file" id="json-file" accept=".json" class="hidden" title="Select JSON file to import" aria-label="Import JSON file">
+                            <label for="json-file-advanced" class="sr-only">Import JSON file (advanced)</label>
+                            <input type="file" id="json-file-advanced" accept=".json" class="hidden" title="Select JSON file to import (advanced)" aria-label="Import JSON file (advanced)">
+                            <div id="advanced-import-overlay" class="advanced-import-overlay hidden">
+                              <div id="advanced-import-panel" class="advanced-import-modal">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                  <h6 class="mb-0">Import avancé (mapping)</h6>
+                                  <button id="advanced-import-cancel" class="btn btn-sm btn-outline-secondary">Fermer</button>
+                                </div>
+                                <div class="row">
+                                  <div class="col-md-6">
+                                    <label class="small">Clé des noeuds (root)</label>
+                                    <input id="advanced-nodes-key" class="form-control form-control-sm">
+                                  </div>
+                                  <div class="col-md-6">
+                                    <label class="small">Clé des liens (root)</label>
+                                    <input id="advanced-links-key" class="form-control form-control-sm">
+                                  </div>
+                                </div>
+                                <div class="row mt-2">
+                                  <div class="col-md-6">
+                                    <label class="small">Champ ID noeud</label>
+                                    <input id="advanced-node-id" class="form-control form-control-sm">
+                                  </div>
+                                  <div class="col-md-6">
+                                    <label class="small">Champ label noeud (ex: name ou name.fr)</label>
+                                    <input id="advanced-node-label" class="form-control form-control-sm">
+                                  </div>
+                                </div>
+                                <div class="row mt-2">
+                                  <div class="col-md-6">
+                                    <label class="small">Champ description noeud (ex: description ou description.fr)</label>
+                                    <input id="advanced-node-desc" class="form-control form-control-sm">
+                                  </div>
+                                  <div class="col-md-6">
+                                    <label class="small">Langue (optionnel, ex: fr)</label>
+                                    <input id="advanced-language-key" class="form-control form-control-sm">
+                                  </div>
+                                </div>
+                                <div class="row mt-2">
+                                  <div class="col-md-4">
+                                    <label class="small">Champ source lien</label>
+                                    <input id="advanced-link-source" class="form-control form-control-sm">
+                                  </div>
+                                  <div class="col-md-4">
+                                    <label class="small">Champ target lien</label>
+                                    <input id="advanced-link-target" class="form-control form-control-sm">
+                                  </div>
+                                  <div class="col-md-4">
+                                    <label class="small">Champ label lien (ex: name ou name.fr)</label>
+                                    <input id="advanced-link-label" class="form-control form-control-sm">
+                                  </div>
+                                </div>
+                                <div class="mt-2 d-flex flex-wrap">
+                                  <button id="advanced-import-apply" class="btn btn-sm btn-success m-1">Importer</button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
 

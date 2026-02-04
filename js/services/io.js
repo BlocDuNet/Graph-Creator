@@ -8,6 +8,7 @@ import eventBus from './EventBus.js';
 
 let graphState = null;
 let renderer = null;
+let pendingAdvancedImport = null;
 
 /**
  * Initialise le service d'entrée/sortie
@@ -90,10 +91,107 @@ function loadJSONGraph(jsonContent) {
 }
 
 /**
+ * Prépare l'import avancé (mapping utilisateur)
+ */
+function prepareAdvancedImport(jsonContent) {
+  try {
+    const raw = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+    pendingAdvancedImport = { raw };
+    showAdvancedImportPanel(true);
+    populateAdvancedImportUI(raw);
+  } catch (error) {
+    console.error("Erreur import avancé:", error);
+    alert(`Erreur import avancé: ${error.message}`);
+  }
+}
+
+function applyAdvancedImport() {
+  if (!pendingAdvancedImport?.raw) return;
+  const mapping = readAdvancedMapping();
+  try {
+    const { nodes, links } = normalizeImportedGraph(pendingAdvancedImport.raw, mapping);
+    const oldState = { nodes: [...graphState.nodes], links: [...graphState.links] };
+    performAction({
+      type: "import_graph",
+      data: { oldState, newState: { nodes, links }, label: "Import JSON graph (advanced)" }
+    });
+    renderer.updateGraph();
+    eventBus.emit('graph-imported', { nodes, links });
+    showAdvancedImportPanel(false);
+    pendingAdvancedImport = null;
+  } catch (error) {
+    console.error("Erreur application import avancé:", error);
+    alert(`Erreur import avancé: ${error.message}`);
+  }
+}
+
+function cancelAdvancedImport() {
+  pendingAdvancedImport = null;
+  showAdvancedImportPanel(false);
+}
+
+function showAdvancedImportPanel(show) {
+  const overlay = document.getElementById('advanced-import-overlay');
+  if (!overlay) return;
+  overlay.classList.toggle('hidden', !show);
+}
+
+function populateAdvancedImportUI(raw) {
+  const rootKeys = Object.keys(raw || {});
+  const nodeKeyGuess = guessNodesKey(raw);
+  const linkKeyGuess = guessLinksKey(raw);
+  const nodes = resolveRootArray(raw, nodeKeyGuess) || [];
+  const links = resolveRootArray(raw, linkKeyGuess) || [];
+
+  const nodeFields = collectKeysFromArray(nodes);
+  const linkFields = collectKeysFromArray(links);
+
+  fillInputWithDatalist('advanced-nodes-key', rootKeys, nodeKeyGuess || '');
+  fillInputWithDatalist('advanced-links-key', rootKeys, linkKeyGuess || '');
+
+  fillInputWithDatalist('advanced-node-id', nodeFields, guessField(nodeFields, ['id', 'key', 'uuid', 'uid']));
+  fillInputWithDatalist('advanced-node-label', nodeFields, guessField(nodeFields, ['name', 'label', 'title']));
+  fillInputWithDatalist('advanced-node-desc', nodeFields, guessField(nodeFields, ['description', 'desc', 'details']));
+
+  fillInputWithDatalist('advanced-link-source', linkFields, guessField(linkFields, ['source', 'from', 'src', 'origin', 'start']));
+  fillInputWithDatalist('advanced-link-target', linkFields, guessField(linkFields, ['target', 'to', 'dst', 'destination', 'end']));
+  fillInputWithDatalist('advanced-link-label', linkFields, guessField(linkFields, ['name', 'label', 'type']));
+}
+
+function readAdvancedMapping() {
+  return {
+    nodesKey: document.getElementById('advanced-nodes-key')?.value || '',
+    linksKey: document.getElementById('advanced-links-key')?.value || '',
+    nodeIdField: document.getElementById('advanced-node-id')?.value || '',
+    nodeLabelField: document.getElementById('advanced-node-label')?.value || '',
+    nodeDescField: document.getElementById('advanced-node-desc')?.value || '',
+    linkSourceField: document.getElementById('advanced-link-source')?.value || '',
+    linkTargetField: document.getElementById('advanced-link-target')?.value || '',
+    linkLabelField: document.getElementById('advanced-link-label')?.value || '',
+    languageKey: document.getElementById('advanced-language-key')?.value || ''
+  };
+}
+
+function fillInputWithDatalist(inputId, options, value) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const listId = `${inputId}-list`;
+  let list = document.getElementById(listId);
+  if (!list) {
+    list = document.createElement('datalist');
+    list.id = listId;
+    input.setAttribute('list', listId);
+    input.parentNode.appendChild(list);
+  }
+  list.innerHTML = (options || []).map(o => `<option value="${o}"></option>`).join('');
+  if (value != null) input.value = value;
+}
+
+/**
  * Normalise et valide un JSON de graphes provenant de schémas variés.
  * Objectif: accepter plusieurs formats tout en garantissant des données sûres.
  */
-function normalizeImportedGraph(raw) {
+function normalizeImportedGraph(raw, mapping = null) {
   if (!raw || typeof raw !== 'object') {
     throw new Error("Format JSON invalide: objet requis.");
   }
@@ -104,9 +202,9 @@ function normalizeImportedGraph(raw) {
   if (raw.data && typeof raw.data === 'object') data = raw.data;
 
   // Détecter les tableaux de noeuds/liens avec plusieurs noms possibles
-  const nodesArray =
+  const nodesArray = resolveRootArray(data, mapping?.nodesKey) ||
     data.nodes || data.vertices || data.items || data.nodeList || data.node || null;
-  const linksArray =
+  const linksArray = resolveRootArray(data, mapping?.linksKey) ||
     data.links || data.edges || data.relations || data.connections || data.link || null;
 
   // Cas: tableau direct de noeuds
@@ -122,8 +220,19 @@ function normalizeImportedGraph(raw) {
     if (!node || typeof node !== 'object') {
       throw new Error(`Noeud invalide à l'index ${idx}: objet requis.`);
     }
-    const id = extractNodeId(node, idx);
-    return { ...node, id: String(id) };
+    const id = mapping?.nodeIdField
+      ? resolveValue(node, mapping.nodeIdField, mapping.languageKey)
+      : extractNodeId(node, idx);
+    const label = mapping?.nodeLabelField
+      ? resolveValue(node, mapping.nodeLabelField, mapping.languageKey)
+      : undefined;
+    const desc = mapping?.nodeDescField
+      ? resolveValue(node, mapping.nodeDescField, mapping.languageKey)
+      : undefined;
+    const normalized = { ...node, id: String(id) };
+    if (label != null && label !== '') normalized.name = String(label);
+    if (desc != null && desc !== '') normalized.description = String(desc);
+    return normalized;
   });
 
   // Index par id
@@ -140,7 +249,9 @@ function normalizeImportedGraph(raw) {
       throw new Error(`Lien invalide à l'index ${idx}: objet requis.`);
     }
 
-    const { sourceId, targetId } = extractLinkEndpoints(link);
+    const { sourceId, targetId } = mapping
+      ? extractLinkEndpointsWithMapping(link, mapping)
+      : extractLinkEndpoints(link);
     if (sourceId == null || targetId == null) {
       console.warn("Lien ignoré (source/target manquant):", link);
       return null;
@@ -158,12 +269,17 @@ function normalizeImportedGraph(raw) {
       nodes.push(newNode);
     }
 
-    return {
+    const label = mapping?.linkLabelField
+      ? resolveValue(link, mapping.linkLabelField, mapping.languageKey)
+      : undefined;
+    const normalized = {
       ...link,
       id: String(link.id ?? `${sourceId}-${targetId}-${idx}`),
       source: nodeById.get(String(sourceId)),
       target: nodeById.get(String(targetId))
     };
+    if (label != null && label !== '') normalized.name = String(label);
+    return normalized;
   }).filter(Boolean);
 
   return { nodes, links };
@@ -179,6 +295,14 @@ function extractNodeId(node, idx) {
   return candidate;
 }
 
+function extractLinkEndpointsWithMapping(link, mapping) {
+  const src = mapping.linkSourceField ? resolveValue(link, mapping.linkSourceField, mapping.languageKey) : null;
+  const tgt = mapping.linkTargetField ? resolveValue(link, mapping.linkTargetField, mapping.languageKey) : null;
+  const sourceId = normalizeEndpoint(src);
+  const targetId = normalizeEndpoint(tgt);
+  return { sourceId, targetId };
+}
+
 function extractLinkEndpoints(link) {
   const src =
     link.source ?? link.from ?? link.src ?? link.sourceId ?? link.origin ?? link.start;
@@ -188,6 +312,27 @@ function extractLinkEndpoints(link) {
   const sourceId = normalizeEndpoint(src);
   const targetId = normalizeEndpoint(tgt);
   return { sourceId, targetId };
+}
+
+function resolveValue(obj, path, langKey) {
+  if (!path) return null;
+  let value = getByPath(obj, path);
+  if (value && typeof value === 'object' && langKey) {
+    if (value[langKey] != null) return value[langKey];
+  }
+  return value;
+}
+
+function getByPath(obj, path) {
+  if (!obj || !path) return null;
+  if (!path.includes('.')) return obj[path];
+  return path.split('.').reduce((acc, key) => (acc ? acc[key] : undefined), obj);
+}
+
+function resolveRootArray(data, key) {
+  if (!data || !key) return null;
+  if (key.includes('.')) return getByPath(data, key);
+  return data[key];
 }
 
 function normalizeEndpoint(value) {
@@ -227,6 +372,49 @@ function deriveLinksFromNodes(nodes) {
     });
   });
   return links;
+}
+
+function collectKeysFromArray(arr) {
+  const set = new Set();
+  (arr || []).forEach(item => {
+    if (!item || typeof item !== 'object') return;
+    Object.keys(item).forEach(k => set.add(k));
+  });
+  return Array.from(set);
+}
+
+function guessNodesKey(raw) {
+  if (!raw || typeof raw !== 'object') return '';
+  const keys = Object.keys(raw);
+  const arrays = keys.filter(k => Array.isArray(raw[k]));
+  // Prefer array with "node-ish" keys
+  const nodeish = arrays.find(k => {
+    const item = raw[k]?.[0];
+    return item && typeof item === 'object' && ('id' in item || 'name' in item || 'label' in item);
+  });
+  return nodeish || arrays[0] || '';
+}
+
+function guessLinksKey(raw) {
+  if (!raw || typeof raw !== 'object') return '';
+  const keys = Object.keys(raw);
+  const arrays = keys.filter(k => Array.isArray(raw[k]));
+  const linkish = arrays.find(k => {
+    const item = raw[k]?.[0];
+    return item && typeof item === 'object' && (
+      'source' in item || 'target' in item || 'from' in item || 'to' in item
+    );
+  });
+  return linkish || '';
+}
+
+function guessField(fields, candidates) {
+  const f = (fields || []).map(x => x.toLowerCase());
+  for (const cand of candidates) {
+    const idx = f.indexOf(cand.toLowerCase());
+    if (idx >= 0) return fields[idx];
+  }
+  return '';
 }
 
 /**
@@ -274,5 +462,8 @@ async function loadJSONModelFile(file) {
 export { 
   exportJson, 
   loadJSONGraph,
-  loadJSONModelFile 
+  loadJSONModelFile,
+  prepareAdvancedImport,
+  applyAdvancedImport,
+  cancelAdvancedImport
 };
