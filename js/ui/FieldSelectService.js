@@ -16,6 +16,8 @@ export function syncGlobalSettingsUI(state) {
     sel.innerHTML = '<option value=""></option>' 
       + opts.map(o => `<option value="${o}">${o}</option>`).join('');
     sel.value = val;
+    // stocker les options complètes pour le filtrage
+    sel._allOptions = opts.slice();
   });
   // inputs
   const defSize = document.getElementById('defaultNodeSizeInput');

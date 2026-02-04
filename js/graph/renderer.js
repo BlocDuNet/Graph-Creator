@@ -2,6 +2,7 @@
  * Gère le rendu du graphe avec D3
  */
 import { graphConfig } from '../config/index.js';
+import eventBus from '../services/EventBus.js';
 
 export class GraphRenderer {
   constructor(graphState, svgSelection) {
@@ -521,7 +522,7 @@ export class GraphRenderer {
     }
     
     // notifier la mise à jour du graphe
-    window.dispatchEvent(new CustomEvent('graph-updated'));
+    eventBus.emit('graph-updated');
     
     return {
       nodeEnter,

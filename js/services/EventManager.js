@@ -30,6 +30,28 @@ export class EventManager {
       renderer.updateGraph();
     });
 
+    // ----- 1bis) Paramètres de forces -----
+    document.getElementById('link-force')?.addEventListener('change', function() {
+      graphConfig.forces.linkStrength = this.checked ? 1 : 0;
+      renderer.updateForces();
+    });
+    document.getElementById('link-distance')?.addEventListener('change', function() {
+      graphConfig.forces.linkDistance = parseFloat(this.value);
+      renderer.updateForces();
+    });
+    document.getElementById('charge-strength')?.addEventListener('change', function() {
+      graphConfig.forces.chargeStrength = parseFloat(this.value);
+      renderer.updateForces();
+    });
+    document.getElementById('center-force')?.addEventListener('change', function() {
+      graphConfig.forces.centerStrength = this.checked ? 1 : 0;
+      renderer.updateForces();
+    });
+    document.getElementById('forceRecreateLinks')?.addEventListener('change', function() {
+      graphConfig.forceRecreateLinks = this.checked;
+      renderer.updateGraph();
+    });
+
     // ----- 2) Import/Export du graphe (JSON) -----
     document.getElementById('export-json')?.addEventListener('click', () => {
       exportJson();

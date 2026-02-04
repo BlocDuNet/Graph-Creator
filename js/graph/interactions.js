@@ -2,6 +2,7 @@
  * Gère les interactions utilisateur avec le graphe
  */
 import { performAction } from '../state/undo_redo.js';
+import eventBus from '../services/EventBus.js';
 
 export class InteractionManager {
   constructor(graphState, renderer, svgSelection) {
@@ -15,7 +16,7 @@ export class InteractionManager {
     
     // attacher handlers immédiatement et après chaque updateGraph
     this.attachInteractionHandlers();
-    window.addEventListener('graph-updated', () => this.attachInteractionHandlers());
+    eventBus.on('graph-updated', () => this.attachInteractionHandlers());
     
     // Activer le zoom
     this.renderer.enableZoom();
@@ -174,16 +175,13 @@ export class InteractionManager {
       this.graphState.clearSelection();
       
       // Déclencher l'événement de désélection explicitement
-      window.dispatchEvent(new CustomEvent('selection-cleared'));
+      eventBus.emit('selection-cleared');
     } else {
       // Sélectionner le nouveau nœud
       this.graphState.selectNode(d);
       
       // Émettre un événement personnalisé pour la sélection
-      const nodeSelectEvent = new CustomEvent('node-selected', { 
-        detail: { node: d } 
-      });
-      window.dispatchEvent(nodeSelectEvent);
+      eventBus.emit('node-selected', { node: d });
     }
     
     this.renderer.updateGraph();
@@ -202,10 +200,7 @@ export class InteractionManager {
     this.renderer.updateGraph();
     
     // Émettre un événement personnalisé
-    const linkSelectEvent = new CustomEvent('link-selected', { 
-      detail: { link: this.graphState.selectedLink } 
-    });
-    window.dispatchEvent(linkSelectEvent);
+    eventBus.emit('link-selected', { link: this.graphState.selectedLink });
   }
   
   /**
@@ -222,9 +217,7 @@ export class InteractionManager {
     this.graphState.selectNode(newNode);
     
     // Déclencher un événement spécifique pour la création
-    window.dispatchEvent(new CustomEvent('node-created', { 
-      detail: { node: newNode } 
-    }));
+    eventBus.emit('node-created', { node: newNode });
     
     this.renderer.updateGraph();
   }
@@ -263,7 +256,7 @@ export class InteractionManager {
           const nodeSelectEvent = new CustomEvent('node-selected', { 
             detail: { node: newNode } 
           });
-          window.dispatchEvent(nodeSelectEvent);
+          eventBus.emit('node-selected', { node: newNode });
         }
       }
     }
@@ -288,7 +281,7 @@ export class InteractionManager {
         if (didDelete) {
           // forcer la désélection et cacher les formulaires
           this.graphState.clearSelection();
-          window.dispatchEvent(new CustomEvent('selection-cleared'));
+          eventBus.emit('selection-cleared');
         }
         this.renderer.updateGraph();
       }
@@ -299,8 +292,7 @@ export class InteractionManager {
         this.renderer.updateGraph();
         
         // Émettre un événement personnalisé
-        const clearEvent = new CustomEvent('selection-cleared');
-        window.dispatchEvent(clearEvent);
+        eventBus.emit('selection-cleared');
       }
     });
     
@@ -308,15 +300,13 @@ export class InteractionManager {
     window.addEventListener('keydown', event => {
       // Undo
       if (event.ctrlKey && !event.shiftKey && (event.key === 'z' || event.key === 'Z')) {
-        const undoEvent = new CustomEvent('undo-requested');
-        window.dispatchEvent(undoEvent);
+        eventBus.emit('undo-requested');
         event.preventDefault();
       }
       
       // Redo
       if (event.ctrlKey && (event.key === 'y' || event.key === 'Y')) {
-        const redoEvent = new CustomEvent('redo-requested');
-        window.dispatchEvent(redoEvent);
+        eventBus.emit('redo-requested');
         event.preventDefault();
       }
     });

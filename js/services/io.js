@@ -4,6 +4,7 @@
 import { performAction } from '../state/undo_redo.js';
 import { uiConfig } from '../config/index.js';
 import { listJsonFiles } from './fileService.js';  // <— nouvel import
+import eventBus from './EventBus.js';
 
 let graphState = null;
 let renderer = null;
@@ -80,9 +81,7 @@ function loadJSONGraph(jsonContent) {
     renderer.updateGraph();
     
     // Émettre un événement personnalisé pour notifier l'importation
-    window.dispatchEvent(new CustomEvent('graph-imported', { 
-      detail: { nodes, links } 
-    }));
+    eventBus.emit('graph-imported', { nodes, links });
     
   } catch (error) {
     console.error("Erreur lors du chargement du graphe:", error);

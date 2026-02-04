@@ -4,6 +4,7 @@
 import { OllamaProvider } from './OllamaProvider.js';
 import { performAction } from '../state/undo_redo.js';
 import { aiConfig } from '../config/index.js';
+import eventBus from '../services/EventBus.js';
 import * as templates from '../config/templates/graphGeneration.js';
 import * as proposalTemplates from '../config/templates/proposals.js';
 
@@ -249,9 +250,7 @@ export class AIManager {
       this.renderer.updateGraph();
       
       // Déclencher un événement pour notifier de l'importation et forcer le rafraîchissement des formulaires
-      window.dispatchEvent(new CustomEvent('graph-imported', { 
-        detail: { nodes: normalizedGraph.nodes, links: normalizedGraph.links } 
-      }));
+      eventBus.emit('graph-imported', { nodes: normalizedGraph.nodes, links: normalizedGraph.links });
       
       // Message de confirmation
       const msg = `Graphe importé avec succès ! (${normalizedGraph.nodes.length} nœuds, ${normalizedGraph.links.length} liens)`;

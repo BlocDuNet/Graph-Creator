@@ -1,9 +1,11 @@
+import eventBus from './EventBus.js';
+
 export class WindowEventManager {
   static _listeners = [];
 
   static bindAll(uiManager) {
     const add = (evt, h) => {
-      window.addEventListener(evt, h);
+      eventBus.on(evt, h);
       this._listeners.push({ evt, h });
     };
 
@@ -33,7 +35,7 @@ export class WindowEventManager {
         uiManager.updateAllFieldSelects();
       }
     };
-    add('action-applied', actionHandler);
+    add('action-performed', actionHandler);
 
     // selection-cleared, node-selected, link-selected, node-created
     add('selection-cleared', () => uiManager.formManager.hideAllForms());
@@ -47,7 +49,7 @@ export class WindowEventManager {
   }
 
   static unbindAll() {
-    this._listeners.forEach(({evt,h}) => window.removeEventListener(evt, h));
+    this._listeners.forEach(({evt,h}) => eventBus.off(evt, h));
     this._listeners = [];
   }
 }

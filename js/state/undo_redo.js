@@ -1,4 +1,5 @@
 // Gestion de l'historique des actions pour les fonctionnalités annuler/rétablir
+import eventBus from '../services/EventBus.js';
 
 class HistoryManager extends EventTarget {
   constructor() {
@@ -97,6 +98,7 @@ class HistoryManager extends EventTarget {
     }
     if (this.updateCallback) this.updateCallback();
     this.dispatchEvent(new CustomEvent('action-performed', { detail:{action} }));
+    eventBus.emit('action-performed', { action });
   }
 
   // Table de correspondance pour les actions inverses
@@ -179,6 +181,7 @@ class HistoryManager extends EventTarget {
     }
     this._updateHistoryList();
     this.dispatchEvent(new Event('undo-performed'));
+    eventBus.emit('undo-performed');
   }
 
   redo() {
@@ -188,6 +191,7 @@ class HistoryManager extends EventTarget {
     this.actionHistory.push(action);
     this._updateHistoryList();
     this.dispatchEvent(new Event('redo-performed'));
+    eventBus.emit('redo-performed');
   }
 
   jumpToHistory(idx) {
@@ -199,6 +203,7 @@ class HistoryManager extends EventTarget {
     this._history = [...this.actionHistory];
     // Notifier les abonnés au singleton
     this.dispatchEvent(new CustomEvent('history-updated', { detail:{ history:this._history } }));
+    eventBus.emit('history-updated', { history: this._history });
     // ← Compatibilité retour en arrière : maintenir window.updateHistoryList
     window.historyList = this._history.slice();
     window.updateHistoryList?.(this._history);
