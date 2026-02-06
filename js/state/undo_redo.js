@@ -61,6 +61,10 @@ class HistoryManager extends EventTarget {
     } else if (action.type === "update_field_type") {
       const { target, field, to } = action.data;
       this.graphState.setFieldTypeInternal(target, field, to);
+    } else if (action.type === "update_field_schema") {
+      const { target, field, to } = action.data;
+      const group = this.graphState.getSchemaGroup(target);
+      group[field] = { ...(group[field] || {}), ...(to || {}) };
     } else {
       switch (action.type) {
         case "create_node": {
@@ -161,6 +165,7 @@ class HistoryManager extends EventTarget {
       update_link: () => ({ type: "update_link", data: { linkId: action.data.linkId, field: action.data.field, from: action.data.to, to: action.data.from } }),
       update_global: () => ({ type: "update_global", data: { field: action.data.field, from: action.data.to, to: action.data.from } }),
       update_field_type: () => ({ type: "update_field_type", data: { target: action.data.target, field: action.data.field, from: action.data.to, to: action.data.from } }),
+      update_field_schema: () => ({ type: "update_field_schema", data: { target: action.data.target, field: action.data.field, from: action.data.to, to: action.data.from } }),
       add_field: () => ({ type: "remove_field", data: action.data }),
       remove_field: () => ({ type: "add_field", data: action.data }),
       import_graph: act => ({

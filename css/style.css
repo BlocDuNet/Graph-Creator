@@ -383,6 +383,17 @@ input[type="checkbox"] {
   border-radius: 3px;
 }
 
+.field-expr-btn {
+  min-width: 32px;
+  height: 24px;
+  padding: 0 6px;
+  margin-left: 4px;
+  background: #eef5ff;
+  border: 1px solid #a8c6ff;
+  color: #2b5aaa;
+  font-weight: 600;
+}
+
 /* Toggle Switch Component */
 .toggle-container {
   display: flex;

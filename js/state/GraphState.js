@@ -9,6 +9,12 @@ import {
   getDefaultValueForType,
   isValueValid
 } from '../services/FieldTypeService.js';
+import {
+  evaluateExpression,
+  parseExpression,
+  inferExpressionType,
+  serializeToFunctional
+} from '../expr/ExpressionEngine.js';
 
 export class GraphState {
   constructor() {
@@ -342,7 +348,86 @@ export class GraphState {
 
   setFieldTypeInternal(target, field, type) {
     const group = this.getSchemaGroup(target);
-    group[field] = { type: normalizeType(type) };
+    const current = group[field] || {};
+    const nextType = normalizeType(type);
+    group[field] = { ...current, type: nextType };
+  }
+
+  getFieldResolvedType(target, field) {
+    const group = this.getSchemaGroup(target);
+    const entry = group[field];
+    if (!entry) return this.getFieldType(target, field);
+    const base = normalizeType(entry.type);
+    if (base === 'conditional') {
+      const resolved = normalizeType(entry.resultType || 'text');
+      return resolved === 'number_comma' ? 'number' : resolved;
+    }
+    if (base === 'number_comma') return 'number';
+    return base;
+  }
+
+  getFieldSchema(target, field) {
+    const group = this.getSchemaGroup(target);
+    if (!group[field]) {
+      this.getFieldType(target, field);
+    }
+    return group[field];
+  }
+
+  updateFieldSchema(target, field, nextEntry) {
+    const group = this.getSchemaGroup(target);
+    const current = group[field] || { type: 'text' };
+    performAction({
+      type: "update_field_schema",
+      data: {
+        target,
+        field,
+        from: { ...current },
+        to: { ...current, ...nextEntry },
+        label: `Update ${target} field schema ${field}`
+      }
+    });
+  }
+
+  resolveFieldValue(target, item, field, stack = []) {
+    if (!item || !field) return '';
+    const entry = this.getFieldSchema(target, field);
+    const baseType = normalizeType(entry?.type);
+    if (baseType !== 'conditional') {
+      return item[field];
+    }
+    const key = `${target}:${field}:${item.id}`;
+    if (stack.includes(key)) return '';
+    const nextStack = stack.concat([key]);
+    let ast = entry?.ast || null;
+    if (!ast && entry?.expr) {
+      try {
+        ast = parseExpression(entry.expr);
+      } catch (e) {
+        return '';
+      }
+    }
+    if (!ast) return '';
+    const ctx = {
+      getField: name => this.resolveFieldValue(target, item, name, nextStack)
+    };
+    try {
+      return evaluateExpression(ast, ctx);
+    } catch (e) {
+      return '';
+    }
+  }
+
+  buildConditionalSchema(target, field, exprText, ast, resultType, visual) {
+    const inferred = ast ? inferExpressionType(ast, name => this.getFieldResolvedType(target, name)).type : 'text';
+    const finalType = normalizeType(resultType || inferred || 'text');
+    return {
+      type: 'conditional',
+      expr: exprText || (ast ? serializeToFunctional(ast) : ''),
+      ast,
+      resultType: finalType,
+      visual
+    };
   }
 
   updateFieldType(target, field, type) {
@@ -366,14 +451,19 @@ export class GraphState {
   }
 
   validateField(target, field, typeOverride = null) {
-    const type = normalizeType(typeOverride || this.getFieldType(target, field));
+    const entry = this.getFieldSchema(target, field);
+    const baseType = normalizeType(typeOverride || entry?.type || this.getFieldType(target, field));
+    const isConditional = baseType === 'conditional';
+    const resolvedType = isConditional ? normalizeType(entry?.resultType || 'text') : baseType;
     const items = target === 'node' ? this.nodes : this.links;
     const invalidIds = [];
     items.forEach(item => {
       if (!item) return;
-      const value = item[field];
+      const value = isConditional
+        ? this.resolveFieldValue(target, item, field)
+        : item[field];
       if (value === null || value === undefined || value === '') return;
-      if (!isValueValid(value, type)) invalidIds.push(item.id);
+      if (!isValueValid(value, resolvedType)) invalidIds.push(item.id);
     });
     return { invalidCount: invalidIds.length, invalidIds, total: items.length };
   }
@@ -586,7 +676,7 @@ export class GraphState {
     const allowedTypes = Array.isArray(opts.types) ? opts.types.map(normalizeType) : null;
     const list = Array.from(fields).filter(f => !excluded.includes(f));
     if (!allowedTypes) return list;
-    return list.filter(f => allowedTypes.includes(this.getFieldType(target, f)));
+    return list.filter(f => allowedTypes.includes(this.getFieldResolvedType(target, f)));
   }
 
   getNeighbors(nodeId) {

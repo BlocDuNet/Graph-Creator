@@ -1,8 +1,10 @@
 export const FIELD_TYPES = [
   { id: 'text', label: 'Texte' },
   { id: 'number', label: 'Nombre' },
+  { id: 'number_comma', label: 'Nombre (virgule)' },
   { id: 'boolean', label: 'Booleen' },
   { id: 'date', label: 'Date' },
+  { id: 'conditional', label: 'Conditionnel' },
   { id: 'object', label: 'Objet' }
 ];
 
@@ -12,10 +14,16 @@ const TYPE_ALIASES = {
   number: 'number',
   int: 'number',
   float: 'number',
+  number_comma: 'number_comma',
+  decimal_comma: 'number_comma',
+  numbercomma: 'number_comma',
+  number_fr: 'number_comma',
   boolean: 'boolean',
   bool: 'boolean',
   date: 'date',
   datetime: 'date',
+  conditional: 'conditional',
+  conditionnel: 'conditional',
   object: 'object',
   json: 'object'
 };
@@ -47,6 +55,15 @@ function isNumericString(value) {
   const trimmed = value.trim();
   if (trimmed === '') return false;
   return !Number.isNaN(Number(trimmed));
+}
+
+function isNumericStringComma(value) {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (trimmed === '') return false;
+  if (!trimmed.includes(',')) return false;
+  const normalized = trimmed.replace(/\s+/g, '').replace(/\./g, '').replace(',', '.');
+  return !Number.isNaN(Number(normalized));
 }
 
 function isBooleanString(value) {
@@ -84,6 +101,24 @@ export function coerceValueToType(value, type) {
       if (!Number.isNaN(parsed)) return { value: parsed, ok: true };
     }
     return { value, ok: false, reason: 'not_number' };
+  }
+
+  if (t === 'number_comma') {
+    if (typeof value === 'number' && !Number.isNaN(value)) {
+      return { value, ok: true };
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed === '') return { value: '', ok: true };
+      let normalized = trimmed.replace(/\s+/g, '');
+      if (normalized.includes(',') && normalized.includes('.')) {
+        normalized = normalized.replace(/\./g, '');
+      }
+      normalized = normalized.replace(',', '.');
+      const parsed = Number(normalized);
+      if (!Number.isNaN(parsed)) return { value: parsed, ok: true };
+    }
+    return { value, ok: false, reason: 'not_number_comma' };
   }
 
   if (t === 'boolean') {
@@ -159,6 +194,17 @@ export function formatValueForInput(value, type) {
     return '';
   }
 
+  if (t === 'number_comma') {
+    if (typeof value === 'number') {
+      const s = String(value);
+      return s.includes('.') ? s.replace('.', ',') : s;
+    }
+    if (typeof value === 'string') {
+      return value.includes('.') && !value.includes(',') ? value.replace('.', ',') : value;
+    }
+    return '';
+  }
+
   if (t === 'object') {
     if (value && typeof value === 'object') return '[object]';
     return '';
@@ -184,7 +230,8 @@ export function inferTypeFromValues(values) {
   }
 
   if (filtered.every(v => typeof v === 'number' || isNumericString(v))) {
-    return 'number';
+    const hasComma = filtered.some(v => typeof v === 'string' && isNumericStringComma(v));
+    return hasComma ? 'number_comma' : 'number';
   }
 
   return 'text';

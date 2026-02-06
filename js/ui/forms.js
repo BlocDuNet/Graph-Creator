@@ -10,6 +10,7 @@ import {
   isValueValid,
   getTypeLabel
 } from '../services/FieldTypeService.js';
+import eventBus from '../services/EventBus.js';
 
 export class FormManager {
   constructor(graphState, renderer) {
@@ -111,7 +112,9 @@ export class FormManager {
     const fieldType = normalizeType(this.graphState.getFieldType(target, fieldName));
     const isBoolean = fieldType === 'boolean';
     const isNumber = fieldType === 'number';
+    const isNumberComma = fieldType === 'number_comma';
     const isDate = fieldType === 'date';
+    const isConditional = fieldType === 'conditional';
     const isObject = fieldType === 'object';
 
     // Creer le controle de saisie
@@ -128,9 +131,10 @@ export class FormManager {
     } else {
       input.setAttribute('type', isNumber ? 'number' : (isDate ? 'date' : 'text'));
       if (isNumber) input.setAttribute('step', 'any');
+      if (isNumberComma) input.setAttribute('inputmode', 'decimal');
     }
 
-    if (isObject) {
+    if (isObject || isConditional) {
       input.disabled = true;
       input.title = 'Champ systeme non modifiable';
     }
@@ -151,6 +155,17 @@ export class FormManager {
       typeSelect.title = 'Champ systeme non modifiable';
     }
     fieldDiv.appendChild(typeSelect);
+
+    const exprBtn = document.createElement('button');
+    exprBtn.setAttribute('type', 'button');
+    exprBtn.className = 'field-expr-btn';
+    exprBtn.textContent = 'fx';
+    exprBtn.title = 'Configurer condition';
+    exprBtn.style.display = isConditional ? '' : 'none';
+    exprBtn.addEventListener('click', () => {
+      eventBus.emit('conditional-edit-requested', { target, field: fieldName });
+    });
+    fieldDiv.appendChild(exprBtn);
 
     const warning = document.createElement('span');
     warning.className = 'type-warning';
@@ -224,11 +239,15 @@ export class FormManager {
 
     typeSelect.addEventListener('change', () => {
       const newType = typeSelect.value;
+      const isConditional = newType === 'conditional';
       this.graphState.updateFieldType(target, fieldName, newType);
       this.refreshForms();
       if (this.graphState.selectedNode) this.showNodeForm(this.graphState.selectedNode);
       if (this.graphState.selectedLink) this.showLinkForm(this.graphState.selectedLink);
       this.renderer.updateGraph();
+      if (isConditional) {
+        eventBus.emit('conditional-edit-requested', { target, field: fieldName });
+      }
     });
 
     inputObject[fieldName] = { input, typeSelect, warning };
@@ -396,7 +415,9 @@ export class FormManager {
 
       const fieldType = normalizeType(this.graphState.getFieldType(target, key));
       let value;
-      if ((key === "source" || key === "target") && dataItem[key]) {
+      if (fieldType === 'conditional') {
+        value = this.graphState.resolveFieldValue(target, dataItem, key);
+      } else if ((key === "source" || key === "target") && dataItem[key]) {
         value = dataItem[key][idField] ?? dataItem[key].id;
       } else {
         value = dataItem[key] != null ? dataItem[key] : "";

@@ -207,21 +207,31 @@ export class GraphRenderer {
     
     // Ajout du cercle
     nodeEnter.append('circle')
-      .attr('r', d => (nodeSizeField && d[nodeSizeField]) 
-           ? Number(d[nodeSizeField]) 
-           : (Number(d.size) || defaultNodeSize));
+      .attr('r', d => {
+        if (nodeSizeField) {
+          const val = this.graphState.resolveFieldValue('node', d, nodeSizeField);
+          if (val !== null && val !== undefined && val !== '') return Number(val) || defaultNodeSize;
+        }
+        return Number(d.size) || defaultNodeSize;
+      });
     
     // Ajout du texte
     nodeEnter.append('text')
-      .attr('dx', d => (nodeSizeField && d[nodeSizeField]) 
-           ? (Number(d[nodeSizeField]) + 5) 
-           : 35)
+      .attr('dx', d => {
+        if (nodeSizeField) {
+          const val = this.graphState.resolveFieldValue('node', d, nodeSizeField);
+          if (val !== null && val !== undefined && val !== '') return (Number(val) || defaultNodeSize) + 5;
+        }
+        return 35;
+      })
       .attr('dy', 5)
       .text(d => {
-        if (nodeLabelField) return this.resolveLangValue(d[nodeLabelField]) || "";
-        // fallback to id‐field if label blank
+        if (nodeLabelField) {
+          const val = this.graphState.resolveFieldValue('node', d, nodeLabelField);
+          return this.resolveLangValue(val) || "";
+        }
         return nodeIdField ? (d[nodeIdField] || "") : "";
-      });
+      })
     
     // Fusion et mise à jour des nœuds existants
     const merged = nodeSelection.merge(nodeEnter)
@@ -229,16 +239,23 @@ export class GraphRenderer {
     
     // Mise à jour du rayon du cercle
     merged.select('circle')
-      .attr('r', d => (nodeSizeField && d[nodeSizeField]) 
-           ? Number(d[nodeSizeField]) 
-           : (Number(d.size) || defaultNodeSize));
+      .attr('r', d => {
+        if (nodeSizeField) {
+          const val = this.graphState.resolveFieldValue('node', d, nodeSizeField);
+          if (val !== null && val !== undefined && val !== '') return Number(val) || defaultNodeSize;
+        }
+        return Number(d.size) || defaultNodeSize;
+      });
     
     // Mise à jour du texte
     merged.select('text')
       .text(d => {
-        if (nodeLabelField) return this.resolveLangValue(d[nodeLabelField]) || "";
+        if (nodeLabelField) {
+          const val = this.graphState.resolveFieldValue('node', d, nodeLabelField);
+          return this.resolveLangValue(val) || "";
+        }
         return nodeIdField ? (d[nodeIdField] || "") : "";
-      });
+      })
     
     // Suppression des nœuds qui ne sont plus dans les données
     nodeSelection.exit().remove();
@@ -325,7 +342,11 @@ export class GraphRenderer {
     // Fusion et mise à jour
     labelEnter.merge(linkLabels)
       .classed('selected', d => d === this.graphState.selectedLink)
-      .text(d => linkLabelField === '' ? '' : (this.resolveLangValue(d[linkLabelField]) || ""));
+      .text(d => {
+        if (linkLabelField === '') return '';
+        const val = this.graphState.resolveFieldValue('link', d, linkLabelField);
+        return this.resolveLangValue(val) || "";
+      });
     
     // Suppression des labels qui ne sont plus dans les données
     linkLabels.exit().remove();
@@ -344,12 +365,18 @@ export class GraphRenderer {
     (this.linkPaths || this.g.selectAll('.link'))
       .attr('d', d => {
         // Récupérer les rayons des nœuds
-        const rSource = (nodeSizeField && d.source[nodeSizeField]) 
-                      ? Math.max(1, Number(d.source[nodeSizeField])) 
-                      : Number(d.source.size || defaultNodeSize);
-        const rTarget = (nodeSizeField && d.target[nodeSizeField]) 
-                      ? Math.max(1, Number(d.target[nodeSizeField])) 
-                      : Number(d.target.size || defaultNodeSize);
+        let rSource = Number(d.source.size || defaultNodeSize);
+        let rTarget = Number(d.target.size || defaultNodeSize);
+        if (nodeSizeField) {
+          const srcVal = this.graphState.resolveFieldValue('node', d.source, nodeSizeField);
+          const tgtVal = this.graphState.resolveFieldValue('node', d.target, nodeSizeField);
+          if (srcVal !== null && srcVal !== undefined && srcVal !== '') {
+            rSource = Math.max(1, Number(srcVal) || rSource);
+          }
+          if (tgtVal !== null && tgtVal !== undefined && tgtVal !== '') {
+            rTarget = Math.max(1, Number(tgtVal) || rTarget);
+          }
+        }
         
         // Vérifier s'il s'agit d'un auto-lien
         if (d.isLoop) {
@@ -414,9 +441,11 @@ export class GraphRenderer {
         
         // Pour les auto-liens
         if (d.isLoop) {
-          const radius = (nodeSizeField && d.source[nodeSizeField]) 
-                        ? +d.source[nodeSizeField] 
-                        : (d.source.size || defaultNodeSize);
+          let radius = d.source.size || defaultNodeSize;
+          if (nodeSizeField) {
+            const val = this.graphState.resolveFieldValue('node', d.source, nodeSizeField);
+            if (val !== null && val !== undefined && val !== '') radius = +val || radius;
+          }
           
           return `translate(${d.source.x},${d.source.y - radius * 2.5})`;
         }
@@ -484,8 +513,14 @@ export class GraphRenderer {
     const { xField, yField } = this.graphState.globalSettings;
     if (xField || yField) {
       this.graphState.nodes.forEach(d => {
-        if (xField && d[xField] != null) d.x = +d[xField];
-        if (yField && d[yField] != null) d.y = +d[yField];
+        if (xField) {
+          const val = this.graphState.resolveFieldValue('node', d, xField);
+          if (val != null && val !== '') d.x = +val;
+        }
+        if (yField) {
+          const val = this.graphState.resolveFieldValue('node', d, yField);
+          if (val != null && val !== '') d.y = +val;
+        }
       });
     }
 

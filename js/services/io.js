@@ -10,6 +10,7 @@ import {
   normalizeType,
   toExternalType
 } from './FieldTypeService.js';
+import { parseExpression } from '../expr/ExpressionEngine.js';
 
 let graphState = null;
 let renderer = null;
@@ -738,7 +739,23 @@ function normalizeSchemaGroup(rawGroup = {}) {
   Object.keys(rawGroup || {}).forEach(field => {
     const entry = rawGroup[field];
     const type = typeof entry === 'string' ? entry : entry?.type;
-    out[field] = { type: normalizeType(type) };
+    const normalized = {
+      type: normalizeType(type)
+    };
+    if (entry && typeof entry === 'object') {
+      if (entry.expr) normalized.expr = entry.expr;
+      if (entry.ast) normalized.ast = entry.ast;
+      if (entry.resultType) normalized.resultType = normalizeType(entry.resultType);
+      if (entry.visual) normalized.visual = entry.visual;
+    }
+    if (!normalized.ast && normalized.expr) {
+      try {
+        normalized.ast = parseExpression(normalized.expr);
+      } catch (e) {
+        // ignore parse errors
+      }
+    }
+    out[field] = normalized;
   });
   return out;
 }
@@ -770,9 +787,18 @@ function buildSchemaGroupForExport(items, internalGroup, overrides = {}) {
   const out = {};
   const keys = collectKeysFromArray(items || []);
   keys.forEach(field => {
-    const hint = internalGroup?.[field]?.type;
+    const entry = internalGroup?.[field] || {};
+    const hint = entry?.type;
     const type = normalizeType(overrides[field] || hint || inferTypeFromValues((items || []).map(i => i[field])));
-    out[field] = { type: toExternalType(type) };
+    const exported = { type: toExternalType(type) };
+    if (entry?.type === 'conditional') {
+      exported.type = 'conditional';
+      if (entry.expr) exported.expr = entry.expr;
+      if (entry.ast) exported.ast = entry.ast;
+      if (entry.resultType) exported.resultType = toExternalType(entry.resultType);
+      if (entry.visual) exported.visual = entry.visual;
+    }
+    out[field] = exported;
   });
   return out;
 }

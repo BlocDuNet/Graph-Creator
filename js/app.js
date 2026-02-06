@@ -7,6 +7,7 @@ import { GraphRenderer } from './graph/renderer.js';
 import { InteractionManager } from './graph/interactions.js';
 import { UIManager } from './ui/UIManager.js';
 import { AIManager } from './ai/AIManager.js';
+import { ConditionalFieldManager } from './expr/ConditionalFieldManager.js';
 import { registerGraphState, registerUpdateCallback } from './state/undo_redo.js';
 import { initLayoutManager } from './services/layoutManager.js';
 import { initIOServices } from './services/io.js';
@@ -34,6 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 6. Initialisation du gestionnaire d'interface utilisateur
   const uiManager = new UIManager(graphState, renderer);
+
+  // 6bis. Gestionnaire des champs conditionnels
+  const conditionalFieldManager = new ConditionalFieldManager(graphState, renderer);
   
   // 7. Initialisation du gestionnaire d'IA
   const aiManager = new AIManager(graphState, renderer);
@@ -58,7 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderer,
       interactionManager,
       uiManager,
-      aiManager
+      aiManager,
+      conditionalFieldManager
     };
   }
   
