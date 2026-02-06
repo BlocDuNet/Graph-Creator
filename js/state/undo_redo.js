@@ -31,19 +31,36 @@ class HistoryManager extends EventTarget {
     } else if (action.type === "import_graph") {
       this.graphState.nodes = action.data.newState.nodes;
       this.graphState.links = action.data.newState.links;
+      if (action.data.newState.schema) {
+        this.graphState.schema = action.data.newState.schema;
+        this.graphState.ensureSchemaForItems('node', this.graphState.nodes);
+        this.graphState.ensureSchemaForItems('link', this.graphState.links);
+      } else {
+        this.graphState.schema = { nodes: {}, links: {} };
+        this.graphState.initializeSchema();
+      }
     } else if (action.type === "add_field") {
-      const { field, target, oldValues } = action.data;
+      const { field, target, oldValues, fieldType, defaultValue, oldType } = action.data;
       const items = (target === "node") ? this.graphState.nodes : this.graphState.links;
       items.forEach(item => {
         const old = Array.isArray(oldValues) 
           ? oldValues.find(o => o.id === item.id) 
           : null;
-        item[field] = old ? old.value : "";
+        item[field] = old ? old.value : (defaultValue !== undefined ? defaultValue : "");
       });
+      const typeToSet = fieldType || oldType;
+      if (typeToSet) {
+        this.graphState.setFieldTypeInternal(target, field, typeToSet);
+      }
     } else if (action.type === "remove_field") {
       const { field, target } = action.data;
       const data = (target === "node") ? this.graphState.nodes : this.graphState.links;
       data.forEach(item => { delete item[field]; });
+      const group = this.graphState.getSchemaGroup(target);
+      if (group && group[field]) delete group[field];
+    } else if (action.type === "update_field_type") {
+      const { target, field, to } = action.data;
+      this.graphState.setFieldTypeInternal(target, field, to);
     } else {
       switch (action.type) {
         case "create_node": {
@@ -143,6 +160,7 @@ class HistoryManager extends EventTarget {
       delete_link: () => ({ type: "create_link", data: { link: action.data.link } }),
       update_link: () => ({ type: "update_link", data: { linkId: action.data.linkId, field: action.data.field, from: action.data.to, to: action.data.from } }),
       update_global: () => ({ type: "update_global", data: { field: action.data.field, from: action.data.to, to: action.data.from } }),
+      update_field_type: () => ({ type: "update_field_type", data: { target: action.data.target, field: action.data.field, from: action.data.to, to: action.data.from } }),
       add_field: () => ({ type: "remove_field", data: action.data }),
       remove_field: () => ({ type: "add_field", data: action.data }),
       import_graph: act => ({
@@ -164,6 +182,9 @@ class HistoryManager extends EventTarget {
       const { field, target } = action.data;
       const items = target === "node" ? this.graphState.nodes : this.graphState.links;
       action.data.oldValues = items.map(item => ({ id: item.id, value: item[field] }));
+      if (!action.data.oldType) {
+        action.data.oldType = this.graphState.getFieldType(target, field);
+      }
     }
     this.applyAction(action);
     this.actionHistory.push(action);

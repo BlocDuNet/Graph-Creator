@@ -2,6 +2,14 @@
  * Gestion des formulaires pour éditer les nœuds et les liens
  */
 import { performAction } from '../state/undo_redo.js';
+import {
+  FIELD_TYPES,
+  normalizeType,
+  formatValueForInput,
+  coerceValueToType,
+  isValueValid,
+  getTypeLabel
+} from '../services/FieldTypeService.js';
 
 export class FormManager {
   constructor(graphState, renderer) {
@@ -54,14 +62,14 @@ export class FormManager {
    * Rafraîchit les formulaires avec les champs actuels
    */
   refreshForms() {
-    this.createFormInputs(this.graphState.nodes, this.nodeForm, this.nodeInputs);
-    this.createFormInputs(this.graphState.links, this.linkForm, this.linkInputs);
+    this.createFormInputs(this.graphState.nodes, this.nodeForm, this.nodeInputs, 'node');
+    this.createFormInputs(this.graphState.links, this.linkForm, this.linkInputs, 'link');
   }
   
   /**
    * Crée les champs de formulaire basés sur les données
    */
-  createFormInputs(data, formElement, inputObject) {
+  createFormInputs(data, formElement, inputObject, target) {
     if (!formElement) return;
     
     // Vider le formulaire et les références précédentes
@@ -71,106 +79,177 @@ export class FormManager {
     Object.keys(inputObject).forEach(key => delete inputObject[key]);
 
     // Récupérer les noms de champs
-    const fieldNames = this.getFieldOptions(data);
+    const fieldNames = this.getFieldOptions(target);
     
     // Créer les champs
     fieldNames.forEach(fieldName =>
-      this.createField(fieldName, formElement, inputObject, data)
+      this.createField(fieldName, formElement, inputObject, data, target)
     );
   }
   
   /**
    * Récupère les options de champs disponibles
    */
-  getFieldOptions(data) {
-    const excluded = ["vx", "vy", "fx", "fy", "index"];
-    const fields = new Set();
-    
-    data.forEach(item => {
-      Object.keys(item).forEach(key => {
-        if (!excluded.includes(key)) fields.add(key);
-      });
-    });
-    
-    return Array.from(fields);
+  getFieldOptions(target) {
+    return target === 'node'
+      ? this.graphState.getNodeFields()
+      : this.graphState.getLinkFields();
   }
   
   /**
    * Crée un champ de formulaire
    */
-  createField(fieldName, formElement, inputObject, data) {
+  createField(fieldName, formElement, inputObject, data, target) {
     const fieldDiv = document.createElement('div');
-    
-    // Créer le label
+
+    // Creer le label
     const label = document.createElement('label');
     label.setAttribute('for', `${formElement.id}-${fieldName}`);
     label.textContent = `${fieldName}:`;
     fieldDiv.appendChild(label);
-    
-    // Créer l'input
-    const input = document.createElement('input');
-    input.setAttribute('type', 'text');
+
+    const fieldType = normalizeType(this.graphState.getFieldType(target, fieldName));
+    const isBoolean = fieldType === 'boolean';
+    const isNumber = fieldType === 'number';
+    const isDate = fieldType === 'date';
+    const isObject = fieldType === 'object';
+
+    // Creer le controle de saisie
+    const input = isBoolean ? document.createElement('select') : document.createElement('input');
     input.setAttribute('id', `${formElement.id}-${fieldName}`);
     input.setAttribute('name', fieldName);
-    
-    // Ajouter un écouteur d'événement pour les modifications
-    input.addEventListener('blur', () => {
-      const newValue = input.value;
-      
-      // Déterminer si nous éditons un nœud ou un lien
+
+    if (isBoolean) {
+      input.innerHTML = [
+        '<option value=""></option>',
+        '<option value="true">true</option>',
+        '<option value="false">false</option>'
+      ].join('');
+    } else {
+      input.setAttribute('type', isNumber ? 'number' : (isDate ? 'date' : 'text'));
+      if (isNumber) input.setAttribute('step', 'any');
+    }
+
+    if (isObject) {
+      input.disabled = true;
+      input.title = 'Champ systeme non modifiable';
+    }
+
+    fieldDiv.appendChild(input);
+
+    // Selecteur de type
+    const typeSelect = document.createElement('select');
+    typeSelect.className = 'field-type-select';
+    typeSelect.innerHTML = FIELD_TYPES
+      .map(t => `<option value="${t.id}">${t.label}</option>`)
+      .join('');
+    typeSelect.value = fieldType;
+
+    const typeLocked = (target === 'link' && (fieldName === 'source' || fieldName === 'target'));
+    if (typeLocked) {
+      typeSelect.disabled = true;
+      typeSelect.title = 'Champ systeme non modifiable';
+    }
+    fieldDiv.appendChild(typeSelect);
+
+    const warning = document.createElement('span');
+    warning.className = 'type-warning';
+    fieldDiv.appendChild(warning);
+
+    const updateWarning = () => {
+      const { invalidCount } = this.graphState.validateField(target, fieldName, fieldType);
+      warning.textContent = invalidCount > 0 ? `${invalidCount} non conformes` : '';
+      typeSelect.classList.toggle('type-invalid', invalidCount > 0);
+      typeSelect.title = invalidCount > 0 ? `Type attendu: ${getTypeLabel(fieldType)}` : '';
+    };
+
+    updateWarning();
+
+    // Ajouter un ecouteur d'evenement pour les modifications
+    const commitValue = () => {
+      if (input.disabled) return;
+      const rawValue = input.value;
+      const result = coerceValueToType(rawValue, fieldType);
+      if (!result.ok) {
+        input.classList.add('value-invalid');
+        input.title = `Type attendu: ${getTypeLabel(fieldType)}`;
+        return;
+      }
+
+      const empty = v => v === null || v === undefined || v === '';
+
       if (this.graphState.selectedNode && inputObject === this.nodeInputs) {
-        const oldValue = this.graphState.selectedNode[fieldName] || "";
-        if (newValue !== oldValue) {
+        const oldValue = this.graphState.selectedNode[fieldName] ?? "";
+        if (empty(result.value) && empty(oldValue)) return;
+        if (result.value !== oldValue) {
           performAction({
             type: "update_node",
             data: {
               nodeId: this.graphState.selectedNode.id,
               field: fieldName,
               from: oldValue,
-              to: newValue,
-              label: `Rename node ${fieldName} (${oldValue} → ${newValue})`
+              to: result.value,
+              label: `Rename node ${fieldName} (${oldValue} ? ${result.value})`
             }
           });
         }
       } else if (this.graphState.selectedLink && inputObject === this.linkInputs) {
-        const oldValue = this.graphState.selectedLink[fieldName] || "";
-        if (newValue !== oldValue) {
+        const oldValue = this.graphState.selectedLink[fieldName] ?? "";
+        if (empty(result.value) && empty(oldValue)) return;
+        if (result.value !== oldValue) {
           performAction({
             type: "update_link",
             data: {
               linkId: this.graphState.selectedLink.id,
               field: fieldName,
               from: oldValue,
-              to: newValue,
-              label: `Rename link ${fieldName} (${oldValue} → ${newValue})`
+              to: result.value,
+              label: `Rename link ${fieldName} (${oldValue} ? ${result.value})`
             }
           });
         }
       }
-      
+
+      input.classList.remove('value-invalid');
+      updateWarning();
+      input.value = formatValueForInput(result.value, fieldType);
+      this.renderer.updateGraph();
+    };
+
+    if (isBoolean) {
+      input.addEventListener('change', commitValue);
+    } else {
+      input.addEventListener('blur', commitValue);
+    }
+
+    typeSelect.addEventListener('change', () => {
+      const newType = typeSelect.value;
+      this.graphState.updateFieldType(target, fieldName, newType);
+      this.refreshForms();
+      if (this.graphState.selectedNode) this.showNodeForm(this.graphState.selectedNode);
+      if (this.graphState.selectedLink) this.showLinkForm(this.graphState.selectedLink);
       this.renderer.updateGraph();
     });
-    
-    fieldDiv.appendChild(input);
-    inputObject[fieldName] = input;
-    
+
+    inputObject[fieldName] = { input, typeSelect, warning };
+
     // Ajouter un bouton de suppression pour les champs non essentiels
     if (!["id", "x", "y", "source", "target"].includes(fieldName)) {
       const button = document.createElement('button');
       button.setAttribute('type', 'button');
       button.setAttribute('tabindex', '-1');
       button.textContent = 'x';
-      
+
       button.addEventListener('click', (event) => {
         event.stopPropagation();
         this.showCustomConfirm(
-          `Supprimer le champ "${fieldName}" pour tous les éléments ?`,
+          `Supprimer le champ "${fieldName}" pour tous les elements ?`,
           () => {
             const isNodeField = inputObject === this.nodeInputs;
             const target = isNodeField ? "node" : "link";
-            
-            performAction({ 
-              type: "remove_field", 
+
+            performAction({
+              type: "remove_field",
               data: { field: fieldName, target, label: `Remove field ${fieldName} from ${target}s` }
             });
             this.refreshForms();
@@ -178,13 +257,13 @@ export class FormManager {
           }
         );
       });
-      
+
       fieldDiv.appendChild(button);
     }
-    
+
     formElement.appendChild(fieldDiv);
   }
-  
+
   /**
    * Affiche une confirmation personnalisée
    * @param {string} message
@@ -308,54 +387,78 @@ export class FormManager {
   updateForm(inputObject, dataItem) {
     if (!dataItem) return;
     const idField = this.graphState.globalSettings.nodeIdField;
-    
+    const target = inputObject === this.nodeInputs ? 'node' : 'link';
+
     Object.keys(inputObject).forEach(key => {
+      const entry = inputObject[key];
+      const control = entry?.input;
+      if (!control) return;
+
+      const fieldType = normalizeType(this.graphState.getFieldType(target, key));
+      let value;
       if ((key === "source" || key === "target") && dataItem[key]) {
-        // utiliser le champ personnalisé pour l'ID
-        inputObject[key].value = dataItem[key][idField] ?? dataItem[key].id;
+        value = dataItem[key][idField] ?? dataItem[key].id;
       } else {
-        inputObject[key].value = dataItem[key] != null ? dataItem[key] : "";
+        value = dataItem[key] != null ? dataItem[key] : "";
+      }
+
+      const displayValue = formatValueForInput(value, fieldType);
+      control.value = displayValue;
+      const valid = isValueValid(value, fieldType);
+      control.classList.toggle('value-invalid', !valid);
+      control.title = `Type attendu: ${getTypeLabel(fieldType)}`;
+
+      if (entry.typeSelect) {
+        entry.typeSelect.value = fieldType;
+      }
+      if (entry.warning) {
+        const { invalidCount } = this.graphState.validateField(target, key, fieldType);
+        entry.warning.textContent = invalidCount > 0 ? `${invalidCount} non conformes` : '';
+        entry.typeSelect?.classList.toggle('type-invalid', invalidCount > 0);
+        entry.typeSelect && (entry.typeSelect.title = invalidCount > 0 ? `Type attendu: ${getTypeLabel(fieldType)}` : '');
       }
     });
   }
-  
+
   /**
    * Nouvelle méthode simplifiée pour focus et sélection d'un champ
    * @param {HTMLInputElement} inputElement - L'élément input à sélectionner
    */
   focusAndSelectField(inputElement) {
     if (!inputElement) return;
-    
-    console.log("Tentative de focus et sélection sur:", inputElement.id);
-    
+
+    console.log("Tentative de focus et selection sur:", inputElement.id);
+
     try {
       // S'assurer que l'input est visible
       inputElement.scrollIntoView({ block: 'center' });
-      
-      // Utiliser les méthodes DOM de base
+
+      // Utiliser les methodes DOM de base
       inputElement.focus();
-      inputElement.select();
-      
+      if (typeof inputElement.select === 'function') inputElement.select();
+
       // Utiliser setTimeout pour une double assurance
       setTimeout(() => {
         // Double tentative
         inputElement.focus();
-        inputElement.select();
-        
-        // Tenter également la méthode setSelectionRange
+        if (typeof inputElement.select === 'function') inputElement.select();
+
+        // Tenter egalement la methode setSelectionRange
         try {
-          inputElement.setSelectionRange(0, inputElement.value.length);
+          if (typeof inputElement.setSelectionRange === 'function') {
+            inputElement.setSelectionRange(0, inputElement.value.length);
+          }
         } catch (e) {
-          // Ignorer les erreurs (peut ne pas être supporté par tous les navigateurs)
+          // Ignorer les erreurs (peut ne pas etre supporte par tous les navigateurs)
         }
-        
-        console.log("Second focus/select appliqué");
+
+        console.log("Second focus/select applique");
       }, 50);
     } catch (error) {
       console.error("Erreur de focus/select:", error);
     }
   }
-  
+
   /**
    * Cache tous les formulaires
    */
@@ -376,19 +479,18 @@ export class FormManager {
   /**
    * Ajoute un nouveau champ aux éléments
    */
-  addField(fieldName, target) {
+  addField(fieldName, target, fieldType = 'text') {
     if (fieldName.trim() === '') return;
     const isNodeField = target === 'node';
-    const formElement = isNodeField ? this.nodeForm : this.linkForm;
     const inputObject = isNodeField ? this.nodeInputs : this.linkInputs;
 
-    // Vérifier si le champ existe déjà
+    // Verifier si le champ existe deja
     if (Object.keys(inputObject).includes(fieldName)) return;
 
-    // Dispatch action via undo/redo, GraphState.addField émettra 'action-applied'
-    this.graphState.addField(fieldName, target);
+    // Dispatch action via undo/redo, GraphState.addField emettra 'action-applied'
+    this.graphState.addFieldWithType(fieldName, target, fieldType);
 
-    // Rafraîchir formulaires et mise à jour du graphe
+    // Rafraichir formulaires et mise a jour du graphe
     this.refreshForms();
     this.renderer.updateGraph();
   }
@@ -405,7 +507,9 @@ export class FormManager {
       console.log("Onglet Valeurs activé");
       setTimeout(() => {
         if (fieldToFocus && inputObject[fieldToFocus]) {
-          this.focusAndSelectField(inputObject[fieldToFocus]);
+          const entry = inputObject[fieldToFocus];
+          const control = entry?.input || entry;
+          this.focusAndSelectField(control);
         }
       }, 150);
     } catch (e) {

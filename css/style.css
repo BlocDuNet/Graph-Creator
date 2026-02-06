@@ -342,6 +342,35 @@ input[type="checkbox"] {
   margin-right: 5px;
 }
 
+#node-form select,
+#link-form select {
+  flex: 1;
+  margin-bottom: 0;
+  margin-right: 5px;
+}
+
+#node-form select.field-type-select,
+#link-form select.field-type-select {
+  flex: 0 0 120px;
+  max-width: 120px;
+}
+
+.field-type-select {
+  max-width: 130px;
+}
+
+.value-invalid,
+.type-invalid {
+  border-color: #dc3545 !important;
+  background-color: #fff5f5;
+}
+
+.type-warning {
+  color: #dc3545;
+  font-size: 0.75rem;
+  margin-left: 6px;
+}
+
 #node-form button,
 #link-form button {
   padding: 0 6px;

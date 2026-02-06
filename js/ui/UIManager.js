@@ -5,7 +5,8 @@ import { undo, redo, jumpToHistory } from '../state/undo_redo.js';
 import { FormManager } from './forms.js';
 import { WindowEventManager } from '../services/WindowEventManager.js';  // ← import ajouté
 import { syncGlobalSettingsUI as refreshFieldSelects } from './FieldSelectService.js';
-import UIContext from './UIContext.js';    // ← import ajouté
+import UIContext from './UIContext.js';
+import { FIELD_TYPES } from '../services/FieldTypeService.js';    // ← import ajouté
 
 export class UIManager {
   constructor(graphState, renderer) {
@@ -20,8 +21,10 @@ export class UIManager {
       changeLabelBtn:        UIContext.get('#changeLabelButton'),
       addNodeFieldBtn:       UIContext.get('#addNodeFieldButton'),
       addNodeFieldInput:     UIContext.get('#addNodeFieldInput'),
+      addNodeFieldType:      UIContext.get('#addNodeFieldType'),
       addLinkFieldBtn:       UIContext.get('#addLinkFieldButton'),
       addLinkFieldInput:     UIContext.get('#addLinkFieldInput'),
+      addLinkFieldType:      UIContext.get('#addLinkFieldType'),
       highlightNeighborsBtn: UIContext.get('#btn-highlight-neighbors'),
       clearHighlightsBtn:    UIContext.get('#btn-clear-highlights'),
       highlightHighDegreeBtn:UIContext.get('#btn-high-degree'),
@@ -48,6 +51,7 @@ export class UIManager {
     // 3) Synchroniser immédiatement les selects/inputs
     refreshFieldSelects(this.graphState);
     // keeps standard selects
+    this.populateFieldTypeSelectors();
 
     // 4) Lier tous les écouteurs window centralisés
     WindowEventManager.bindAll(this);
@@ -59,6 +63,19 @@ export class UIManager {
   /**
    * Initialise les écouteurs d'événements de base
    */
+  populateFieldTypeSelectors() {
+    const options = FIELD_TYPES.filter(t => t.id !== 'object');
+    const html = options.map(t => `<option value="${t.id}">${t.label}</option>`).join('');
+    if (this.el.addNodeFieldType) {
+      this.el.addNodeFieldType.innerHTML = html;
+      if (!this.el.addNodeFieldType.value) this.el.addNodeFieldType.value = 'text';
+    }
+    if (this.el.addLinkFieldType) {
+      this.el.addLinkFieldType.innerHTML = html;
+      if (!this.el.addLinkFieldType.value) this.el.addLinkFieldType.value = 'text';
+    }
+  }
+
   initEventListeners() {
     // Undo/Redo
     this.el.undoBtn?.addEventListener('click', () => undo());
@@ -71,11 +88,13 @@ export class UIManager {
     // Champs dynamiques
     this.el.addNodeFieldBtn?.addEventListener('click', () => {
       const name = this.el.addNodeFieldInput.value.trim();
-      if (name) this.formManager.addField(name, 'node');
+      const type = this.el.addNodeFieldType?.value || 'text';
+      if (name) this.formManager.addField(name, 'node', type);
     });
     this.el.addLinkFieldBtn?.addEventListener('click', () => {
       const name = this.el.addLinkFieldInput.value.trim();
-      if (name) this.formManager.addField(name, 'link');
+      const type = this.el.addLinkFieldType?.value || 'text';
+      if (name) this.formManager.addField(name, 'link', type);
     });
     
     // Actions avancées

@@ -30,7 +30,7 @@ export class WindowEventManager {
       if (t === 'delete_node' || t === 'delete_link') {
         uiManager.formManager.hideAllForms();
       }
-      if (t === 'add_field' || t === 'remove_field') {
+      if (t === 'add_field' || t === 'remove_field' || t === 'update_field_type') {
         uiManager.formManager.refreshForms();
         uiManager.updateAllFieldSelects();
       }

@@ -5,6 +5,11 @@ import { performAction } from '../state/undo_redo.js';
 import { uiConfig } from '../config/index.js';
 import { listJsonFiles } from './fileService.js';  // <— nouvel import
 import eventBus from './EventBus.js';
+import {
+  inferTypeFromValues,
+  normalizeType,
+  toExternalType
+} from './FieldTypeService.js';
 
 let graphState = null;
 let renderer = null;
@@ -85,6 +90,8 @@ function exportJsonAdvanced(options = {}) {
     })
   };
 
+  exportData.schema = buildSchemaForExport(exportData.nodes, exportData.links, graphState?.schema);
+
   if (format === 'csv_nodes') {
     downloadDelimited(exportData.nodes, 'nodes.csv', ',');
     return;
@@ -126,12 +133,13 @@ function exportJsonAdvanced(options = {}) {
 function loadJSONGraph(jsonContent) {
   try {
     const jsonData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
-    const { nodes, links } = normalizeImportedGraph(jsonData);
+    const { nodes, links, schema } = normalizeImportedGraph(jsonData);
     
     // Sauvegarder l'état précédent
     const oldState = {
       nodes: [...graphState.nodes],
-      links: [...graphState.links]
+      links: [...graphState.links],
+      schema: graphState.getSchemaSnapshot?.() || graphState.schema
     };
     
     // Appliquer la nouvelle structure de graphe
@@ -139,7 +147,7 @@ function loadJSONGraph(jsonContent) {
       type: "import_graph", 
       data: { 
         oldState,
-        newState: { nodes, links },
+        newState: { nodes, links, schema },
         label: "Import JSON graph" 
       } 
     });
@@ -177,11 +185,11 @@ function applyAdvancedImport() {
   if (!pendingAdvancedImport?.raw) return;
   const mapping = readAdvancedMapping();
   try {
-    const { nodes, links } = normalizeImportedGraph(pendingAdvancedImport.raw, mapping);
-    const oldState = { nodes: [...graphState.nodes], links: [...graphState.links] };
+    const { nodes, links, schema } = normalizeImportedGraph(pendingAdvancedImport.raw, mapping);
+    const oldState = { nodes: [...graphState.nodes], links: [...graphState.links], schema: graphState.getSchemaSnapshot?.() || graphState.schema };
     performAction({ 
       type: "import_graph", 
-      data: { oldState, newState: { nodes, links }, label: "Import JSON graph (advanced)" } 
+      data: { oldState, newState: { nodes, links, schema }, label: "Import JSON graph (advanced)" } 
     });
     renderer.updateGraph();
     eventBus.emit('graph-imported', { nodes, links });
@@ -412,7 +420,10 @@ function normalizeImportedGraph(raw, mapping = null) {
   expandMultilangObjectsToSuffix(nodes, ['name', 'description']);
   expandMultilangObjectsToSuffix(links, ['name', 'description']);
 
-  return { nodes, links };
+  const schemaSource = raw.schema || data.schema || null;
+  const schema = normalizeSchema(schemaSource, nodes, links);
+
+  return { nodes, links, schema };
 }
 
 function extractNodeId(node, idx) {
@@ -720,6 +731,59 @@ function collectKeysFromArray(arr) {
     Object.keys(item).forEach(k => set.add(k));
   });
   return Array.from(set);
+}
+
+function normalizeSchemaGroup(rawGroup = {}) {
+  const out = {};
+  Object.keys(rawGroup || {}).forEach(field => {
+    const entry = rawGroup[field];
+    const type = typeof entry === 'string' ? entry : entry?.type;
+    out[field] = { type: normalizeType(type) };
+  });
+  return out;
+}
+
+function ensureSchemaFields(group, items) {
+  const out = { ...(group || {}) };
+  const keys = collectKeysFromArray(items || []);
+  keys.forEach(field => {
+    if (!out[field]) {
+      const values = (items || []).map(i => i[field]);
+      out[field] = { type: inferTypeFromValues(values) };
+    }
+  });
+  return out;
+}
+
+function normalizeSchema(rawSchema, nodes, links) {
+  const schema = { nodes: {}, links: {} };
+  if (rawSchema && typeof rawSchema === 'object') {
+    schema.nodes = normalizeSchemaGroup(rawSchema.nodes || {});
+    schema.links = normalizeSchemaGroup(rawSchema.links || {});
+  }
+  schema.nodes = ensureSchemaFields(schema.nodes, nodes);
+  schema.links = ensureSchemaFields(schema.links, links);
+  return schema;
+}
+
+function buildSchemaGroupForExport(items, internalGroup, overrides = {}) {
+  const out = {};
+  const keys = collectKeysFromArray(items || []);
+  keys.forEach(field => {
+    const hint = internalGroup?.[field]?.type;
+    const type = normalizeType(overrides[field] || hint || inferTypeFromValues((items || []).map(i => i[field])));
+    out[field] = { type: toExternalType(type) };
+  });
+  return out;
+}
+
+function buildSchemaForExport(nodes, links, internalSchema) {
+  const nodeSchema = buildSchemaGroupForExport(nodes, internalSchema?.nodes);
+  const linkSchema = buildSchemaGroupForExport(links, internalSchema?.links, {
+    source: 'text',
+    target: 'text'
+  });
+  return { nodes: nodeSchema, links: linkSchema };
 }
 
 function expandFieldsWithMultilang(fields, items) {

@@ -3,6 +3,12 @@
  */
 import { performAction } from './undo_redo.js';
 import { graphConfig } from '../config/index.js';
+import {
+  normalizeType,
+  inferTypeFromValues,
+  getDefaultValueForType,
+  isValueValid
+} from '../services/FieldTypeService.js';
 
 export class GraphState {
   constructor() {
@@ -43,6 +49,10 @@ export class GraphState {
     
     // Initialiser les liens après avoir créé les nodes
     this.initializeLinks();
+
+    // SchÃ©ma de types pour les champs
+    this.schema = { nodes: {}, links: {} };
+    this.initializeSchema();
 
     // -- ajout start --
     // Mettre nextLinkId juste après le plus grand ID de lien existant
@@ -88,6 +98,13 @@ export class GraphState {
       y,
       size: this.globalSettings.defaultNodeSize || 30
     };
+
+    // Ajouter les champs manquants selon le schÃ©ma
+    Object.keys(this.schema.nodes).forEach(field => {
+      if (newNode[field] === undefined) {
+        newNode[field] = getDefaultValueForType(this.getFieldType('node', field));
+      }
+    });
     
     performAction({ 
       type: "create_node", 
@@ -131,6 +148,12 @@ export class GraphState {
       target,
       width: this.globalSettings.defaultLinkWidth
     };
+
+    Object.keys(this.schema.links).forEach(field => {
+      if (newLink[field] === undefined) {
+        newLink[field] = getDefaultValueForType(this.getFieldType('link', field));
+      }
+    });
     
     performAction({ 
       type: "create_link", 
@@ -204,10 +227,19 @@ export class GraphState {
    * Ajoute un champ à tous les nœuds ou liens
    */
   addField(fieldName, target) {
+    return this.addFieldWithType(fieldName, target, 'text');
+  }
+
+  /**
+   * Ajoute un champ Ã  tous les nÅ“uds ou liens avec un type
+   */
+  addFieldWithType(fieldName, target, fieldType) {
     if (fieldName.trim() === '') return;
 
     const data = target === 'node' ? this.nodes : this.links;
     const existingKeys = data.length > 0 ? Object.keys(data[0]) : [];
+    const normalizedType = normalizeType(fieldType);
+    const defaultValue = getDefaultValueForType(normalizedType);
 
     const languages = (this.globalSettings.multilingualLangs || "")
       .split(',')
@@ -226,6 +258,8 @@ export class GraphState {
         data: {
           field: f,
           target,
+          fieldType: normalizedType,
+          defaultValue,
           label: `Add field ${f} to ${target}s`
         }
       }));
@@ -240,9 +274,108 @@ export class GraphState {
       data: {
         field: fieldName,
         target,
+        fieldType: normalizedType,
+        defaultValue,
         label: `Add field ${fieldName} to ${target}s`
       }
     });
+  }
+
+  /**
+   * Initialise le schÃ©ma de types Ã  partir des donnÃ©es et des dÃ©fauts connus
+   */
+  initializeSchema() {
+    const defaults = {
+      nodes: {
+        id: 'text',
+        name: 'text',
+        description: 'text',
+        x: 'number',
+        y: 'number',
+        size: 'number'
+      },
+      links: {
+        id: 'text',
+        source: 'object',
+        target: 'object',
+        name: 'text',
+        description: 'text',
+        width: 'number'
+      }
+    };
+    Object.keys(defaults.nodes).forEach(f => {
+      this.schema.nodes[f] = { type: normalizeType(defaults.nodes[f]) };
+    });
+    Object.keys(defaults.links).forEach(f => {
+      this.schema.links[f] = { type: normalizeType(defaults.links[f]) };
+    });
+
+    this.ensureSchemaForItems('node', this.nodes);
+    this.ensureSchemaForItems('link', this.links);
+  }
+
+  getSchemaGroup(target) {
+    return target === 'node' ? this.schema.nodes : this.schema.links;
+  }
+
+  ensureSchemaForItems(target, items) {
+    const group = this.getSchemaGroup(target);
+    (items || []).forEach(item => {
+      Object.keys(item || {}).forEach(field => {
+        if (!group[field]) {
+          const values = (items || []).map(i => i[field]);
+          group[field] = { type: inferTypeFromValues(values) };
+        }
+      });
+    });
+  }
+
+  getFieldType(target, field) {
+    const group = this.getSchemaGroup(target);
+    if (!group[field]) {
+      const items = target === 'node' ? this.nodes : this.links;
+      const values = (items || []).map(i => i[field]);
+      group[field] = { type: inferTypeFromValues(values) };
+    }
+    return normalizeType(group[field].type);
+  }
+
+  setFieldTypeInternal(target, field, type) {
+    const group = this.getSchemaGroup(target);
+    group[field] = { type: normalizeType(type) };
+  }
+
+  updateFieldType(target, field, type) {
+    const newType = normalizeType(type);
+    const oldType = this.getFieldType(target, field);
+    if (newType === oldType) return;
+    performAction({
+      type: "update_field_type",
+      data: {
+        target,
+        field,
+        from: oldType,
+        to: newType,
+        label: `Update ${target} field type ${field} (${oldType} â†’ ${newType})`
+      }
+    });
+  }
+
+  getSchemaSnapshot() {
+    return JSON.parse(JSON.stringify(this.schema));
+  }
+
+  validateField(target, field, typeOverride = null) {
+    const type = normalizeType(typeOverride || this.getFieldType(target, field));
+    const items = target === 'node' ? this.nodes : this.links;
+    const invalidIds = [];
+    items.forEach(item => {
+      if (!item) return;
+      const value = item[field];
+      if (value === null || value === undefined || value === '') return;
+      if (!isValueValid(value, type)) invalidIds.push(item.id);
+    });
+    return { invalidCount: invalidIds.length, invalidIds, total: items.length };
   }
 
   /**
@@ -260,12 +393,19 @@ export class GraphState {
 
     const actions = [];
     fields.forEach(base => {
+      const baseType = this.getFieldType(target, base);
       langs.forEach(lang => {
         const fieldLang = `${base}_${lang}`;
         if (!existingKeys.includes(fieldLang)) {
           actions.push({
             type: "add_field",
-            data: { field: fieldLang, target, label: `Add field ${fieldLang} to ${target}s` }
+            data: {
+              field: fieldLang,
+              target,
+              fieldType: baseType,
+              defaultValue: getDefaultValueForType(baseType),
+              label: `Add field ${fieldLang} to ${target}s`
+            }
           });
         }
       });
@@ -329,7 +469,8 @@ export class GraphState {
       type: "remove_field", 
       data: { 
         field: fieldName, 
-        target, 
+        target,
+        oldType: this.getFieldType(target, fieldName),
         label: `Remove field ${fieldName} from ${target}s` 
       } 
     });
@@ -361,7 +502,8 @@ export class GraphState {
   importGraph(newGraph) {
     const oldState = {
       nodes: [...this.nodes],
-      links: [...this.links]
+      links: [...this.links],
+      schema: this.getSchemaSnapshot()
     };
     
     performAction({
@@ -421,32 +563,30 @@ export class GraphState {
    * Retourne les champs de nœuds disponibles
    */
   getNodeFields() {
-    const excluded = ["vx", "vy", "fx", "fy", "index"];
-    const fields = new Set();
-    
-    this.nodes.forEach(item => {
-      Object.keys(item).forEach(key => {
-        if (!excluded.includes(key)) fields.add(key);
-      });
-    });
-    
-    return Array.from(fields);
+    return this.getFieldsByType('node');
   }
   
   /**
    * Retourne les champs de liens disponibles
    */
   getLinkFields() {
-    const excluded = ["index", "source", "target"];
-    const fields = new Set();
-    
-    this.links.forEach(item => {
-      Object.keys(item).forEach(key => {
-        if (!excluded.includes(key)) fields.add(key);
-      });
+    return this.getFieldsByType('link');
+  }
+
+  getFieldsByType(target, opts = {}) {
+    const excluded = target === 'node'
+      ? ["vx", "vy", "fx", "fy", "index"]
+      : ["index"];
+    const group = this.getSchemaGroup(target);
+    const data = target === 'node' ? this.nodes : this.links;
+    const fields = new Set(Object.keys(group || {}));
+    data.forEach(item => {
+      Object.keys(item || {}).forEach(key => fields.add(key));
     });
-    
-    return Array.from(fields);
+    const allowedTypes = Array.isArray(opts.types) ? opts.types.map(normalizeType) : null;
+    const list = Array.from(fields).filter(f => !excluded.includes(f));
+    if (!allowedTypes) return list;
+    return list.filter(f => allowedTypes.includes(this.getFieldType(target, f)));
   }
 
   getNeighbors(nodeId) {
