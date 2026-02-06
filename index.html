@@ -794,14 +794,14 @@
       </div>
     </div>
     <div id="conditional-field-overlay" class="advanced-import-overlay hidden">
-      <div class="advanced-import-modal">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="mb-0">Champ conditionnel</h6>
-          <button id="conditional-field-cancel" class="btn btn-sm btn-outline-secondary">Fermer</button>
-        </div>
-        <p class="small text-muted mb-2">
-          Creez une expression conditionnelle simple ou avancee. Le mode visuel couvre les cas courants.
-        </p>
+        <div class="advanced-import-modal">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Champ personnalise</h6>
+            <button id="conditional-field-cancel" class="btn btn-sm btn-outline-secondary">Fermer</button>
+          </div>
+          <p class="small text-muted mb-2">
+            Creez une expression simple ou avancee. Le mode visuel couvre les cas courants.
+          </p>
         <div class="row">
           <div class="col-md-6">
             <label class="small">Champ</label>
@@ -818,90 +818,203 @@
 
         <div id="conditional-visual" class="mt-2">
           <div class="row">
-            <div class="col-md-12">
-              <label class="small">Condition (Si)</label>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-3">
-              <select id="cond-left-source" class="form-control form-control-sm">
-                <option value="field">Champ</option>
-                <option value="value">Valeur</option>
+            <div class="col-md-6">
+              <label class="small">Type visuel</label>
+              <select id="conditional-visual-kind" class="form-control form-control-sm">
+                <option value="expression">Expression simple</option>
+                <option value="condition">Condition (Si/Alors)</option>
               </select>
-            </div>
-            <div class="col-md-4">
-              <select id="cond-left-field" class="form-control form-control-sm"></select>
-              <input id="cond-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
-            </div>
-            <div class="col-md-2">
-              <select id="cond-operator" class="form-control form-control-sm">
-                <option value="gt">&gt;</option>
-                <option value="gte">&gt;=</option>
-                <option value="lt">&lt;</option>
-                <option value="lte">&lt;=</option>
-                <option value="eq">==</option>
-                <option value="neq">!=</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <select id="cond-right-source" class="form-control form-control-sm">
-                <option value="field">Champ</option>
-                <option value="value">Valeur</option>
-              </select>
-              <select id="cond-right-field" class="form-control form-control-sm mt-1"></select>
-              <input id="cond-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
             </div>
           </div>
 
-          <div class="row mt-2">
-            <div class="col-md-6">
-              <label class="small">Alors</label>
-              <select id="then-mode" class="form-control form-control-sm mb-1">
-                <option value="value">Valeur</option>
-                <option value="concat">Concatener</option>
-              </select>
-              <div id="then-value-block">
-                <select id="then-source" class="form-control form-control-sm">
-                  <option value="field">Champ</option>
-                  <option value="value">Valeur</option>
-                </select>
-                <select id="then-field" class="form-control form-control-sm mt-1"></select>
-                <input id="then-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
-              </div>
-              <div id="then-concat-block" class="hidden">
-                <select id="then-concat-field-a" class="form-control form-control-sm"></select>
-                <input id="then-concat-sep" class="form-control form-control-sm mt-1" placeholder="Separateur">
-                <select id="then-concat-field-b" class="form-control form-control-sm mt-1"></select>
+          <div id="conditional-condition-block" class="mt-2">
+            <div class="row">
+              <div class="col-md-12">
+                <label class="small">Condition (Si)</label>
               </div>
             </div>
-            <div class="col-md-6">
-              <label class="small">Sinon</label>
-              <select id="else-mode" class="form-control form-control-sm mb-1">
-                <option value="value">Valeur</option>
-                <option value="concat">Concatener</option>
-              </select>
-              <div id="else-value-block">
-                <select id="else-source" class="form-control form-control-sm">
+            <div class="row">
+              <div class="col-md-3">
+                <select id="cond-left-source" class="form-control form-control-sm">
                   <option value="field">Champ</option>
                   <option value="value">Valeur</option>
                 </select>
-                <select id="else-field" class="form-control form-control-sm mt-1"></select>
-                <input id="else-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
               </div>
-              <div id="else-concat-block" class="hidden">
-                <select id="else-concat-field-a" class="form-control form-control-sm"></select>
-                <input id="else-concat-sep" class="form-control form-control-sm mt-1" placeholder="Separateur">
-                <select id="else-concat-field-b" class="form-control form-control-sm mt-1"></select>
+              <div class="col-md-4">
+                <select id="cond-left-field" class="form-control form-control-sm"></select>
+                <input id="cond-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+              </div>
+              <div class="col-md-2">
+                <select id="cond-operator" class="form-control form-control-sm">
+                  <option value="gt">&gt;</option>
+                  <option value="gte">&gt;=</option>
+                  <option value="lt">&lt;</option>
+                  <option value="lte">&lt;=</option>
+                  <option value="eq">==</option>
+                  <option value="neq">!=</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select id="cond-right-source" class="form-control form-control-sm">
+                  <option value="field">Champ</option>
+                  <option value="value">Valeur</option>
+                </select>
+                <select id="cond-right-field" class="form-control form-control-sm mt-1"></select>
+                <input id="cond-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+              </div>
+            </div>
+
+            <div class="row mt-2">
+              <div class="col-md-4">
+                <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="custom-control-input" id="cond-extra-enabled">
+                  <label class="custom-control-label" for="cond-extra-enabled">Deuxieme condition</label>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <select id="cond-join" class="form-control form-control-sm">
+                  <option value="and">ET</option>
+                  <option value="or">OU</option>
+                </select>
+              </div>
+            </div>
+            <div id="cond-extra-block" class="row mt-2 hidden">
+              <div class="col-md-3">
+                <select id="cond2-left-source" class="form-control form-control-sm">
+                  <option value="field">Champ</option>
+                  <option value="value">Valeur</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <select id="cond2-left-field" class="form-control form-control-sm"></select>
+                <input id="cond2-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+              </div>
+              <div class="col-md-2">
+                <select id="cond2-operator" class="form-control form-control-sm">
+                  <option value="gt">&gt;</option>
+                  <option value="gte">&gt;=</option>
+                  <option value="lt">&lt;</option>
+                  <option value="lte">&lt;=</option>
+                  <option value="eq">==</option>
+                  <option value="neq">!=</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select id="cond2-right-source" class="form-control form-control-sm">
+                  <option value="field">Champ</option>
+                  <option value="value">Valeur</option>
+                </select>
+                <select id="cond2-right-field" class="form-control form-control-sm mt-1"></select>
+                <input id="cond2-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+              </div>
+            </div>
+          </div>
+
+          <div id="conditional-then-else-block" class="mt-2">
+            <div class="row">
+              <div class="col-md-6">
+                <label class="small" id="then-label">Alors</label>
+                <select id="then-mode" class="form-control form-control-sm mb-1">
+                  <option value="value">Valeur</option>
+                  <option value="concat">Concatener</option>
+                  <option value="calc">Calcul</option>
+                </select>
+                <div id="then-value-block">
+                  <select id="then-source" class="form-control form-control-sm">
+                    <option value="field">Champ</option>
+                    <option value="value">Valeur</option>
+                  </select>
+                  <select id="then-field" class="form-control form-control-sm mt-1"></select>
+                  <input id="then-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+                </div>
+                <div id="then-concat-block" class="hidden">
+                  <select id="then-concat-field-a" class="form-control form-control-sm"></select>
+                  <input id="then-concat-sep" class="form-control form-control-sm mt-1" placeholder="Separateur">
+                  <select id="then-concat-field-b" class="form-control form-control-sm mt-1"></select>
+                </div>
+                <div id="then-calc-block" class="hidden">
+                  <select id="then-calc-left-source" class="form-control form-control-sm">
+                    <option value="field">Champ</option>
+                    <option value="value">Valeur</option>
+                  </select>
+                  <select id="then-calc-left-field" class="form-control form-control-sm mt-1"></select>
+                  <input id="then-calc-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+                  <select id="then-calc-op" class="form-control form-control-sm mt-1">
+                    <option value="add">+</option>
+                    <option value="sub">-</option>
+                    <option value="mul">*</option>
+                    <option value="div">/</option>
+                  </select>
+                  <select id="then-calc-right-source" class="form-control form-control-sm mt-1">
+                    <option value="field">Champ</option>
+                    <option value="value">Valeur</option>
+                  </select>
+                  <select id="then-calc-right-field" class="form-control form-control-sm mt-1"></select>
+                  <input id="then-calc-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+                </div>
+              </div>
+              <div class="col-md-6" id="conditional-else-block">
+                <label class="small" id="else-label">Sinon</label>
+                <select id="else-mode" class="form-control form-control-sm mb-1">
+                  <option value="value">Valeur</option>
+                  <option value="concat">Concatener</option>
+                  <option value="calc">Calcul</option>
+                </select>
+                <div id="else-value-block">
+                  <select id="else-source" class="form-control form-control-sm">
+                    <option value="field">Champ</option>
+                    <option value="value">Valeur</option>
+                  </select>
+                  <select id="else-field" class="form-control form-control-sm mt-1"></select>
+                  <input id="else-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+                </div>
+                <div id="else-concat-block" class="hidden">
+                  <select id="else-concat-field-a" class="form-control form-control-sm"></select>
+                  <input id="else-concat-sep" class="form-control form-control-sm mt-1" placeholder="Separateur">
+                  <select id="else-concat-field-b" class="form-control form-control-sm mt-1"></select>
+                </div>
+                <div id="else-calc-block" class="hidden">
+                  <select id="else-calc-left-source" class="form-control form-control-sm">
+                    <option value="field">Champ</option>
+                    <option value="value">Valeur</option>
+                  </select>
+                  <select id="else-calc-left-field" class="form-control form-control-sm mt-1"></select>
+                  <input id="else-calc-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+                  <select id="else-calc-op" class="form-control form-control-sm mt-1">
+                    <option value="add">+</option>
+                    <option value="sub">-</option>
+                    <option value="mul">*</option>
+                    <option value="div">/</option>
+                  </select>
+                  <select id="else-calc-right-source" class="form-control form-control-sm mt-1">
+                    <option value="field">Champ</option>
+                    <option value="value">Valeur</option>
+                  </select>
+                  <select id="else-calc-right-field" class="form-control form-control-sm mt-1"></select>
+                  <input id="else-calc-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div id="conditional-expression" class="mt-2 hidden">
-          <label class="small">Expression</label>
-          <textarea id="conditional-expression-text" class="form-control form-control-sm" rows="4" placeholder='if(gt(age,18), concat(prenom," ",nom), "Mineur")'></textarea>
-          <div id="conditional-expression-error" class="type-warning mt-1"></div>
-        </div>
+          <div id="conditional-expression" class="mt-2 hidden">
+            <label class="small">Expression</label>
+            <textarea id="conditional-expression-text" class="form-control form-control-sm" rows="4" placeholder='if(gt(age,18), concat(prenom," ",nom), "Mineur")'></textarea>
+            <div id="conditional-expression-error" class="type-warning mt-1"></div>
+            <div class="small text-muted mt-1">
+              Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace
+            </div>
+          </div>
+
+          <div id="conditional-ai-help" class="mt-2">
+            <label class="small">Assistance IA (beta)</label>
+            <textarea id="conditional-ai-request" class="form-control form-control-sm" rows="2" placeholder="Decris la formule souhaitee"></textarea>
+            <div class="d-flex flex-wrap mt-1">
+              <button id="conditional-ai-generate" class="btn btn-sm btn-outline-primary m-1">Proposer expression</button>
+              <span id="conditional-ai-status" class="small text-muted mt-1"></span>
+            </div>
+          </div>
 
         <div class="row mt-2">
           <div class="col-md-6">

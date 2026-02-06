@@ -6,6 +6,7 @@ import { aiConfig } from './ai.js';
 import { uiConfig } from './ui.js';
 import * as graphGeneration from './templates/graphGeneration.js';
 import * as proposals from './templates/proposals.js';
+import * as expressions from './templates/expressions.js';
 
 // Exporter les configurations pour faciliter l'import
 export {
@@ -13,7 +14,8 @@ export {
   aiConfig,
   uiConfig,
   graphGeneration,
-  proposals
+  proposals,
+  expressions
 };
 
 // Exporter une structure unifiée pour la compatibilité avec le code existant
@@ -23,6 +25,7 @@ export default {
   ui: uiConfig,
   templates: {
     graphGeneration,
-    proposals
+    proposals,
+    expressions
   }
 };

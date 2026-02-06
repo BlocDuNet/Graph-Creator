@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 6. Initialisation du gestionnaire d'interface utilisateur
   const uiManager = new UIManager(graphState, renderer);
 
-  // 6bis. Gestionnaire des champs conditionnels
+  // 6bis. Gestionnaire des champs personnalises
   const conditionalFieldManager = new ConditionalFieldManager(graphState, renderer);
   
   // 7. Initialisation du gestionnaire d'IA

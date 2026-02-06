@@ -407,7 +407,11 @@ const FUNCTIONS = {
   max: (a, b) => Math.max(toNumber(a), toNumber(b)),
   toNumber: a => toNumber(a),
   toText: a => (a == null ? '' : String(a)),
-  toBool: a => toBoolean(a)
+  toBool: a => toBoolean(a),
+  contains: (a, b) => String(a ?? '').includes(String(b ?? '')),
+  startsWith: (a, b) => String(a ?? '').startsWith(String(b ?? '')),
+  endsWith: (a, b) => String(a ?? '').endsWith(String(b ?? '')),
+  replace: (a, b, c) => String(a ?? '').split(String(b ?? '')).join(String(c ?? ''))
 };
 
 export function evaluateExpression(ast, ctx = {}) {
@@ -474,8 +478,8 @@ export function inferExpressionType(ast, getFieldType) {
         return t1 === t2 ? t1 : 'text';
       }
       if (['add', 'sub', 'mul', 'div', 'len', 'round', 'min', 'max', 'toNumber'].includes(name)) return 'number';
-      if (['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'and', 'or', 'not', 'toBool'].includes(name)) return 'boolean';
-      if (['concat', 'upper', 'lower', 'trim', 'toText', 'coalesce'].includes(name)) return 'text';
+      if (['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'and', 'or', 'not', 'toBool', 'contains', 'startsWith', 'endsWith'].includes(name)) return 'boolean';
+      if (['concat', 'upper', 'lower', 'trim', 'toText', 'coalesce', 'replace'].includes(name)) return 'text';
       if (name === 'field') return 'text';
       return 'text';
     }

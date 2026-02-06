@@ -4,7 +4,7 @@ export const FIELD_TYPES = [
   { id: 'number_comma', label: 'Nombre (virgule)' },
   { id: 'boolean', label: 'Booleen' },
   { id: 'date', label: 'Date' },
-  { id: 'conditional', label: 'Conditionnel' },
+  { id: 'conditional', label: 'Personnalise' },
   { id: 'object', label: 'Objet' }
 ];
 
@@ -24,6 +24,14 @@ const TYPE_ALIASES = {
   datetime: 'date',
   conditional: 'conditional',
   conditionnel: 'conditional',
+  custom: 'conditional',
+  custom_field: 'conditional',
+  personnalise: 'conditional',
+  personalize: 'conditional',
+  expression: 'conditional',
+  calcule: 'conditional',
+  computed: 'conditional',
+  formula: 'conditional',
   object: 'object',
   json: 'object'
 };

@@ -136,7 +136,7 @@ export class FormManager {
 
     if (isObject || isConditional) {
       input.disabled = true;
-      input.title = 'Champ systeme non modifiable';
+      input.title = isConditional ? 'Champ calcule (edition directe desactivee)' : 'Champ systeme non modifiable';
     }
 
     fieldDiv.appendChild(input);
@@ -160,7 +160,7 @@ export class FormManager {
     exprBtn.setAttribute('type', 'button');
     exprBtn.className = 'field-expr-btn';
     exprBtn.textContent = 'fx';
-    exprBtn.title = 'Configurer condition';
+    exprBtn.title = 'Configurer expression';
     exprBtn.style.display = isConditional ? '' : 'none';
     exprBtn.addEventListener('click', () => {
       eventBus.emit('conditional-edit-requested', { target, field: fieldName });

@@ -359,7 +359,22 @@ export class GraphState {
     if (!entry) return this.getFieldType(target, field);
     const base = normalizeType(entry.type);
     if (base === 'conditional') {
-      const resolved = normalizeType(entry.resultType || 'text');
+      const rawResult = entry.resultType;
+      let resolved = normalizeType(rawResult || 'text');
+      if (!rawResult || rawResult === 'auto') {
+        let ast = entry.ast;
+        if (!ast && entry.expr) {
+          try {
+            ast = parseExpression(entry.expr);
+          } catch (e) {
+            ast = null;
+          }
+        }
+        if (ast) {
+          const inferred = inferExpressionType(ast, name => this.getFieldResolvedType(target, name)).type;
+          resolved = normalizeType(inferred || resolved || 'text');
+        }
+      }
       return resolved === 'number_comma' ? 'number' : resolved;
     }
     if (base === 'number_comma') return 'number';
