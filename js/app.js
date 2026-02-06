@@ -8,6 +8,7 @@ import { InteractionManager } from './graph/interactions.js';
 import { UIManager } from './ui/UIManager.js';
 import { AIManager } from './ai/AIManager.js';
 import { ConditionalFieldManager } from './expr/ConditionalFieldManager.js';
+import { StyleRuleManager } from './style/StyleRuleManager.js';
 import { registerGraphState, registerUpdateCallback } from './state/undo_redo.js';
 import { initLayoutManager } from './services/layoutManager.js';
 import { initIOServices } from './services/io.js';
@@ -38,6 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 6bis. Gestionnaire des champs personnalises
   const conditionalFieldManager = new ConditionalFieldManager(graphState, renderer);
+
+  // 6ter. Gestionnaire des regles de style / pie charts
+  const styleRuleManager = new StyleRuleManager(graphState, renderer);
   
   // 7. Initialisation du gestionnaire d'IA
   const aiManager = new AIManager(graphState, renderer);
@@ -63,7 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
       interactionManager,
       uiManager,
       aiManager,
-      conditionalFieldManager
+      conditionalFieldManager,
+      styleRuleManager
     };
   }
   

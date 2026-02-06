@@ -562,6 +562,43 @@
                     </div>
                   </div>
                   
+                  <div class="col-12 mb-3">
+                    <div class="card h-100">
+                      <div class="card-header section-header" id="headingStyleRules">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseStyleRules" aria-expanded="true" aria-controls="collapseStyleRules">
+                          Regles de style (noeuds / liens)
+                        </button>
+                      </div>
+                      <div id="collapseStyleRules" class="collapse show" aria-labelledby="headingStyleRules">
+                        <div class="card-body">
+                          <div class="d-flex flex-wrap mb-2">
+                            <button id="style-rule-add-node" class="btn btn-sm btn-outline-secondary m-1">+ Regle noeud</button>
+                            <button id="style-rule-add-link" class="btn btn-sm btn-outline-secondary m-1">+ Regle lien</button>
+                          </div>
+                          <div id="style-rules-list"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-12 mb-3">
+                    <div class="card h-100">
+                      <div class="card-header section-header" id="headingPieRules">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapsePieRules" aria-expanded="true" aria-controls="collapsePieRules">
+                          Pie chart (groupes de noeuds)
+                        </button>
+                      </div>
+                      <div id="collapsePieRules" class="collapse show" aria-labelledby="headingPieRules">
+                        <div class="card-body">
+                          <div class="d-flex flex-wrap mb-2">
+                            <button id="pie-rule-add" class="btn btn-sm btn-outline-secondary m-1">+ Regle pie chart</button>
+                          </div>
+                          <div id="pie-rules-list"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -863,6 +900,35 @@
                     <summary class="small">Log IA (echanges complets)</summary>
                     <textarea id="ai-log" class="w-100 log-textarea mt-2" readonly></textarea>
                   </details>
+                </div>
+              </div>
+              <div class="card mt-3">
+                <div class="card-header section-header">
+                  <button class="btn btn-link" type="button">
+                    Configuration logiciel Import/Export
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="app-config-include-ai" checked>
+                        <label class="custom-control-label" for="app-config-include-ai">IA</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mt-1">
+                        <input type="checkbox" class="custom-control-input" id="app-config-include-style" checked>
+                        <label class="custom-control-label" for="app-config-include-style">Regles de style</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mt-1">
+                        <input type="checkbox" class="custom-control-input" id="app-config-include-pie" checked>
+                        <label class="custom-control-label" for="app-config-include-pie">Pie charts</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-2 d-flex flex-wrap">
+                    <button id="app-config-export" class="btn btn-sm btn-outline-primary m-1">Exporter config logiciel</button>
+                    <input type="file" id="app-config-import" accept=".json" class="m-1">
+                  </div>
                 </div>
               </div>
             </div>

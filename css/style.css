@@ -1,4 +1,4 @@
-/* ======================================
+﻿/* ======================================
    1. BASE & RESET
 ====================================== */
 body {
@@ -83,7 +83,7 @@ svg {
 .cluster-1 { fill: #4e79a7; }
 .cluster-2 { fill: #59a14f; }
 .cluster-3 { fill: #e15759; }
-/* … vous pouvez ajouter plus de classes cluster-N … */
+/* â€¦ vous pouvez ajouter plus de classes cluster-N â€¦ */
 
 /* ======================================
    3. LAYOUT COMPONENTS
@@ -190,7 +190,7 @@ th, td {
 }
 
 .section-header .btn-link::before {
-  content: "▶";
+  content: "â–¶";
   margin-right: 0.5rem;
   font-size: 0.8rem;
   transition: transform 0.2s;
@@ -451,6 +451,44 @@ input[type="checkbox"] {
   outline-offset: 2px;
 }
 
+.node-pie path {
+  pointer-events: none;
+}
+
+.rule-card {
+  border: 1px solid #e2e8f0;
+  background: #fbfbfb;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.rule-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.rule-header .rule-name {
+  max-width: 220px;
+}
+
+.rule-header .rule-priority {
+  max-width: 90px;
+}
+
+.rule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 6px;
+}
+
+.rule-row {
+  margin-bottom: 6px;
+}
+
 .condition-row,
 .condition-group {
   cursor: grab;
@@ -656,7 +694,7 @@ input:checked + .slider:before {
   overflow: auto;
 }
 
-/* Confirmation personnalisée */
+/* Confirmation personnalisÃ©e */
 .confirm-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -767,3 +805,4 @@ input:checked + .slider:before {
     flex: 1 0 100%;
   }
 }
+

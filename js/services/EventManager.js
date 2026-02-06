@@ -2,6 +2,7 @@ import { exportJson, exportImage, loadJSONGraph, prepareAdvancedImport, applyAdv
 import eventBus from './EventBus.js';
 import { graphConfig } from '../config/index.js';
 import { updateGraphConfig } from '../config/graph.js';
+import { buildAppConfig, applyAppConfig } from './AppConfigService.js';
 
 export class EventManager {
   static init(state, renderer) {
@@ -105,7 +106,9 @@ export class EventManager {
         curvedLinks:   graphConfig.linkStyle.curvedLinks,
         baseCurvature: graphConfig.linkStyle.baseCurvature,
         loopCurvature: graphConfig.linkStyle.loopCurvature,
-        curvatureStep: graphConfig.linkStyle.curvatureStep
+        curvatureStep: graphConfig.linkStyle.curvatureStep,
+        styleRules: graphConfig.styleRules,
+        pieRules: graphConfig.pieRules
       };
       const blob = new Blob([JSON.stringify(cfg, null,2)], { type:'application/json' });
       const url = URL.createObjectURL(blob);
@@ -129,6 +132,41 @@ export class EventManager {
           updateGraphConfig(data, renderer);
         } catch(err) {
           console.error('Erreur parsing config:', err);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // ----- 4) Import/Export configuration logiciel -----
+    const exportAppBtn = document.getElementById('app-config-export');
+    exportAppBtn?.addEventListener('click', () => {
+      const includeAi = document.getElementById('app-config-include-ai')?.checked ?? true;
+      const includeStyle = document.getElementById('app-config-include-style')?.checked ?? true;
+      const includePie = document.getElementById('app-config-include-pie')?.checked ?? true;
+      const cfg = buildAppConfig({ includeAi, includeStyle, includePie });
+      const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'config-logiciel.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    const importAppInput = document.getElementById('app-config-import');
+    importAppInput?.addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          applyAppConfig(data);
+          renderer.updateGraph();
+        } catch (err) {
+          console.error('Erreur parsing config logiciel:', err);
         }
       };
       reader.readAsText(file);

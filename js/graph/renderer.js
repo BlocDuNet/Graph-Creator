@@ -1,8 +1,9 @@
-/**
- * Gère le rendu du graphe avec D3
+﻿/**
+ * GÃ¨re le rendu du graphe avec D3
  */
 import { graphConfig } from '../config/index.js';
 import eventBus from '../services/EventBus.js';
+import { parseExpression, evaluateExpression } from '../expr/ExpressionEngine.js';
 
 export class GraphRenderer {
   constructor(graphState, svgSelection) {
@@ -11,23 +12,25 @@ export class GraphRenderer {
     this.width = +this.svg.attr('width');
     this.height = +this.svg.attr('height');
     
-    // Création du groupe principal pour le graphe
+    // CrÃ©ation du groupe principal pour le graphe
     this.g = this.svg.append('g');
     
     // Configuration de la simulation de forces
     this.simulation = this.createForceSimulation();
     
-    // Création des définitions de marqueurs (flèches)
+    // CrÃ©ation des dÃ©finitions de marqueurs (flÃ¨ches)
     this.createArrowDefinitions();
     
-    // Mémorisation de la dernière configuration de marqueurs
-    this._lastMarkerConfig = null;
+    // MÃ©morisation de la derniÃ¨re configuration de marqueurs
     
-    console.log("Renderer initialized with graph config:", graphConfig);
+    this.ruleCache = new Map();
+    eventBus.on('style-rules-updated', () => this.ruleCache.clear());
+    eventBus.on('pie-rules-updated', () => this.ruleCache.clear());
+console.log("Renderer initialized with graph config:", graphConfig);
   }
   
   /**
-   * Crée la simulation de forces D3
+   * CrÃ©e la simulation de forces D3
    */
   createForceSimulation() {
     const idField = this.graphState.globalSettings.nodeIdField;
@@ -36,7 +39,7 @@ export class GraphRenderer {
     console.log(`Creating force simulation with: linkStrength=${linkStrength}, linkDistance=${linkDistance}, chargeStrength=${chargeStrength}, centerStrength=${centerStrength}`);
     
     const forceLink = d3.forceLink()
-      .id(d => d[idField] ?? d.id)     // ← use custom id field
+      .id(d => d[idField] ?? d.id)     // â† use custom id field
       .distance(linkDistance)
       .strength(linkStrength);
       
@@ -46,7 +49,7 @@ export class GraphRenderer {
     const forceCenter = d3.forceCenter(this.width / 2, this.height / 2)
       .strength(centerStrength);
     
-    // Réduire alpha et decay pour une simulation plus stable
+    // RÃ©duire alpha et decay pour une simulation plus stable
     return d3.forceSimulation()
       .force('link', forceLink)
       .force('charge', forceCharge)
@@ -56,7 +59,7 @@ export class GraphRenderer {
   }
   
   /**
-   * Met à jour les forces de la simulation
+   * Met Ã  jour les forces de la simulation
    */
   updateForces() {
     const { linkStrength, linkDistance, chargeStrength, centerStrength } = graphConfig.forces;
@@ -73,26 +76,26 @@ export class GraphRenderer {
     this.simulation.force('center')
       .strength(centerStrength);
     
-    // Redémarrer la simulation avec une alpha élevée pour appliquer les changements
+    // RedÃ©marrer la simulation avec une alpha Ã©levÃ©e pour appliquer les changements
     this.simulation.alpha(1).restart();
   }
 
   /**
-   * Crée les définitions de marqueurs (flèches) pour les liens
+   * CrÃ©e les dÃ©finitions de marqueurs (flÃ¨ches) pour les liens
    */
   createArrowDefinitions() {
-    // Sérialiser la config courante
+    // SÃ©rialiser la config courante
     const currentConfig = JSON.stringify(graphConfig.markers);
-    // Ne rien faire si inchangé
+    // Ne rien faire si inchangÃ©
     if (this._lastMarkerConfig === currentConfig) return;
-    // Mettre à jour le cache
+    // Mettre Ã  jour le cache
     this._lastMarkerConfig = currentConfig;
     
-    // Supprimer et recréer les définitions
+    // Supprimer et recrÃ©er les dÃ©finitions
     d3.select("svg defs").selectAll("*").remove();
     const defs = d3.select("svg defs");
     
-    // Créer un marqueur de flèche standard
+    // CrÃ©er un marqueur de flÃ¨che standard
     defs.append("marker")
       .attr("id", "arrowhead")
       .attr("viewBox", "-10 -10 20 20")
@@ -106,7 +109,7 @@ export class GraphRenderer {
       .attr("fill", "#000")
       .attr("stroke", "none");
       
-    // Marqueur pour les liens sélectionnés
+    // Marqueur pour les liens sÃ©lectionnÃ©s
     defs.append("marker")
       .attr("id", "arrowhead-selected")
       .attr("viewBox", "-10 -10 20 20")
@@ -134,7 +137,7 @@ export class GraphRenderer {
       .attr("fill", "#000")
       .attr("stroke", "none");
     
-    // Marqueur pour les auto-liens sélectionnés
+    // Marqueur pour les auto-liens sÃ©lectionnÃ©s
     defs.append("marker")
       .attr("id", "arrowhead-loop-selected")
       .attr("viewBox", "-10 -10 20 20")
@@ -156,74 +159,61 @@ export class GraphRenderer {
     const idField = this.graphState.globalSettings.nodeIdField;
     const { baseCurvature, loopCurvature, curvatureStep } = graphConfig.linkStyle;
     
-    // Cas spécial pour les auto-liens (boucles)
+    // Cas spÃ©cial pour les auto-liens (boucles)
     if (source[idField] === target[idField]) {
       return loopCurvature;
     }
     
-    // Déterminer la direction de ce lien
+    // DÃ©terminer la direction de ce lien
     const isForward = source[idField] < target[idField];
     
-    // Trouver tous les liens entre cette paire de nœuds
+    // Trouver tous les liens entre cette paire de nÅ“uds
     const parallelLinks = this.graphState.links.filter(l => 
       (l.source[idField] === source[idField] && l.target[idField] === target[idField]) || 
       (l.source[idField] === target[idField] && l.target[idField] === source[idField])
     );
     
-    // Séparer en deux groupes selon la direction
+    // SÃ©parer en deux groupes selon la direction
     const forwardLinks = parallelLinks.filter(l => l.source[idField] < l.target[idField]);
     const backwardLinks = parallelLinks.filter(l => l.source[idField] > l.target[idField]);
     
-    // Si c'est le seul lien entre ces nœuds, appliquer la courbure de base
+    // Si c'est le seul lien entre ces nÅ“uds, appliquer la courbure de base
     if (parallelLinks.length === 1) {
       return isForward ? baseCurvature : -baseCurvature;
     }
     
-    // Trouver l'index de ce lien spécifique dans le groupe approprié
+    // Trouver l'index de ce lien spÃ©cifique dans le groupe appropriÃ©
     const targetGroup = isForward ? forwardLinks : backwardLinks;
     const linkIndex = targetGroup.findIndex(l => l.id === linkId);
     
     // Calculer la courbure en fonction de l'index et du pas de courbure
     const calculatedCurvature = baseCurvature + (curvatureStep * linkIndex);
     
-    // Assurer que les directions opposées ont des courbures opposées
+    // Assurer que les directions opposÃ©es ont des courbures opposÃ©es
     return isForward ? calculatedCurvature : -calculatedCurvature;
   }
   
   /**
-   * Met à jour les nœuds du graphe
+   * Met Ã  jour les nÅ“uds du graphe
    */
   updateNodes() {
     const { nodeLabelField, nodeSizeField, defaultNodeSize, nodeIdField } = this.graphState.globalSettings;
-    
-    // Sélection des nœuds avec correspondance de données
+
+    // SÃ©lection des nÅ“uds avec correspondance de donnÃ©es
     const nodeSelection = this.g.selectAll('.node')
       .data(this.graphState.nodes, d => d.id);
-    
-    // Création des nouveaux nœuds
+
+    // CrÃ©ation des nouveaux nÅ“uds
     const nodeEnter = nodeSelection.enter()
       .append('g')
       .attr('class', 'node');
-    
-    // Ajout du cercle
-    nodeEnter.append('circle')
-      .attr('r', d => {
-        if (nodeSizeField) {
-          const val = this.graphState.resolveFieldValue('node', d, nodeSizeField);
-          if (val !== null && val !== undefined && val !== '') return Number(val) || defaultNodeSize;
-        }
-        return Number(d.size) || defaultNodeSize;
-      });
-    
+
+    nodeEnter.append('g').attr('class', 'node-pie');
+    nodeEnter.append('rect').attr('class', 'node-rect').attr('rx', 4).attr('ry', 4);
+    nodeEnter.append('circle');
+
     // Ajout du texte
     nodeEnter.append('text')
-      .attr('dx', d => {
-        if (nodeSizeField) {
-          const val = this.graphState.resolveFieldValue('node', d, nodeSizeField);
-          if (val !== null && val !== undefined && val !== '') return (Number(val) || defaultNodeSize) + 5;
-        }
-        return 35;
-      })
       .attr('dy', 5)
       .text(d => {
         if (nodeLabelField) {
@@ -231,63 +221,88 @@ export class GraphRenderer {
           return this.resolveLangValue(val) || "";
         }
         return nodeIdField ? (d[nodeIdField] || "") : "";
-      })
-    
-    // Fusion et mise à jour des nœuds existants
+      });
+
+    // Fusion et mise Ã  jour des nÅ“uds existants
     const merged = nodeSelection.merge(nodeEnter)
       .classed('selected', d => d === this.graphState.selectedNode);
-    
-    // Mise à jour du rayon du cercle
+
+    // Calculer styles & tailles
+    merged.each(d => {
+      const baseSize = this.getBaseNodeSize(d, nodeSizeField, defaultNodeSize);
+      const style = this.getStyleFor('node', d);
+      const renderSize = this.resolveStyleNumber(style.size, baseSize);
+      d.__renderSize = renderSize;
+      d.__style = style;
+      d.__pie = this.getPieForNode(d, renderSize);
+    });
+
+    // Mise Ã  jour du cercle
     merged.select('circle')
-      .attr('r', d => {
-        if (nodeSizeField) {
-          const val = this.graphState.resolveFieldValue('node', d, nodeSizeField);
-          if (val !== null && val !== undefined && val !== '') return Number(val) || defaultNodeSize;
-        }
-        return Number(d.size) || defaultNodeSize;
-      });
-    
-    // Mise à jour du texte
+      .attr('r', d => d.__renderSize || defaultNodeSize)
+      .attr('fill', d => this.getNodeFill(d))
+      .attr('stroke', d => this.getNodeStroke(d))
+      .attr('stroke-width', d => this.getNodeStrokeWidth(d))
+      .attr('opacity', d => this.getNodeOpacity(d))
+      .style('display', d => (d.__style?.shape === 'rect' ? 'none' : ''));
+
+    // Mise Ã  jour du rectangle (si besoin)
+    merged.select('.node-rect')
+      .attr('x', d => -(d.__renderSize || defaultNodeSize))
+      .attr('y', d => -(d.__renderSize || defaultNodeSize))
+      .attr('width', d => (d.__renderSize || defaultNodeSize) * 2)
+      .attr('height', d => (d.__renderSize || defaultNodeSize) * 2)
+      .attr('fill', d => this.getNodeFill(d))
+      .attr('stroke', d => this.getNodeStroke(d))
+      .attr('stroke-width', d => this.getNodeStrokeWidth(d))
+      .attr('opacity', d => this.getNodeOpacity(d))
+      .style('display', d => (d.__style?.shape === 'rect' ? '' : 'none'));
+
+    // Mise Ã  jour du texte
     merged.select('text')
+      .attr('dx', d => (d.__renderSize || defaultNodeSize) + 5)
+      .attr('fill', d => d.__style?.labelColor || null)
       .text(d => {
         if (nodeLabelField) {
           const val = this.graphState.resolveFieldValue('node', d, nodeLabelField);
           return this.resolveLangValue(val) || "";
         }
         return nodeIdField ? (d[nodeIdField] || "") : "";
-      })
-    
-    // Suppression des nœuds qui ne sont plus dans les données
+      });
+
+    this.updateNodePieCharts(merged);
+
+    // Suppression des nÅ“uds qui ne sont plus dans les donnÃ©es
     nodeSelection.exit().remove();
-    
+
     return nodeEnter;
   }
   
   /**
-   * Met à jour les liens du graphe
+   * Met Ã  jour les liens du graphe
    */
   updateLinks() {
     const idField = this.graphState.globalSettings.nodeIdField;
-    const { defaultLinkWidth } = this.graphState.globalSettings; // ← utilisation unique
+    const { defaultLinkWidth } = this.graphState.globalSettings; // â† utilisation unique
     const { curvedLinks } = graphConfig.linkStyle;
     
-    // Précalculer les courbures pour chaque lien
+    // PrÃ©calculer les courbures pour chaque lien
     this.graphState.links.forEach(link => {
-      // Vérifier si c'est un auto-lien
+      // VÃ©rifier si c'est un auto-lien
       link.isLoop = link.source[idField] === link.target[idField];
       link.curvature = this.calculateLinkCurvature(link.source, link.target, link.id);
       
-      // Toujours remplacer la largeur par la valeur par défaut si non définie
+      // Toujours remplacer la largeur par la valeur par dÃ©faut si non dÃ©finie
       if (link.width === undefined) {
         link.width = parseFloat(defaultLinkWidth);
       }
     });
     
-    // Sélectionner les liens avec un ID unique pour chaque lien
+    // SÃ©lectionner les liens avec un ID unique pour chaque lien
     const getLinkId = link =>
       `${link.source[idField] ?? link.source.id}` +
       `-${link.target[idField] ?? link.target.id}` +
-      `-${link.id}`;              // ← include custom id in key
+      `-${link.id}`;              // â† include custom id in key
 
     const linkSelection = this.g.selectAll('.link').data(this.graphState.links, getLinkId);
     const linkEnter = linkSelection.enter()
@@ -296,10 +311,18 @@ export class GraphRenderer {
       .attr('fill', 'none')
       .attr('vector-effect', 'non-scaling-stroke');
     
-    // Fusion et mise à jour
+    // Fusion et mise Ã  jour
     const allLinks = linkSelection.merge(linkEnter)
-      .attr('stroke-width', d => parseFloat(d.width) || defaultLinkWidth)
-      .attr('stroke', d => d === this.graphState.selectedLink ? '#f00' : '#000')
+      .each(d => {
+        const baseWidth = parseFloat(d.width) || defaultLinkWidth;
+        const style = this.getStyleFor('link', d);
+        d.__style = style;
+        d.__renderWidth = this.resolveStyleNumber(style.linkWidth, baseWidth);
+      })
+      .attr('stroke-width', d => d.__renderWidth || defaultLinkWidth)
+      .attr('stroke', d => d === this.graphState.selectedLink ? '#f00' : (d.__style?.linkColor || '#000'))
+      .attr('stroke-opacity', d => this.resolveStyleNumber(d.__style?.linkOpacity, null))
+      .attr('stroke-dasharray', d => d.__style?.linkDash || null)
       .attr('marker-end', d => {
         if (d.isLoop) {
           return d === this.graphState.selectedLink 
@@ -314,71 +337,61 @@ export class GraphRenderer {
     
     linkSelection.exit().remove();
 
-    // Stocker la sélection pour le ticked()
+    // Stocker la sÃ©lection pour le ticked()
     this.linkPaths = allLinks;
 
     return linkEnter;
   }
   
   /**
-   * Met à jour les labels des liens
+   * Met Ã  jour les labels des liens
    */
   updateLinkLabels() {
     const idField = this.graphState.globalSettings.nodeIdField;
     const { linkLabelField } = this.graphState.globalSettings;
     
-    // Sélectionner les labels des liens
+    // SÃ©lectionner les labels des liens
     const linkLabels = this.g.selectAll('.link-label')
       .data(this.graphState.links, d =>
         `${d.source[idField] ?? d.source.id}-${d.target[idField] ?? d.target.id}-${d.id}`
-      );  // ← include link id to disambiguate parallel links
+      );  // â† include link id to disambiguate parallel links
     
-    // Créer les nouveaux labels
+    // CrÃ©er les nouveaux labels
     const labelEnter = linkLabels.enter()
       .append('text')
       .attr('class', 'link-label')
       .attr('dx', 10);
     
-    // Fusion et mise à jour
+    // Fusion et mise Ã  jour
     labelEnter.merge(linkLabels)
       .classed('selected', d => d === this.graphState.selectedLink)
+      .attr('fill', d => d.__style?.labelColor || null)
       .text(d => {
         if (linkLabelField === '') return '';
         const val = this.graphState.resolveFieldValue('link', d, linkLabelField);
         return this.resolveLangValue(val) || "";
       });
     
-    // Suppression des labels qui ne sont plus dans les données
+    // Suppression des labels qui ne sont plus dans les donnÃ©es
     linkLabels.exit().remove();
     
     return labelEnter;
   }
   
   /**
-   * Fonction appelée à chaque pas de simulation
+   * Fonction appelÃ©e Ã  chaque pas de simulation
    */
   ticked() {
-    const { nodeSizeField, defaultNodeSize } = this.graphState.globalSettings;
     const { curvedLinks } = graphConfig.linkStyle;
     
-    // Utiliser la sélection mise en cache au lieu de relancer selectAll
+    // Utiliser la sÃ©lection mise en cache au lieu de relancer selectAll
     (this.linkPaths || this.g.selectAll('.link'))
       .attr('d', d => {
-        // Récupérer les rayons des nœuds
-        let rSource = Number(d.source.size || defaultNodeSize);
-        let rTarget = Number(d.target.size || defaultNodeSize);
-        if (nodeSizeField) {
-          const srcVal = this.graphState.resolveFieldValue('node', d.source, nodeSizeField);
-          const tgtVal = this.graphState.resolveFieldValue('node', d.target, nodeSizeField);
-          if (srcVal !== null && srcVal !== undefined && srcVal !== '') {
-            rSource = Math.max(1, Number(srcVal) || rSource);
-          }
-          if (tgtVal !== null && tgtVal !== undefined && tgtVal !== '') {
-            rTarget = Math.max(1, Number(tgtVal) || rTarget);
-          }
-        }
+        // RÃ©cupÃ©rer les rayons des nÅ“uds (avec regles de style)
+        const rSource = this.getNodeRenderSize(d.source);
+        const rTarget = this.getNodeRenderSize(d.target);
         
-        // Vérifier s'il s'agit d'un auto-lien
+        // VÃ©rifier s'il s'agit d'un auto-lien
         if (d.isLoop) {
           return this.drawSelfLoop(d.source.x, d.source.y, rSource);
         }
@@ -388,14 +401,14 @@ export class GraphRenderer {
         const dy = d.target.y - d.source.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
-        // Protection contre division par zéro
+        // Protection contre division par zÃ©ro
         if (dist < 0.1) return `M${d.source.x},${d.source.y}L${d.source.x},${d.source.y}`;
         
         // Vecteur unitaire
         const unitX = dx / dist;
         const unitY = dy / dist;
         
-        // Points ajustés
+        // Points ajustÃ©s
         const adjustedStart = {
           x: d.source.x + unitX * rSource,
           y: d.source.y + unitY * rSource
@@ -412,14 +425,14 @@ export class GraphRenderer {
           return `M${adjustedStart.x},${adjustedStart.y} L${adjustedEnd.x},${adjustedEnd.y}`;
         }
         
-        // Courbe de Bézier
+        // Courbe de BÃ©zier
         const curvature = d.curvature || 0.05;
         
         // Vecteur perpendiculaire
         const perpX = -unitY;
         const perpY = unitX;
         
-        // Point médian décalé
+        // Point mÃ©dian dÃ©calÃ©
         const midX = (adjustedStart.x + adjustedEnd.x) / 2;
         const midY = (adjustedStart.y + adjustedEnd.y) / 2;
         
@@ -429,23 +442,18 @@ export class GraphRenderer {
         return `M${adjustedStart.x},${adjustedStart.y} Q${ctrlX},${ctrlY} ${adjustedEnd.x},${adjustedEnd.y}`;
       });
     
-    // Mise à jour des positions des nœuds
+    // Mise Ã  jour des positions des nÅ“uds
     this.g.selectAll('.node')
       .attr('transform', d => `translate(${d.x},${d.y})`);
     
-    // Mise à jour des positions des labels de liens
+    // Mise Ã  jour des positions des labels de liens
     this.g.selectAll('.link-label')
       .attr('transform', d => {
-        const { nodeSizeField, defaultNodeSize } = this.graphState.globalSettings;
         const { curvedLinks } = graphConfig.linkStyle;
         
         // Pour les auto-liens
         if (d.isLoop) {
-          let radius = d.source.size || defaultNodeSize;
-          if (nodeSizeField) {
-            const val = this.graphState.resolveFieldValue('node', d.source, nodeSizeField);
-            if (val !== null && val !== undefined && val !== '') radius = +val || radius;
-          }
+          const radius = this.getNodeRenderSize(d.source);
           
           return `translate(${d.source.x},${d.source.y - radius * 2.5})`;
         }
@@ -466,12 +474,12 @@ export class GraphRenderer {
         if (dist === 0) return "translate(0,0)";
         
         const curvature = d.curvature || 0.05;
-        const t = 0.55; // Paramètre pour la position le long de la courbe
+        const t = 0.55; // ParamÃ¨tre pour la position le long de la courbe
         
         const perpX = -(ty - sy) / dist;
         const perpY = (tx - sx) / dist;
         
-        // Calcul du point sur la courbe de Bézier
+        // Calcul du point sur la courbe de BÃ©zier
         const midX = (1-t)*(1-t)*sx + 2*(1-t)*t*((sx + tx)/2 + perpX*dist*curvature) + t*t*tx;
         const midY = (1-t)*(1-t)*sy + 2*(1-t)*t*((sy + ty)/2 + perpY*dist*curvature) + t*t*ty;
         
@@ -487,18 +495,18 @@ export class GraphRenderer {
   drawSelfLoop(x, y, radius) {
     const { loopCurvature } = graphConfig.linkStyle;
     
-    // Dessiner une boucle au-dessus du nœud
+    // Dessiner une boucle au-dessus du nÅ“ud
     const loopRadius = radius * loopCurvature;
     const startAngle = -Math.PI/2 - Math.PI/6;
     const endAngle = -Math.PI/2 + Math.PI/6;
     
-    // Points de contrôle pour la courbe de Bézier
+    // Points de contrÃ´le pour la courbe de BÃ©zier
     const startX = x + radius * Math.cos(startAngle);
     const startY = y + radius * Math.sin(startAngle);
     const endX = x + radius * Math.cos(endAngle);
     const endY = y + radius * Math.sin(endAngle);
     
-    // Point de contrôle pour une courbe plus arrondie
+    // Point de contrÃ´le pour une courbe plus arrondie
     const controlX = x;
     const controlY = y - loopRadius * 2;
     
@@ -506,10 +514,10 @@ export class GraphRenderer {
   }
   
   /**
-   * Met à jour l'affichage complet du graphe
+   * Met Ã  jour l'affichage complet du graphe
    */
   updateGraph() {
-    // apply user‐selected x/y fields before simulation
+    // apply userâ€selected x/y fields before simulation
     const { xField, yField } = this.graphState.globalSettings;
     if (xField || yField) {
       this.graphState.nodes.forEach(d => {
@@ -524,39 +532,39 @@ export class GraphRenderer {
       });
     }
 
-    // Créer les définitions de marqueurs
+    // CrÃ©er les dÃ©finitions de marqueurs
     this.createArrowDefinitions();
     
-    // Stabiliser les nœuds initiaux en les maintenant fixes temporairement
+    // Stabiliser les nÅ“uds initiaux en les maintenant fixes temporairement
     const firstRun = !this._initialized;
     if (firstRun) {
-      // Libérer les positions fixes après la première initialisation
+      // LibÃ©rer les positions fixes aprÃ¨s la premiÃ¨re initialisation
       setTimeout(() => {
         this.graphState.nodes.forEach(node => {
           delete node.fx;
           delete node.fy;
         });
-        // Redémarrer la simulation avec une faible alpha
+        // RedÃ©marrer la simulation avec une faible alpha
         this.simulation.alpha(0.3).restart();
       }, 1000);
       this._initialized = true;
     }
     
-    // Mettre à jour les éléments visuels
+    // Mettre Ã  jour les Ã©lÃ©ments visuels
     const nodeEnter = this.updateNodes();
     const linkEnter = this.updateLinks();
     const labelEnter = this.updateLinkLabels();
     
-    // Mettre à jour la simulation
+    // Mettre Ã  jour la simulation
     this.simulation.nodes(this.graphState.nodes).on('tick', () => this.ticked());
     this.simulation.force('link').links(this.graphState.links);
     
-    // Redémarrer la simulation avec une faible alpha pour éviter trop de mouvement
+    // RedÃ©marrer la simulation avec une faible alpha pour Ã©viter trop de mouvement
     if (!firstRun) {
       this.simulation.alpha(0.3).restart();
     }
     
-    // notifier la mise à jour du graphe
+    // notifier la mise Ã  jour du graphe
     eventBus.emit('graph-updated');
     
     return {
@@ -586,6 +594,202 @@ export class GraphRenderer {
     
     this.svg.on('dblclick.zoom', null);
     this.svg.on('contextmenu', event => event.preventDefault());
+  }
+
+  resolveStyleNumber(value, fallback = null) {
+    if (value === null || value === undefined || value === '') return fallback;
+    const normalized = String(value).trim().replace(',', '.');
+    const num = Number(normalized);
+    return Number.isFinite(num) ? num : fallback;
+  }
+
+  getBaseNodeSize(node, nodeSizeField, defaultNodeSize) {
+    if (nodeSizeField) {
+      const val = this.graphState.resolveFieldValue('node', node, nodeSizeField);
+      if (val !== null && val !== undefined && val !== '') {
+        return Math.max(1, Number(val) || defaultNodeSize);
+      }
+    }
+    return Math.max(1, Number(node.size) || defaultNodeSize);
+  }
+
+  getNodeRenderSize(node) {
+    if (node?.__renderSize != null) return node.__renderSize;
+    const { nodeSizeField, defaultNodeSize } = this.graphState.globalSettings;
+    const base = this.getBaseNodeSize(node, nodeSizeField, defaultNodeSize);
+    const style = this.getStyleFor('node', node);
+    return this.resolveStyleNumber(style.size, base);
+  }
+
+  getNodeFill(node) {
+    const fill = node?.__style?.fill;
+    if (fill) return fill;
+    if (node?.__pie && node.__pie.mode === 'inside') return 'none';
+    return null;
+  }
+
+  getNodeStroke(node) {
+    const stroke = node?.__style?.stroke;
+    return stroke || null;
+  }
+
+  getNodeStrokeWidth(node) {
+    return this.resolveStyleNumber(node?.__style?.strokeWidth, null);
+  }
+
+  getNodeOpacity(node) {
+    return this.resolveStyleNumber(node?.__style?.opacity, null);
+  }
+
+  getRuleAst(rule) {
+    const expr = (rule?.when || '').trim();
+    if (!expr) return null;
+    const key = `${rule.id || 'rule'}|${expr}`;
+    if (this.ruleCache.has(key)) return this.ruleCache.get(key);
+    try {
+      const ast = parseExpression(expr);
+      this.ruleCache.set(key, ast);
+      return ast;
+    } catch (e) {
+      this.ruleCache.set(key, null);
+      return null;
+    }
+  }
+
+  ruleMatches(rule, target, item) {
+    if (!rule || rule.enabled === false) return false;
+    const expr = (rule.when || '').trim();
+    if (!expr) return true;
+    const ast = this.getRuleAst(rule);
+    if (!ast) return false;
+    try {
+      return !!evaluateExpression(ast, {
+        getField: name => this.graphState.resolveFieldValue(target, item, name)
+      });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  getStyleFor(target, item) {
+    const list = target === 'link'
+      ? (graphConfig.styleRules?.links || [])
+      : (graphConfig.styleRules?.nodes || []);
+    if (!Array.isArray(list) || !list.length) return {};
+    const sorted = list
+      .filter(r => r && r.enabled !== false)
+      .slice()
+      .sort((a, b) => this.resolveStyleNumber(a.priority, 0) - this.resolveStyleNumber(b.priority, 0));
+    let style = {};
+    sorted.forEach(rule => {
+      if (this.ruleMatches(rule, target, item)) {
+        style = { ...style, ...(rule.style || {}) };
+      }
+    });
+    return style;
+  }
+
+  parseList(value) {
+    return String(value || '')
+      .split(/[,;\n]/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  parseNumber(value) {
+    if (value === null || value === undefined || value === '') return 0;
+    if (typeof value === 'number') return value;
+    let str = String(value).trim();
+    if (!str) return 0;
+    if (str.includes(',') && str.includes('.')) {
+      str = str.replace(/\./g, '');
+    }
+    str = str.replace(',', '.');
+    const num = Number(str);
+    return Number.isFinite(num) ? num : 0;
+  }
+
+  getPieForNode(node, radius) {
+    const rules = graphConfig.pieRules?.nodes || [];
+    if (!Array.isArray(rules) || !rules.length) return null;
+    const sorted = rules
+      .filter(r => r && r.enabled !== false)
+      .slice()
+      .sort((a, b) => this.resolveStyleNumber(a.priority, 0) - this.resolveStyleNumber(b.priority, 0));
+
+    const rule = sorted.find(r => this.ruleMatches(r, 'node', node));
+    if (!rule) return null;
+
+    const minSize = this.resolveStyleNumber(rule.minSize, 0);
+    if (minSize && radius < minSize) return null;
+
+    let segments = [];
+    if (rule.segmentsJson) {
+      try {
+        const parsed = JSON.parse(rule.segmentsJson);
+        if (Array.isArray(parsed)) {
+          segments = parsed.map(seg => ({
+            label: seg.label || '',
+            value: this.parseNumber(seg.value),
+            color: seg.color || ''
+          }));
+        }
+      } catch (e) {
+        segments = [];
+      }
+    } else {
+      const fields = Array.isArray(rule.fields) ? rule.fields : this.parseList(rule.fields);
+      segments = fields.map((field, idx) => ({
+        label: field,
+        value: this.parseNumber(this.graphState.resolveFieldValue('node', node, field)),
+        color: ''
+      }));
+    }
+
+    segments = segments.filter(s => s.value > 0);
+    if (!segments.length) return null;
+
+    const colors = Array.isArray(rule.colors) ? rule.colors : this.parseList(rule.colors);
+    const palette = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f', '#edc948', '#b07aa1', '#ff9da7'];
+    segments = segments.map((seg, idx) => ({
+      ...seg,
+      color: seg.color || colors[idx % colors.length] || palette[idx % palette.length]
+    }));
+
+    return {
+      mode: rule.mode || 'inside',
+      ringWidth: this.resolveStyleNumber(rule.ringWidth, 6),
+      offset: this.resolveStyleNumber(rule.offset, 2),
+      minSize,
+      segments
+    };
+  }
+
+  updateNodePieCharts(selection) {
+    if (!selection) return;
+    const pie = d3.pie().value(d => d.value).sort(null);
+    selection.select('g.node-pie').each((d, i, nodes) => {
+      const group = d3.select(nodes[i]);
+      const pieData = d.__pie;
+      if (!pieData || !Array.isArray(pieData.segments) || !pieData.segments.length) {
+        group.selectAll('path').remove();
+        return;
+      }
+
+      const radius = d.__renderSize || this.graphState.globalSettings.defaultNodeSize;
+      const inner = pieData.mode === 'ring' ? radius + (pieData.offset || 2) : 0;
+      const outer = pieData.mode === 'ring' ? inner + (pieData.ringWidth || 6) : radius;
+      const arc = d3.arc().innerRadius(inner).outerRadius(outer);
+      const arcs = pie(pieData.segments);
+
+      const paths = group.selectAll('path').data(arcs, a => a.data.label || a.index);
+      paths.enter()
+        .append('path')
+        .merge(paths)
+        .attr('d', arc)
+        .attr('fill', a => a.data.color || '#ccc');
+      paths.exit().remove();
+    });
   }
 
   resolveLangValue(value) {
@@ -638,3 +842,4 @@ export class GraphRenderer {
     });
   }
 }
+
