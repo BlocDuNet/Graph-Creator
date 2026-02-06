@@ -1,20 +1,25 @@
 /**
  * Gestion centralisée des fonctionnalités IA
  */
-import { OllamaProvider } from './OllamaProvider.js';
 import { performAction } from '../state/undo_redo.js';
 import { aiConfig } from '../config/index.js';
 import eventBus from '../services/EventBus.js';
 import * as templates from '../config/templates/graphGeneration.js';
 import * as proposalTemplates from '../config/templates/proposals.js';
+import {
+  getProvider,
+  getModel,
+  setProvider,
+  setModel,
+  fetchModels,
+  listProviders,
+  applyToUI
+} from './AIService.js';
 
 export class AIManager {
   constructor(graphState, renderer) {
     this.graphState = graphState;
     this.renderer = renderer;
-    
-    // Initialiser les fournisseurs d'IA
-    this.ollamaProvider = new OllamaProvider();
     
     // État local
     this.currentAbortController = null;
@@ -31,7 +36,8 @@ export class AIManager {
    */
   initUIElements() {
     this.elements = {
-      model: document.getElementById("ollamaModel"),
+      provider: document.getElementById("aiProvider"),
+      model: document.getElementById("aiModel"),
       prompt: document.getElementById("ollamaPrompt"),
       result: document.getElementById("ollamaResult"),
       raw: document.getElementById("ollamaRaw"),
@@ -69,9 +75,15 @@ export class AIManager {
       sheetFieldName: document.getElementById("sheet-field-name"),
       sheetFieldDesc: document.getElementById("sheet-field-description")
     };
-    
-    // Initialiser la liste des modèles
-    this.ollamaProvider.fetchModels().then(models => {
+    // Initialiser la liste des fournisseurs et des modeles
+    if (this.elements.provider) {
+      const providers = listProviders();
+      this.elements.provider.innerHTML = providers
+        .map(p => `<option value="${p}">${p}</option>`)
+        .join('');
+    }
+    applyToUI(this.elements.provider, this.elements.model);
+    fetchModels().then(models => {
       if (this.elements.model && models.length > 0) {
         this.updateModelDropdown(models);
       }
@@ -116,6 +128,7 @@ export class AIManager {
     // Sélectionner le premier modèle
     if (models.length > 0) {
       this.elements.model.value = models[0];
+      setModel(models[0]);
     }
   }
   
@@ -125,6 +138,19 @@ export class AIManager {
   initEventListeners() {
     if (this.elements.sendBtn) {
       this.elements.sendBtn.addEventListener("click", () => this.handleGenerateGraph());
+    }
+
+    if (this.elements.provider) {
+      this.elements.provider.addEventListener('change', () => {
+        setProvider(this.elements.provider.value);
+        fetchModels().then(models => this.updateModelDropdown(models));
+      });
+    }
+
+    if (this.elements.model) {
+      this.elements.model.addEventListener('change', () => {
+        setModel(this.elements.model.value.trim());
+      });
     }
     
     if (this.elements.stopBtn) {
@@ -198,7 +224,7 @@ export class AIManager {
    */
   handleGenerateGraph() {
     this.currentAbortController = new AbortController();
-    const model = this.elements.model?.value.trim() || aiConfig.ollama.api.defaultModel;
+    const model = this.elements.model?.value.trim() || getModel();
     const userPrompt = this.elements.prompt?.value.trim();
     
     if (!userPrompt) {
@@ -218,7 +244,7 @@ export class AIManager {
     this.updateLoadingState(this.elements.sendBtn, true, "generation");
     
     // Envoyer la requête à Ollama
-    this.ollamaProvider.sendRequest({
+    getProvider().sendRequest({
       prompt: promptTemplate,
       model,
       abortController: this.currentAbortController,
@@ -394,7 +420,7 @@ export class AIManager {
     this.updateLoadingState(this.elements.proposalsBtn, true, "proposals");
     
     this.currentAbortController = new AbortController();
-    const model = this.elements.model?.value.trim() || aiConfig.ollama.api.defaultModel;
+    const model = this.elements.model?.value.trim() || getModel();
     
     // Générer le prompt pour les propositions
     const proposalPrompt = proposalTemplates.getProposalPrompt(this.graphState);
@@ -406,7 +432,7 @@ export class AIManager {
     if (this.elements.raw) this.elements.raw.value = "Envoi de la requête à Ollama...";
     
     // Envoyer la requête
-    this.ollamaProvider.sendRequest({
+    getProvider().sendRequest({
       prompt: proposalPrompt,
       model,
       abortController: this.currentAbortController,
@@ -594,10 +620,10 @@ export class AIManager {
     }
 
     this.currentAbortController = new AbortController();
-    const model = this.elements.model?.value.trim() || aiConfig.ollama.api.defaultModel;
+    const model = this.elements.model?.value.trim() || getModel();
     const prompt = `Traduire en ${targetLang}. Répondre uniquement avec la traduction.\nTexte:\n${value}`;
 
-    this.ollamaProvider.sendRequest({
+    getProvider().sendRequest({
       prompt,
       model,
       abortController: this.currentAbortController,
@@ -815,7 +841,7 @@ export class AIManager {
     }
 
     this.currentAbortController = new AbortController();
-    const model = this.elements.model?.value.trim() || aiConfig.ollama.api.defaultModel;
+    const model = this.elements.model?.value.trim() || getModel();
     const payload = selected.map((s, idx) => ({
       index: idx,
       type: s.type,
@@ -835,7 +861,7 @@ Entrée:
 ${JSON.stringify(payload, null, 2)}
 `;
 
-    this.ollamaProvider.sendRequest({
+    getProvider().sendRequest({
       prompt,
       model,
       abortController: this.currentAbortController,

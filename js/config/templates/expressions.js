@@ -19,7 +19,7 @@ Tu dois repondre uniquement avec un JSON valide de la forme:
 
 Rappels:
 - Utilise les champs disponibles. Pour un nom non valide, utilise field("nom_du_champ").
-- Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, gt, gte, lt, lte, eq, neq, and, or, not, len, upper, lower, trim, coalesce, round, min, max, toNumber, toText, toBool, field.
+- Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber, gt, gte, lt, lte, eq, neq, and, or, not, len, upper, lower, trim, coalesce, round, min, max, toNumber, toText, toBool, field.
 
 Contexte: ${target}.${field}
 Type souhaite: ${desiredType}

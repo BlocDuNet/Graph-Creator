@@ -378,6 +378,46 @@ function isEmpty(value) {
   return value === null || value === undefined || value === '';
 }
 
+function toDate(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (typeof value === 'number' && !Number.isNaN(value)) {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const t = Date.parse(trimmed);
+    if (!Number.isNaN(t)) return new Date(t);
+  }
+  return null;
+}
+
+function dateDiff(a, b, unit = 'days') {
+  const da = toDate(a);
+  const db = toDate(b);
+  if (!da || !db) return 0;
+  const diffMs = da.getTime() - db.getTime();
+  const key = String(unit || 'days').toLowerCase();
+  if (['hours', 'hour', 'h'].includes(key)) return diffMs / 3600000;
+  if (['minutes', 'minute', 'm'].includes(key)) return diffMs / 60000;
+  if (['seconds', 'second', 's'].includes(key)) return diffMs / 1000;
+  return diffMs / 86400000;
+}
+
+function formatNumber(value, decimals = 0, decimalSep = '.') {
+  const num = toNumber(value);
+  let dec = Math.round(toNumber(decimals));
+  if (Number.isNaN(dec) || dec < 0) dec = 0;
+  if (dec > 20) dec = 20;
+  let out = num.toFixed(dec);
+  const sep = String(decimalSep || '.').toLowerCase();
+  if (sep === ',' || sep === 'comma' || sep === 'virgule') {
+    out = out.replace('.', ',');
+  }
+  return out;
+}
+
 const FUNCTIONS = {
   if: (cond, a, b) => (toBoolean(cond) ? a : b),
   concat: (...args) => args.map(v => (v == null ? '' : String(v))).join(''),
@@ -411,7 +451,27 @@ const FUNCTIONS = {
   contains: (a, b) => String(a ?? '').includes(String(b ?? '')),
   startsWith: (a, b) => String(a ?? '').startsWith(String(b ?? '')),
   endsWith: (a, b) => String(a ?? '').endsWith(String(b ?? '')),
-  replace: (a, b, c) => String(a ?? '').split(String(b ?? '')).join(String(c ?? ''))
+  replace: (a, b, c) => String(a ?? '').split(String(b ?? '')).join(String(c ?? '')),
+  regex: (a, b, c) => {
+    try {
+      const pattern = String(b ?? '');
+      const flags = String(c ?? '');
+      if (!pattern) return false;
+      const re = new RegExp(pattern, flags);
+      return re.test(String(a ?? ''));
+    } catch (e) {
+      return false;
+    }
+  },
+  substring: (a, b, c) => {
+    const text = String(a ?? '');
+    const start = Math.max(0, Math.floor(toNumber(b)));
+    if (c == null || c === '') return text.slice(start);
+    const len = Math.max(0, Math.floor(toNumber(c)));
+    return text.slice(start, start + len);
+  },
+  dateDiff: (a, b, c) => dateDiff(a, b, c),
+  formatNumber: (a, b, c) => formatNumber(a, b, c)
 };
 
 export function evaluateExpression(ast, ctx = {}) {
@@ -478,8 +538,9 @@ export function inferExpressionType(ast, getFieldType) {
         return t1 === t2 ? t1 : 'text';
       }
       if (['add', 'sub', 'mul', 'div', 'len', 'round', 'min', 'max', 'toNumber'].includes(name)) return 'number';
-      if (['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'and', 'or', 'not', 'toBool', 'contains', 'startsWith', 'endsWith'].includes(name)) return 'boolean';
-      if (['concat', 'upper', 'lower', 'trim', 'toText', 'coalesce', 'replace'].includes(name)) return 'text';
+      if (['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'and', 'or', 'not', 'toBool', 'contains', 'startsWith', 'endsWith', 'regex'].includes(name)) return 'boolean';
+      if (['concat', 'upper', 'lower', 'trim', 'toText', 'coalesce', 'replace', 'substring', 'formatNumber'].includes(name)) return 'text';
+      if (['dateDiff'].includes(name)) return 'number';
       if (name === 'field') return 'text';
       return 'text';
     }

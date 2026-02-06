@@ -581,8 +581,12 @@
                           <!-- Conteneur pour la génération par prompt -->
                           <div id="div-generation">
                             <div class="mb-2">
-                              <label for="ollamaModel">Modèle d'IA (ollama only):</label>
-                              <input id="ollamaModel" type="text" placeholder="ex: mistral" class="w-100" title="Nom du modèle Ollama à utiliser">
+                            <label for="aiProvider">Fournisseur IA:</label>
+                            <select id="aiProvider" class="w-100" title="Fournisseur IA">
+                              <option value="ollama">Ollama</option>
+                            </select>
+                            <label for="aiModel" class="mt-2">Modele d'IA:</label>
+                            <input id="aiModel" type="text" placeholder="ex: mistral" class="w-100" title="Nom du modele IA a utiliser">
                             </div>
                             <textarea id="ollamaPrompt" placeholder="Saisissez votre requête ici" class="w-100 prompt-textarea" title="Votre requête pour générer un graph"></textarea>
                             <br>
@@ -830,84 +834,10 @@
           <div id="conditional-condition-block" class="mt-2">
             <div class="row">
               <div class="col-md-12">
-                <label class="small">Condition (Si)</label>
+                <label class="small">Conditions (groupes imbriques)</label>
               </div>
             </div>
-            <div class="row">
-              <div class="col-md-3">
-                <select id="cond-left-source" class="form-control form-control-sm">
-                  <option value="field">Champ</option>
-                  <option value="value">Valeur</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <select id="cond-left-field" class="form-control form-control-sm"></select>
-                <input id="cond-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
-              </div>
-              <div class="col-md-2">
-                <select id="cond-operator" class="form-control form-control-sm">
-                  <option value="gt">&gt;</option>
-                  <option value="gte">&gt;=</option>
-                  <option value="lt">&lt;</option>
-                  <option value="lte">&lt;=</option>
-                  <option value="eq">==</option>
-                  <option value="neq">!=</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <select id="cond-right-source" class="form-control form-control-sm">
-                  <option value="field">Champ</option>
-                  <option value="value">Valeur</option>
-                </select>
-                <select id="cond-right-field" class="form-control form-control-sm mt-1"></select>
-                <input id="cond-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
-              </div>
-            </div>
-
-            <div class="row mt-2">
-              <div class="col-md-4">
-                <div class="custom-control custom-checkbox">
-                  <input type="checkbox" class="custom-control-input" id="cond-extra-enabled">
-                  <label class="custom-control-label" for="cond-extra-enabled">Deuxieme condition</label>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <select id="cond-join" class="form-control form-control-sm">
-                  <option value="and">ET</option>
-                  <option value="or">OU</option>
-                </select>
-              </div>
-            </div>
-            <div id="cond-extra-block" class="row mt-2 hidden">
-              <div class="col-md-3">
-                <select id="cond2-left-source" class="form-control form-control-sm">
-                  <option value="field">Champ</option>
-                  <option value="value">Valeur</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <select id="cond2-left-field" class="form-control form-control-sm"></select>
-                <input id="cond2-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
-              </div>
-              <div class="col-md-2">
-                <select id="cond2-operator" class="form-control form-control-sm">
-                  <option value="gt">&gt;</option>
-                  <option value="gte">&gt;=</option>
-                  <option value="lt">&lt;</option>
-                  <option value="lte">&lt;=</option>
-                  <option value="eq">==</option>
-                  <option value="neq">!=</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <select id="cond2-right-source" class="form-control form-control-sm">
-                  <option value="field">Champ</option>
-                  <option value="value">Valeur</option>
-                </select>
-                <select id="cond2-right-field" class="form-control form-control-sm mt-1"></select>
-                <input id="cond2-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
-              </div>
-            </div>
+            <div id="condition-group-root"></div>
           </div>
 
           <div id="conditional-then-else-block" class="mt-2">
@@ -1003,12 +933,20 @@
             <textarea id="conditional-expression-text" class="form-control form-control-sm" rows="4" placeholder='if(gt(age,18), concat(prenom," ",nom), "Mineur")'></textarea>
             <div id="conditional-expression-error" class="type-warning mt-1"></div>
             <div class="small text-muted mt-1">
-              Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace
+              Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber
             </div>
           </div>
 
           <div id="conditional-ai-help" class="mt-2">
             <label class="small">Assistance IA (beta)</label>
+            <select id="conditional-ai-suggestion" class="form-control form-control-sm mb-1">
+              <option value="">Suggestion rapide...</option>
+              <option value="Creer un nom complet en concatenant prenom et nom.">Nom complet (prenom + nom)</option>
+              <option value="Si age >= 18 alors 'Majeur' sinon 'Mineur'.">Condition simple (age)</option>
+              <option value="Ajouter la TVA (prix * 1.2) et retourner le total.">Calcul (TVA)</option>
+              <option value="Si status contient 'ok' alors 'OK' sinon 'KO'.">Texte contient</option>
+            </select>
+            <button id="conditional-ai-fill" class="btn btn-sm btn-outline-secondary mb-1">Remplir suggestion</button>
             <textarea id="conditional-ai-request" class="form-control form-control-sm" rows="2" placeholder="Decris la formule souhaitee"></textarea>
             <div class="d-flex flex-wrap mt-1">
               <button id="conditional-ai-generate" class="btn btn-sm btn-outline-primary m-1">Proposer expression</button>

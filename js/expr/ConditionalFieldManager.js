@@ -5,8 +5,7 @@ import {
   inferExpressionType
 } from './ExpressionEngine.js';
 import { normalizeType } from '../services/FieldTypeService.js';
-import { OllamaProvider } from '../ai/OllamaProvider.js';
-import { aiConfig } from '../config/index.js';
+import { getProvider, getModel } from '../ai/AIService.js';
 import { getExpressionAssistantPrompt } from '../config/templates/expressions.js';
 
 export class ConditionalFieldManager {
@@ -14,7 +13,6 @@ export class ConditionalFieldManager {
     this.graphState = graphState;
     this.renderer = renderer;
     this.current = null;
-    this.aiProvider = new OllamaProvider();
     this.aiAbortController = null;
     this.bindElements();
     this.bindEvents();
@@ -35,27 +33,11 @@ export class ConditionalFieldManager {
       resultType: document.getElementById('conditional-result-type'),
       visualKind: document.getElementById('conditional-visual-kind'),
       conditionBlock: document.getElementById('conditional-condition-block'),
+      conditionRoot: document.getElementById('condition-group-root'),
       thenElseBlock: document.getElementById('conditional-then-else-block'),
       elseBlock: document.getElementById('conditional-else-block'),
       thenLabel: document.getElementById('then-label'),
       elseLabel: document.getElementById('else-label'),
-      condLeftSource: document.getElementById('cond-left-source'),
-      condLeftField: document.getElementById('cond-left-field'),
-      condLeftValue: document.getElementById('cond-left-value'),
-      condOperator: document.getElementById('cond-operator'),
-      condRightSource: document.getElementById('cond-right-source'),
-      condRightField: document.getElementById('cond-right-field'),
-      condRightValue: document.getElementById('cond-right-value'),
-      condExtraEnabled: document.getElementById('cond-extra-enabled'),
-      condJoin: document.getElementById('cond-join'),
-      condExtraBlock: document.getElementById('cond-extra-block'),
-      cond2LeftSource: document.getElementById('cond2-left-source'),
-      cond2LeftField: document.getElementById('cond2-left-field'),
-      cond2LeftValue: document.getElementById('cond2-left-value'),
-      cond2Operator: document.getElementById('cond2-operator'),
-      cond2RightSource: document.getElementById('cond2-right-source'),
-      cond2RightField: document.getElementById('cond2-right-field'),
-      cond2RightValue: document.getElementById('cond2-right-value'),
       thenMode: document.getElementById('then-mode'),
       thenValueBlock: document.getElementById('then-value-block'),
       thenConcatBlock: document.getElementById('then-concat-block'),
@@ -90,6 +72,8 @@ export class ConditionalFieldManager {
       elseCalcRightSource: document.getElementById('else-calc-right-source'),
       elseCalcRightField: document.getElementById('else-calc-right-field'),
       elseCalcRightValue: document.getElementById('else-calc-right-value'),
+      aiSuggestion: document.getElementById('conditional-ai-suggestion'),
+      aiFill: document.getElementById('conditional-ai-fill'),
       aiRequest: document.getElementById('conditional-ai-request'),
       aiGenerate: document.getElementById('conditional-ai-generate'),
       aiStatus: document.getElementById('conditional-ai-status')
@@ -109,11 +93,6 @@ export class ConditionalFieldManager {
     this.el.visualKind?.addEventListener('change', () => this.toggleVisualKind());
     this.el.thenMode?.addEventListener('change', () => this.toggleThenElse());
     this.el.elseMode?.addEventListener('change', () => this.toggleThenElse());
-    this.el.condLeftSource?.addEventListener('change', () => this.toggleSources());
-    this.el.condRightSource?.addEventListener('change', () => this.toggleSources());
-    this.el.condExtraEnabled?.addEventListener('change', () => this.toggleExtraCondition());
-    this.el.cond2LeftSource?.addEventListener('change', () => this.toggleSources());
-    this.el.cond2RightSource?.addEventListener('change', () => this.toggleSources());
     this.el.thenSource?.addEventListener('change', () => this.toggleSources());
     this.el.elseSource?.addEventListener('change', () => this.toggleSources());
     this.el.thenCalcLeftSource?.addEventListener('change', () => this.toggleSources());
@@ -122,16 +101,47 @@ export class ConditionalFieldManager {
     this.el.elseCalcRightSource?.addEventListener('change', () => this.toggleSources());
     this.el.exprText?.addEventListener('input', () => this.updateCanonicalFromExpression());
     this.el.aiGenerate?.addEventListener('click', () => this.requestAiExpression());
+    this.el.aiFill?.addEventListener('click', () => {
+      const suggestion = this.el.aiSuggestion?.value || '';
+      if (suggestion && this.el.aiRequest) {
+        this.el.aiRequest.value = suggestion;
+      }
+    });
+
+    if (this.el.conditionRoot) {
+      this.el.conditionRoot.addEventListener('change', e => {
+        const target = e.target;
+        if (target && target.classList.contains('cond-source')) {
+          const row = target.closest('.condition-row');
+          if (row) this.toggleConditionRow(row);
+        }
+      });
+      this.el.conditionRoot.addEventListener('click', e => {
+        const btn = e.target;
+        if (!btn || !btn.dataset) return;
+        const action = btn.dataset.action;
+        if (action === 'add-condition') {
+          const group = btn.closest('.condition-group');
+          if (group) this.addConditionRow(group);
+        } else if (action === 'add-group') {
+          const group = btn.closest('.condition-group');
+          if (group) this.addGroup(group);
+        } else if (action === 'remove-condition') {
+          const row = btn.closest('.condition-row');
+          row?.remove();
+        } else if (action === 'remove-group') {
+          const group = btn.closest('.condition-group');
+          if (group && !group.dataset.root) group.remove();
+        }
+      });
+    }
   }
 
   open(target, field) {
     this.current = { target, field };
     if (!this.el.overlay) return;
     const fields = this.graphState.getFieldsByType(target).filter(f => f !== field);
-    this.fillSelect(this.el.condLeftField, fields);
-    this.fillSelect(this.el.condRightField, fields);
-    this.fillSelect(this.el.cond2LeftField, fields);
-    this.fillSelect(this.el.cond2RightField, fields);
+    this.availableFields = fields;
     this.fillSelect(this.el.thenField, fields);
     this.fillSelect(this.el.elseField, fields);
     this.fillSelect(this.el.thenConcatA, fields);
@@ -168,7 +178,6 @@ export class ConditionalFieldManager {
 
     this.toggleMode();
     this.toggleVisualKind();
-    this.toggleExtraCondition();
     this.toggleThenElse();
     this.toggleSources();
     this.show();
@@ -211,13 +220,6 @@ export class ConditionalFieldManager {
     if (this.el.elseLabel && isCondition) this.el.elseLabel.textContent = 'Sinon';
   }
 
-  toggleExtraCondition() {
-    const enabled = !!this.el.condExtraEnabled?.checked;
-    this.el.condExtraBlock?.classList.toggle('hidden', !enabled);
-    if (this.el.condJoin) this.el.condJoin.disabled = !enabled;
-    this.toggleSources();
-  }
-
   toggleThenElse() {
     const thenMode = this.el.thenMode?.value || 'value';
     const elseMode = this.el.elseMode?.value || 'value';
@@ -231,10 +233,6 @@ export class ConditionalFieldManager {
   }
 
   toggleSources() {
-    this.toggleSourceBlock(this.el.condLeftSource, this.el.condLeftField, this.el.condLeftValue);
-    this.toggleSourceBlock(this.el.condRightSource, this.el.condRightField, this.el.condRightValue);
-    this.toggleSourceBlock(this.el.cond2LeftSource, this.el.cond2LeftField, this.el.cond2LeftValue);
-    this.toggleSourceBlock(this.el.cond2RightSource, this.el.cond2RightField, this.el.cond2RightValue);
     this.toggleSourceBlock(this.el.thenSource, this.el.thenField, this.el.thenValue);
     this.toggleSourceBlock(this.el.elseSource, this.el.elseField, this.el.elseValue);
     this.toggleSourceBlock(this.el.thenCalcLeftSource, this.el.thenCalcLeftField, this.el.thenCalcLeftValue);
@@ -253,6 +251,310 @@ export class ConditionalFieldManager {
   fillSelect(select, options) {
     if (!select) return;
     select.innerHTML = [''].concat(options || []).map(o => `<option value="${o}">${o}</option>`).join('');
+  }
+
+  renderConditionGroup(visualConfig) {
+    if (!this.el.conditionRoot) return;
+    this.el.conditionRoot.innerHTML = '';
+    const groupConfig = this.getConditionGroupConfig(visualConfig);
+    const group = this.createConditionGroup(groupConfig, true);
+    this.el.conditionRoot.appendChild(group);
+  }
+
+  getConditionGroupConfig(visualConfig = {}) {
+    if (visualConfig.conditionGroup) return visualConfig.conditionGroup;
+    if (visualConfig.condLeftSource || visualConfig.condRightSource) {
+      const cond1 = {
+        type: 'condition',
+        left: {
+          source: visualConfig.condLeftSource || 'field',
+          field: visualConfig.condLeftField || '',
+          value: visualConfig.condLeftValue || ''
+        },
+        op: visualConfig.condOperator || 'eq',
+        right: {
+          source: visualConfig.condRightSource || 'field',
+          field: visualConfig.condRightField || '',
+          value: visualConfig.condRightValue || ''
+        }
+      };
+      const items = [cond1];
+      if (visualConfig.condExtraEnabled) {
+        items.push({
+          type: 'condition',
+          left: {
+            source: visualConfig.cond2LeftSource || 'field',
+            field: visualConfig.cond2LeftField || '',
+            value: visualConfig.cond2LeftValue || ''
+          },
+          op: visualConfig.cond2Operator || 'eq',
+          right: {
+            source: visualConfig.cond2RightSource || 'field',
+            field: visualConfig.cond2RightField || '',
+            value: visualConfig.cond2RightValue || ''
+          }
+        });
+      }
+      return { type: 'group', join: visualConfig.condJoin || 'and', items };
+    }
+    return {
+      type: 'group',
+      join: 'and',
+      items: [
+        {
+          type: 'condition',
+          left: { source: 'field', field: '', value: '' },
+          op: 'eq',
+          right: { source: 'value', field: '', value: '' }
+        }
+      ]
+    };
+  }
+
+  createConditionGroup(config = {}, isRoot = false) {
+    const group = document.createElement('div');
+    group.className = 'condition-group';
+    group.dataset.type = 'group';
+    if (isRoot) group.dataset.root = 'true';
+
+    const header = document.createElement('div');
+    header.className = 'condition-group-header';
+
+    const joinLabel = document.createElement('span');
+    joinLabel.className = 'small';
+    joinLabel.textContent = 'Operateur';
+
+    const joinSelect = document.createElement('select');
+    joinSelect.className = 'form-control form-control-sm group-join';
+    joinSelect.innerHTML = `
+      <option value="and">ET</option>
+      <option value="or">OU</option>
+    `;
+    joinSelect.value = config.join || 'and';
+
+    const addCond = document.createElement('button');
+    addCond.type = 'button';
+    addCond.className = 'btn btn-sm btn-outline-secondary';
+    addCond.dataset.action = 'add-condition';
+    addCond.textContent = '+ Condition';
+
+    const addGroup = document.createElement('button');
+    addGroup.type = 'button';
+    addGroup.className = 'btn btn-sm btn-outline-secondary';
+    addGroup.dataset.action = 'add-group';
+    addGroup.textContent = '+ Groupe';
+
+    header.appendChild(joinLabel);
+    header.appendChild(joinSelect);
+    header.appendChild(addCond);
+    header.appendChild(addGroup);
+
+    if (!isRoot) {
+      const removeGroup = document.createElement('button');
+      removeGroup.type = 'button';
+      removeGroup.className = 'btn btn-sm btn-outline-danger';
+      removeGroup.dataset.action = 'remove-group';
+      removeGroup.textContent = 'x';
+      header.appendChild(removeGroup);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'condition-group-body';
+
+    const items = Array.isArray(config.items) && config.items.length
+      ? config.items
+      : [
+          {
+            type: 'condition',
+            left: { source: 'field', field: '', value: '' },
+            op: 'eq',
+            right: { source: 'value', field: '', value: '' }
+          }
+        ];
+
+    items.forEach(item => {
+      if (item && item.type === 'group') {
+        body.appendChild(this.createConditionGroup(item, false));
+      } else {
+        body.appendChild(this.createConditionRow(item));
+      }
+    });
+
+    group.appendChild(header);
+    group.appendChild(body);
+    return group;
+  }
+
+  createConditionRow(config = {}) {
+    const row = document.createElement('div');
+    row.className = 'condition-row';
+    row.dataset.type = 'condition';
+
+    const leftSource = document.createElement('select');
+    leftSource.className = 'form-control form-control-sm cond-source';
+    leftSource.dataset.role = 'left-source';
+    leftSource.innerHTML = `
+      <option value="field">Champ</option>
+      <option value="value">Valeur</option>
+    `;
+
+    const leftField = document.createElement('select');
+    leftField.className = 'form-control form-control-sm cond-field';
+    leftField.dataset.role = 'left-field';
+    leftField.innerHTML = [''].concat(this.availableFields || []).map(f => `<option value="${f}">${f}</option>`).join('');
+
+    const leftValue = document.createElement('input');
+    leftValue.className = 'form-control form-control-sm cond-value';
+    leftValue.dataset.role = 'left-value';
+    leftValue.placeholder = 'Valeur';
+
+    const operator = document.createElement('select');
+    operator.className = 'form-control form-control-sm cond-operator';
+    operator.dataset.role = 'operator';
+    operator.innerHTML = `
+      <option value="gt">&gt;</option>
+      <option value="gte">&gt;=</option>
+      <option value="lt">&lt;</option>
+      <option value="lte">&lt;=</option>
+      <option value="eq">==</option>
+      <option value="neq">!=</option>
+    `;
+
+    const rightSource = document.createElement('select');
+    rightSource.className = 'form-control form-control-sm cond-source';
+    rightSource.dataset.role = 'right-source';
+    rightSource.innerHTML = `
+      <option value="field">Champ</option>
+      <option value="value">Valeur</option>
+    `;
+
+    const rightField = document.createElement('select');
+    rightField.className = 'form-control form-control-sm cond-field';
+    rightField.dataset.role = 'right-field';
+    rightField.innerHTML = [''].concat(this.availableFields || []).map(f => `<option value="${f}">${f}</option>`).join('');
+
+    const rightValue = document.createElement('input');
+    rightValue.className = 'form-control form-control-sm cond-value';
+    rightValue.dataset.role = 'right-value';
+    rightValue.placeholder = 'Valeur';
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn btn-sm btn-outline-danger cond-remove';
+    removeBtn.dataset.action = 'remove-condition';
+    removeBtn.textContent = 'x';
+
+    row.appendChild(leftSource);
+    row.appendChild(leftField);
+    row.appendChild(leftValue);
+    row.appendChild(operator);
+    row.appendChild(rightSource);
+    row.appendChild(rightField);
+    row.appendChild(rightValue);
+    row.appendChild(removeBtn);
+
+    if (config.left) {
+      leftSource.value = config.left.source || 'field';
+      leftField.value = config.left.field || '';
+      leftValue.value = config.left.value || '';
+    }
+    if (config.right) {
+      rightSource.value = config.right.source || 'field';
+      rightField.value = config.right.field || '';
+      rightValue.value = config.right.value || '';
+    }
+    operator.value = config.op || 'eq';
+
+    this.toggleConditionRow(row);
+    return row;
+  }
+
+  addConditionRow(groupEl, config = null) {
+    const body = groupEl?.querySelector('.condition-group-body');
+    if (!body) return;
+    body.appendChild(this.createConditionRow(config));
+  }
+
+  addGroup(groupEl, config = null) {
+    const body = groupEl?.querySelector('.condition-group-body');
+    if (!body) return;
+    body.appendChild(this.createConditionGroup(config || { join: 'and', items: [] }, false));
+  }
+
+  toggleConditionRow(row) {
+    if (!row) return;
+    const leftSource = row.querySelector('[data-role="left-source"]');
+    const leftField = row.querySelector('[data-role="left-field"]');
+    const leftValue = row.querySelector('[data-role="left-value"]');
+    const rightSource = row.querySelector('[data-role="right-source"]');
+    const rightField = row.querySelector('[data-role="right-field"]');
+    const rightValue = row.querySelector('[data-role="right-value"]');
+
+    const leftIsField = leftSource?.value === 'field';
+    if (leftField) leftField.style.display = leftIsField ? '' : 'none';
+    if (leftValue) leftValue.style.display = leftIsField ? 'none' : '';
+
+    const rightIsField = rightSource?.value === 'field';
+    if (rightField) rightField.style.display = rightIsField ? '' : 'none';
+    if (rightValue) rightValue.style.display = rightIsField ? 'none' : '';
+  }
+
+  serializeConditionRow(row) {
+    const getVal = role => row.querySelector(`[data-role="${role}"]`)?.value || '';
+    return {
+      type: 'condition',
+      left: {
+        source: getVal('left-source') || 'field',
+        field: getVal('left-field') || '',
+        value: row.querySelector('[data-role="left-value"]')?.value || ''
+      },
+      op: getVal('operator') || 'eq',
+      right: {
+        source: getVal('right-source') || 'field',
+        field: getVal('right-field') || '',
+        value: row.querySelector('[data-role="right-value"]')?.value || ''
+      }
+    };
+  }
+
+  serializeConditionGroup(groupEl) {
+    if (!groupEl) return null;
+    const join = groupEl.querySelector('.group-join')?.value || 'and';
+    const body = groupEl.querySelector('.condition-group-body');
+    const items = [];
+    Array.from(body?.children || []).forEach(child => {
+      if (child.classList.contains('condition-group')) {
+        const sub = this.serializeConditionGroup(child);
+        if (sub) items.push(sub);
+      } else if (child.classList.contains('condition-row')) {
+        items.push(this.serializeConditionRow(child));
+      }
+    });
+    return { type: 'group', join, items };
+  }
+
+  buildConditionAstFromGroup(groupConfig) {
+    if (!groupConfig || !Array.isArray(groupConfig.items)) {
+      return { type: 'literal', value: true, valueType: 'boolean' };
+    }
+    const join = groupConfig.join === 'or' ? 'or' : 'and';
+    const parts = groupConfig.items.map(item => {
+      if (!item) return null;
+      if (item.type === 'group') return this.buildConditionAstFromGroup(item);
+      return this.buildConditionAstFromCondition(item);
+    }).filter(Boolean);
+    if (!parts.length) return { type: 'literal', value: true, valueType: 'boolean' };
+    return parts.reduce((acc, cur) => acc ? { type: 'binary', op: join, left: acc, right: cur } : cur, null);
+  }
+
+  buildConditionAstFromCondition(cond) {
+    const left = cond?.left?.source === 'field'
+      ? { type: 'field', name: cond.left.field || '' }
+      : this.parseLiteral(cond?.left?.value || '');
+    const right = cond?.right?.source === 'field'
+      ? { type: 'field', name: cond.right.field || '' }
+      : this.parseLiteral(cond?.right?.value || '');
+    return { type: 'binary', op: cond?.op || 'eq', left, right };
   }
 
   parseLiteral(value) {
@@ -316,19 +618,9 @@ export class ConditionalFieldManager {
   }
 
   buildAstFromVisual() {
-    const left = this.buildOperand(this.el.condLeftSource, this.el.condLeftField, this.el.condLeftValue);
-    const right = this.buildOperand(this.el.condRightSource, this.el.condRightField, this.el.condRightValue);
-    const op = this.el.condOperator?.value || 'eq';
-    let condition = { type: 'binary', op, left, right };
-    const extraEnabled = !!this.el.condExtraEnabled?.checked;
-    if (extraEnabled) {
-      const left2 = this.buildOperand(this.el.cond2LeftSource, this.el.cond2LeftField, this.el.cond2LeftValue);
-      const right2 = this.buildOperand(this.el.cond2RightSource, this.el.cond2RightField, this.el.cond2RightValue);
-      const op2 = this.el.cond2Operator?.value || 'eq';
-      const cond2 = { type: 'binary', op: op2, left: left2, right: right2 };
-      const join = this.el.condJoin?.value === 'or' ? 'or' : 'and';
-      condition = { type: 'binary', op: join, left: condition, right: cond2 };
-    }
+    const groupEl = this.el.conditionRoot?.querySelector('.condition-group');
+    const groupConfig = this.serializeConditionGroup(groupEl);
+    const condition = this.buildConditionAstFromGroup(groupConfig);
 
     const thenNode = this.buildResultNode(
       this.el.thenMode?.value || 'value',
@@ -412,10 +704,10 @@ export class ConditionalFieldManager {
       fields,
       desiredType
     });
-    const model = document.getElementById('ollamaModel')?.value?.trim() || aiConfig.ollama.api.defaultModel;
+    const model = getModel();
     this.setAiStatus('Generation en cours...');
     this.aiAbortController = new AbortController();
-    this.aiProvider.sendRequest({
+    getProvider().sendRequest({
       prompt,
       model,
       abortController: this.aiAbortController,
@@ -430,7 +722,11 @@ export class ConditionalFieldManager {
           this.toggleMode();
         }
         this.el.exprText.value = expression;
-        this.updateCanonicalFromExpression();
+        const ast = this.updateCanonicalFromExpression();
+        if (!ast) {
+          this.setAiStatus('Expression IA invalide (parse echoue).');
+          return;
+        }
         if (result?.resultType && result.resultType !== 'auto' && this.el.resultType) {
           this.el.resultType.value = normalizeType(result.resultType);
         }
@@ -473,22 +769,9 @@ export class ConditionalFieldManager {
   captureVisualConfig() {
     return {
       visualKind: this.el.visualKind?.value || 'expression',
-      condLeftSource: this.el.condLeftSource?.value || 'field',
-      condLeftField: this.el.condLeftField?.value || '',
-      condLeftValue: this.el.condLeftValue?.value || '',
-      condOperator: this.el.condOperator?.value || 'eq',
-      condRightSource: this.el.condRightSource?.value || 'field',
-      condRightField: this.el.condRightField?.value || '',
-      condRightValue: this.el.condRightValue?.value || '',
-      condExtraEnabled: !!this.el.condExtraEnabled?.checked,
-      condJoin: this.el.condJoin?.value || 'and',
-      cond2LeftSource: this.el.cond2LeftSource?.value || 'field',
-      cond2LeftField: this.el.cond2LeftField?.value || '',
-      cond2LeftValue: this.el.cond2LeftValue?.value || '',
-      cond2Operator: this.el.cond2Operator?.value || 'eq',
-      cond2RightSource: this.el.cond2RightSource?.value || 'field',
-      cond2RightField: this.el.cond2RightField?.value || '',
-      cond2RightValue: this.el.cond2RightValue?.value || '',
+      conditionGroup: this.serializeConditionGroup(
+        this.el.conditionRoot?.querySelector('.condition-group')
+      ),
       thenMode: this.el.thenMode?.value || 'value',
       thenSource: this.el.thenSource?.value || 'field',
       thenField: this.el.thenField?.value || '',
@@ -523,22 +806,7 @@ export class ConditionalFieldManager {
   applyVisualConfig(cfg) {
     if (!cfg) return;
     if (this.el.visualKind) this.el.visualKind.value = cfg.visualKind || this.el.visualKind.value || 'expression';
-    this.el.condLeftSource.value = cfg.condLeftSource || 'field';
-    this.el.condLeftField.value = cfg.condLeftField || '';
-    this.el.condLeftValue.value = cfg.condLeftValue || '';
-    this.el.condOperator.value = cfg.condOperator || 'eq';
-    this.el.condRightSource.value = cfg.condRightSource || 'field';
-    this.el.condRightField.value = cfg.condRightField || '';
-    this.el.condRightValue.value = cfg.condRightValue || '';
-    if (this.el.condExtraEnabled) this.el.condExtraEnabled.checked = !!cfg.condExtraEnabled;
-    if (this.el.condJoin) this.el.condJoin.value = cfg.condJoin || 'and';
-    if (this.el.cond2LeftSource) this.el.cond2LeftSource.value = cfg.cond2LeftSource || 'field';
-    if (this.el.cond2LeftField) this.el.cond2LeftField.value = cfg.cond2LeftField || '';
-    if (this.el.cond2LeftValue) this.el.cond2LeftValue.value = cfg.cond2LeftValue || '';
-    if (this.el.cond2Operator) this.el.cond2Operator.value = cfg.cond2Operator || 'eq';
-    if (this.el.cond2RightSource) this.el.cond2RightSource.value = cfg.cond2RightSource || 'field';
-    if (this.el.cond2RightField) this.el.cond2RightField.value = cfg.cond2RightField || '';
-    if (this.el.cond2RightValue) this.el.cond2RightValue.value = cfg.cond2RightValue || '';
+    this.renderConditionGroup(cfg);
 
     this.el.thenMode.value = cfg.thenMode || 'value';
     this.el.thenSource.value = cfg.thenSource || 'field';
@@ -574,24 +842,11 @@ export class ConditionalFieldManager {
   setDefaultVisual() {
     if (!this.el) return;
     if (this.el.visualKind) this.el.visualKind.value = 'expression';
-    this.el.condLeftSource.value = 'field';
-    this.el.condRightSource.value = 'value';
-    this.el.condOperator.value = 'gt';
-    if (this.el.condExtraEnabled) this.el.condExtraEnabled.checked = false;
-    if (this.el.condJoin) this.el.condJoin.value = 'and';
-    if (this.el.cond2LeftSource) this.el.cond2LeftSource.value = 'field';
-    if (this.el.cond2RightSource) this.el.cond2RightSource.value = 'value';
-    if (this.el.cond2Operator) this.el.cond2Operator.value = 'eq';
+    this.renderConditionGroup({});
     this.el.thenMode.value = 'value';
     this.el.thenSource.value = 'field';
     this.el.elseMode.value = 'value';
     this.el.elseSource.value = 'value';
-    this.el.condLeftValue.value = '';
-    this.el.condRightValue.value = '';
-    if (this.el.cond2LeftValue) this.el.cond2LeftValue.value = '';
-    if (this.el.cond2RightValue) this.el.cond2RightValue.value = '';
-    if (this.el.cond2LeftField) this.el.cond2LeftField.value = '';
-    if (this.el.cond2RightField) this.el.cond2RightField.value = '';
     this.el.thenValue.value = '';
     this.el.elseValue.value = '';
     if (this.el.thenCalcLeftSource) this.el.thenCalcLeftSource.value = 'field';
