@@ -2,10 +2,11 @@ import eventBus from '../services/EventBus.js';
 import {
   parseExpression,
   serializeToFunctional,
-  inferExpressionType
+  inferExpressionType,
+  evaluateExpression
 } from './ExpressionEngine.js';
 import { normalizeType } from '../services/FieldTypeService.js';
-import { getProvider, getModel } from '../ai/AIService.js';
+import { getModel, registerSettingsControls, sendAiRequest } from '../ai/AIService.js';
 import { getExpressionAssistantPrompt } from '../config/templates/expressions.js';
 
 export class ConditionalFieldManager {
@@ -14,8 +15,14 @@ export class ConditionalFieldManager {
     this.renderer = renderer;
     this.current = null;
     this.aiAbortController = null;
+    this.isSyncing = false;
+    this.canonicalDirty = false;
+    this.draggedEl = null;
+    this.dropTarget = null;
+    this.dropTargetEl = null;
     this.bindElements();
     this.bindEvents();
+    this.initAiControls();
   }
 
   bindElements() {
@@ -72,12 +79,21 @@ export class ConditionalFieldManager {
       elseCalcRightSource: document.getElementById('else-calc-right-source'),
       elseCalcRightField: document.getElementById('else-calc-right-field'),
       elseCalcRightValue: document.getElementById('else-calc-right-value'),
+      aiProvider: document.getElementById('conditional-ai-provider'),
+      aiModel: document.getElementById('conditional-ai-model'),
       aiSuggestion: document.getElementById('conditional-ai-suggestion'),
       aiFill: document.getElementById('conditional-ai-fill'),
       aiRequest: document.getElementById('conditional-ai-request'),
       aiGenerate: document.getElementById('conditional-ai-generate'),
-      aiStatus: document.getElementById('conditional-ai-status')
+      aiStop: document.getElementById('conditional-ai-stop'),
+      aiStatus: document.getElementById('conditional-ai-status'),
+      validateBtn: document.getElementById('conditional-validate'),
+      validateOutput: document.getElementById('conditional-validate-output')
     };
+  }
+
+  initAiControls() {
+    registerSettingsControls(this.el.aiProvider, this.el.aiModel);
   }
 
   bindEvents() {
@@ -100,13 +116,18 @@ export class ConditionalFieldManager {
     this.el.elseCalcLeftSource?.addEventListener('change', () => this.toggleSources());
     this.el.elseCalcRightSource?.addEventListener('change', () => this.toggleSources());
     this.el.exprText?.addEventListener('input', () => this.updateCanonicalFromExpression());
+    this.el.exprCanonical?.addEventListener('input', () => this.updateExpressionFromCanonical());
+    this.el.visual?.addEventListener('input', () => this.updateCanonicalFromVisual());
+    this.el.visual?.addEventListener('change', () => this.updateCanonicalFromVisual());
     this.el.aiGenerate?.addEventListener('click', () => this.requestAiExpression());
+    this.el.aiStop?.addEventListener('click', () => this.stopAiRequest());
     this.el.aiFill?.addEventListener('click', () => {
       const suggestion = this.el.aiSuggestion?.value || '';
       if (suggestion && this.el.aiRequest) {
         this.el.aiRequest.value = suggestion;
       }
     });
+    this.el.validateBtn?.addEventListener('click', () => this.validateExpression());
 
     if (this.el.conditionRoot) {
       this.el.conditionRoot.addEventListener('change', e => {
@@ -115,10 +136,11 @@ export class ConditionalFieldManager {
           const row = target.closest('.condition-row');
           if (row) this.toggleConditionRow(row);
         }
+        this.updateCanonicalFromVisual();
       });
       this.el.conditionRoot.addEventListener('click', e => {
-        const btn = e.target;
-        if (!btn || !btn.dataset) return;
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
         const action = btn.dataset.action;
         if (action === 'add-condition') {
           const group = btn.closest('.condition-group');
@@ -133,12 +155,19 @@ export class ConditionalFieldManager {
           const group = btn.closest('.condition-group');
           if (group && !group.dataset.root) group.remove();
         }
+        this.updateCanonicalFromVisual();
       });
+      this.el.conditionRoot.addEventListener('dragstart', e => this.onDragStart(e));
+      this.el.conditionRoot.addEventListener('dragover', e => this.onDragOver(e));
+      this.el.conditionRoot.addEventListener('dragleave', e => this.onDragLeave(e));
+      this.el.conditionRoot.addEventListener('drop', e => this.onDrop(e));
+      this.el.conditionRoot.addEventListener('dragend', e => this.onDragEnd(e));
     }
   }
 
   open(target, field) {
     this.current = { target, field };
+    this.canonicalDirty = false;
     if (!this.el.overlay) return;
     const fields = this.graphState.getFieldsByType(target).filter(f => f !== field);
     this.availableFields = fields;
@@ -165,6 +194,7 @@ export class ConditionalFieldManager {
       this.el.exprError.textContent = '';
     }
     this.setAiStatus('');
+    if (this.el.validateOutput) this.el.validateOutput.textContent = '';
 
     const detectedKind = this.detectVisualKind(entry);
     if (entry.visual) {
@@ -180,6 +210,7 @@ export class ConditionalFieldManager {
     this.toggleVisualKind();
     this.toggleThenElse();
     this.toggleSources();
+    this.updateCanonicalFromVisual();
     this.show();
   }
 
@@ -316,6 +347,7 @@ export class ConditionalFieldManager {
     group.className = 'condition-group';
     group.dataset.type = 'group';
     if (isRoot) group.dataset.root = 'true';
+    if (!isRoot) group.draggable = true;
 
     const header = document.createElement('div');
     header.className = 'condition-group-header';
@@ -389,6 +421,7 @@ export class ConditionalFieldManager {
     const row = document.createElement('div');
     row.className = 'condition-row';
     row.dataset.type = 'condition';
+    row.draggable = true;
 
     const leftSource = document.createElement('select');
     leftSource.className = 'form-control form-control-sm cond-source';
@@ -418,6 +451,10 @@ export class ConditionalFieldManager {
       <option value="lte">&lt;=</option>
       <option value="eq">==</option>
       <option value="neq">!=</option>
+      <option value="contains">contient</option>
+      <option value="startsWith">commence</option>
+      <option value="endsWith">termine</option>
+      <option value="regex">regex</option>
     `;
 
     const rightSource = document.createElement('select');
@@ -554,7 +591,11 @@ export class ConditionalFieldManager {
     const right = cond?.right?.source === 'field'
       ? { type: 'field', name: cond.right.field || '' }
       : this.parseLiteral(cond?.right?.value || '');
-    return { type: 'binary', op: cond?.op || 'eq', left, right };
+    const op = cond?.op || 'eq';
+    if (['contains', 'startsWith', 'endsWith', 'regex'].includes(op)) {
+      return { type: 'call', name: op, args: [left, right] };
+    }
+    return { type: 'binary', op, left, right };
   }
 
   parseLiteral(value) {
@@ -669,22 +710,75 @@ export class ConditionalFieldManager {
   }
 
   updateCanonicalFromExpression() {
-    if (!this.el.exprText) return;
+    if (!this.el.exprText || !this.el.exprCanonical) return;
+    if (this.isSyncing) return;
+    this.isSyncing = true;
+    this.canonicalDirty = false;
     try {
       const ast = parseExpression(this.el.exprText.value || '');
       const canonical = serializeToFunctional(ast);
       this.el.exprCanonical.value = canonical;
       this.el.exprError.textContent = '';
+      this.isSyncing = false;
       return ast;
     } catch (e) {
       this.el.exprError.textContent = e.message || 'Expression invalide';
       this.el.exprCanonical.value = '';
+      this.isSyncing = false;
       return null;
+    }
+  }
+
+  updateExpressionFromCanonical() {
+    if (!this.el.exprCanonical || !this.el.exprText) return;
+    if (this.isSyncing) return;
+    this.isSyncing = true;
+    const canonical = (this.el.exprCanonical.value || '').trim();
+    if (!canonical) {
+      this.el.exprError.textContent = '';
+      this.isSyncing = false;
+      return;
+    }
+    this.canonicalDirty = true;
+    try {
+      const ast = parseExpression(canonical);
+      this.el.exprText.value = canonical;
+      this.el.exprError.textContent = '';
+      this.isSyncing = false;
+      return ast;
+    } catch (e) {
+      this.el.exprError.textContent = e.message || 'Expression invalide';
+      this.isSyncing = false;
+      return null;
+    }
+  }
+
+  updateCanonicalFromVisual() {
+    if (!this.el.exprCanonical) return;
+    if (this.canonicalDirty || this.isSyncing) return;
+    if ((this.el.mode?.value || 'visual') !== 'visual') return;
+    this.isSyncing = true;
+    try {
+      const ast = this.buildAstFromVisual();
+      const canonical = serializeToFunctional(ast);
+      this.el.exprCanonical.value = canonical;
+      this.el.exprError.textContent = '';
+    } catch (e) {
+      this.el.exprError.textContent = e.message || 'Expression invalide';
+    } finally {
+      this.isSyncing = false;
     }
   }
 
   setAiStatus(message) {
     if (this.el.aiStatus) this.el.aiStatus.textContent = message || '';
+  }
+
+  stopAiRequest() {
+    if (this.aiAbortController) {
+      this.aiAbortController.abort();
+      this.setAiStatus('Generation arretee.');
+    }
   }
 
   requestAiExpression() {
@@ -707,9 +801,10 @@ export class ConditionalFieldManager {
     const model = getModel();
     this.setAiStatus('Generation en cours...');
     this.aiAbortController = new AbortController();
-    getProvider().sendRequest({
+    sendAiRequest({
       prompt,
       model,
+      context: 'Champ personnalise',
       abortController: this.aiAbortController,
       onComplete: (result) => {
         const expression = result?.expression || result?.expr || '';
@@ -731,6 +826,7 @@ export class ConditionalFieldManager {
           this.el.resultType.value = normalizeType(result.resultType);
         }
         this.setAiStatus('Expression proposee.');
+        this.validateExpression();
       },
       onError: (error) => {
         this.setAiStatus(`Erreur IA: ${error.message}`);
@@ -745,11 +841,24 @@ export class ConditionalFieldManager {
     let ast = null;
     let expr = '';
     let visual = null;
+    const canonicalText = (this.el.exprCanonical?.value || '').trim();
 
-    if (mode === 'visual') {
+    if (canonicalText) {
+      try {
+        ast = parseExpression(canonicalText);
+      } catch (e) {
+        if (this.el.exprError) this.el.exprError.textContent = e.message || 'Expression invalide';
+        return;
+      }
+      expr = serializeToFunctional(ast);
+      if (mode === 'visual' && !this.canonicalDirty) {
+        visual = this.captureVisualConfig();
+      }
+    } else if (mode === 'visual') {
       ast = this.buildAstFromVisual();
       expr = serializeToFunctional(ast);
       visual = this.captureVisualConfig();
+      if (this.el.exprCanonical) this.el.exprCanonical.value = expr;
     } else {
       ast = this.updateCanonicalFromExpression();
       if (!ast) return;
@@ -863,5 +972,245 @@ export class ConditionalFieldManager {
     if (this.el.elseCalcRightValue) this.el.elseCalcRightValue.value = '';
     if (this.el.elseCalcLeftField) this.el.elseCalcLeftField.value = '';
     if (this.el.elseCalcRightField) this.el.elseCalcRightField.value = '';
+  }
+
+  validateExpression() {
+    const output = this.el.validateOutput;
+    if (!output) return;
+    if (!this.current) {
+      output.textContent = 'Aucun champ selectionne.';
+      return;
+    }
+    const { target, field } = this.current;
+    const mode = this.el.mode?.value || 'visual';
+    const canonicalText = (this.el.exprCanonical?.value || '').trim();
+    let ast = null;
+    let source = 'expression';
+
+    try {
+      if (canonicalText) {
+        ast = parseExpression(canonicalText);
+        source = 'canonique';
+      } else if (mode === 'visual') {
+        ast = this.buildAstFromVisual();
+        source = 'visuel';
+      } else {
+        ast = parseExpression(this.el.exprText?.value || '');
+        source = 'expression';
+      }
+    } catch (e) {
+      output.textContent = `Expression invalide (${source}): ${e.message || 'invalide'}`;
+      return;
+    }
+
+    const canonical = serializeToFunctional(ast);
+    if (!canonicalText && this.el.exprCanonical) this.el.exprCanonical.value = canonical;
+
+    const usedFields = Array.from(this.collectFieldRefs(ast)).filter(Boolean);
+    const available = new Set(this.graphState.getFieldsByType(target));
+    const missing = usedFields.filter(f => !available.has(f));
+    const cyclePath = this.detectCycle(target, field, ast);
+
+    const items = target === 'node' ? this.graphState.nodes : this.graphState.links;
+    const conditionAst = this.extractConditionAst(ast);
+    const matchedIds = [];
+    const evalErrors = [];
+
+    items.forEach(item => {
+      try {
+        const ctx = { getField: name => this.graphState.resolveFieldValue(target, item, name) };
+        if (conditionAst) {
+          const ok = !!evaluateExpression(conditionAst, ctx);
+          if (ok) matchedIds.push(item.id);
+        } else {
+          matchedIds.push(item.id);
+        }
+      } catch (e) {
+        evalErrors.push({ id: item.id, error: e.message || 'erreur' });
+      }
+    });
+
+    const lines = [];
+    lines.push(`Source: ${source}`);
+    lines.push(`Expression canonique: ${canonical}`);
+    if (missing.length) lines.push(`Champs manquants: ${missing.join(', ')}`);
+    if (cyclePath) lines.push(`Cycle detecte: ${cyclePath.join(' -> ')}`);
+    if (evalErrors.length) {
+      const sample = evalErrors.slice(0, 5).map(e => `${e.id}: ${e.error}`).join(' | ');
+      lines.push(`Erreurs d'evaluation: ${evalErrors.length}`);
+      if (sample) lines.push(`Exemples: ${sample}${evalErrors.length > 5 ? ' ...' : ''}`);
+    }
+    lines.push(`Elements concernes: ${matchedIds.length}/${items.length}`);
+    if (matchedIds.length) {
+      const preview = matchedIds.slice(0, 30).join(', ');
+      lines.push(`IDs: ${preview}${matchedIds.length > 30 ? ' ...' : ''}`);
+    }
+
+    output.textContent = lines.join('\n');
+  }
+
+  collectFieldRefs(ast, acc = new Set()) {
+    if (!ast || typeof ast !== 'object') return acc;
+    if (ast.type === 'field') {
+      if (ast.name) acc.add(ast.name);
+      return acc;
+    }
+    if (ast.type === 'binary') {
+      this.collectFieldRefs(ast.left, acc);
+      this.collectFieldRefs(ast.right, acc);
+      return acc;
+    }
+    if (ast.type === 'unary') {
+      this.collectFieldRefs(ast.expr, acc);
+      return acc;
+    }
+    if (ast.type === 'call') {
+      (ast.args || []).forEach(arg => this.collectFieldRefs(arg, acc));
+      return acc;
+    }
+    if (Array.isArray(ast.args)) {
+      ast.args.forEach(arg => this.collectFieldRefs(arg, acc));
+    }
+    return acc;
+  }
+
+  extractConditionAst(ast) {
+    if (!ast || ast.type !== 'call') return null;
+    if (ast.name !== 'if') return null;
+    return ast.args?.[0] || null;
+  }
+
+  detectCycle(target, field, astOverride) {
+    const path = [];
+
+    const getAst = name => {
+      if (name === field) return astOverride;
+      const entry = this.graphState.getFieldSchema(target, name);
+      if (!entry) return null;
+      if (entry.ast) return entry.ast;
+      if (entry.expr) {
+        try {
+          return parseExpression(entry.expr);
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    };
+
+    const visit = (name, chain) => {
+      if (chain.includes(name)) {
+        path.push(...chain, name);
+        return true;
+      }
+      const ast = getAst(name);
+      if (!ast) return false;
+      const deps = Array.from(this.collectFieldRefs(ast));
+      for (const dep of deps) {
+        const entry = this.graphState.getFieldSchema(target, dep);
+        const depType = normalizeType(entry?.type || this.graphState.getFieldType(target, dep));
+        if (depType !== 'conditional') continue;
+        if (visit(dep, chain.concat([name]))) return true;
+      }
+      return false;
+    };
+
+    if (visit(field, [])) return path;
+    return null;
+  }
+
+  onDragStart(e) {
+    const tag = e.target?.tagName;
+    if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(tag)) return;
+    const item = e.target.closest('.condition-row, .condition-group');
+    if (!item || item.dataset.root) return;
+    this.draggedEl = item;
+    item.classList.add('condition-dragging');
+    try {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', 'condition');
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  onDragOver(e) {
+    if (!this.draggedEl) return;
+    e.preventDefault();
+    const row = e.target.closest('.condition-row');
+    const body = e.target.closest('.condition-group-body');
+    const group = e.target.closest('.condition-group');
+
+    let targetEl = null;
+    let position = 'inside';
+    if (row && row !== this.draggedEl && !this.draggedEl.contains(row)) {
+      targetEl = row;
+      const rect = row.getBoundingClientRect();
+      position = (e.clientY - rect.top) < rect.height / 2 ? 'before' : 'after';
+    } else if (body && !this.draggedEl.contains(body)) {
+      targetEl = body;
+      position = 'inside';
+    } else if (group && !this.draggedEl.contains(group)) {
+      targetEl = group.querySelector('.condition-group-body') || group;
+      position = 'inside';
+    }
+
+    this.dropTarget = { el: targetEl, position };
+    this.setDropTarget(targetEl);
+  }
+
+  onDragLeave(e) {
+    if (!this.draggedEl) return;
+    const leaving = e.target;
+    if (leaving && leaving.classList?.contains('condition-drop-target')) {
+      leaving.classList.remove('condition-drop-target');
+    }
+  }
+
+  onDrop(e) {
+    if (!this.draggedEl) return;
+    e.preventDefault();
+    const drop = this.dropTarget;
+    const dragged = this.draggedEl;
+
+    if (drop?.el && dragged && drop.el !== dragged) {
+      if (drop.position === 'inside') {
+        drop.el.appendChild(dragged);
+      } else if (drop.el.parentElement) {
+        const parent = drop.el.parentElement;
+        if (drop.position === 'before') {
+          parent.insertBefore(dragged, drop.el);
+        } else {
+          parent.insertBefore(dragged, drop.el.nextSibling);
+        }
+      }
+    }
+
+    this.clearDragState();
+    this.updateCanonicalFromVisual();
+  }
+
+  onDragEnd() {
+    this.clearDragState();
+  }
+
+  setDropTarget(el) {
+    if (this.dropTargetEl && this.dropTargetEl !== el) {
+      this.dropTargetEl.classList.remove('condition-drop-target');
+    }
+    this.dropTargetEl = el;
+    if (el) el.classList.add('condition-drop-target');
+  }
+
+  clearDragState() {
+    if (this.draggedEl) {
+      this.draggedEl.classList.remove('condition-dragging');
+    }
+    if (this.dropTargetEl) {
+      this.dropTargetEl.classList.remove('condition-drop-target');
+    }
+    this.draggedEl = null;
+    this.dropTarget = null;
+    this.dropTargetEl = null;
   }
 }

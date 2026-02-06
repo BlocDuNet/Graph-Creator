@@ -411,6 +411,10 @@ input[type="checkbox"] {
   flex-wrap: wrap;
 }
 
+.condition-group-header .group-join {
+  min-width: 80px;
+}
+
 .condition-group-body {
   display: flex;
   flex-direction: column;
@@ -440,6 +444,33 @@ input[type="checkbox"] {
 .condition-actions button {
   padding: 0 6px;
   height: 24px;
+}
+
+.condition-drop-target {
+  outline: 2px dashed #8bb2ff;
+  outline-offset: 2px;
+}
+
+.condition-row,
+.condition-group {
+  cursor: grab;
+}
+
+.condition-row.condition-dragging,
+.condition-group.condition-dragging {
+  opacity: 0.6;
+  cursor: grabbing;
+}
+
+#conditional-field-overlay {
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 20px 0;
+}
+
+#conditional-field-overlay .advanced-import-modal {
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 
 /* Toggle Switch Component */

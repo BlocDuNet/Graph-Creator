@@ -7,13 +7,9 @@ import eventBus from '../services/EventBus.js';
 import * as templates from '../config/templates/graphGeneration.js';
 import * as proposalTemplates from '../config/templates/proposals.js';
 import {
-  getProvider,
   getModel,
-  setProvider,
-  setModel,
-  fetchModels,
-  listProviders,
-  applyToUI
+  registerSettingsControls,
+  sendAiRequest
 } from './AIService.js';
 
 export class AIManager {
@@ -38,23 +34,32 @@ export class AIManager {
     this.elements = {
       provider: document.getElementById("aiProvider"),
       model: document.getElementById("aiModel"),
+      configProvider: document.getElementById("config-ai-provider"),
+      configModel: document.getElementById("config-ai-model"),
       prompt: document.getElementById("ollamaPrompt"),
       result: document.getElementById("ollamaResult"),
       raw: document.getElementById("ollamaRaw"),
       sendBtn: document.getElementById("ollamaSend"),
       stopBtn: document.getElementById("ollamaStop"),
+      stopProposalsBtn: document.getElementById("ollamaStopProposals"),
       importBtn: document.getElementById("importGraph"),
       proposalsBtn: document.getElementById("ollamaSendProposals"),
       rejectBtn: document.getElementById("ollamaRejectProposals"),
       proposalNodes: document.getElementById("proposalNodes"),
       proposalLinks: document.getElementById("proposalLinks"),
+      proposalsProvider: document.getElementById("proposals-ai-provider"),
+      proposalsModel: document.getElementById("proposals-ai-model"),
       translateField: document.getElementById("translateField"),
       translateTarget: document.getElementById("translateTarget"),
-      translateBtn: document.getElementById("translateBtn")
+      translateBtn: document.getElementById("translateBtn"),
+      translateStopBtn: document.getElementById("translateStop"),
+      translateProvider: document.getElementById("translate-ai-provider"),
+      translateModel: document.getElementById("translate-ai-model")
       ,
       sheetRefresh: document.getElementById("sheet-refresh"),
       sheetSelectAll: document.getElementById("sheet-select-all"),
       sheetTranslate: document.getElementById("sheet-translate"),
+      sheetTranslateStop: document.getElementById("sheet-translate-stop"),
       sheetApply: document.getElementById("sheet-apply"),
       sheetExportCsv: document.getElementById("sheet-export-csv"),
       sheetFind: document.getElementById("sheet-find"),
@@ -73,21 +78,19 @@ export class AIManager {
       sheetLangSource: document.getElementById("sheet-lang-source"),
       sheetLangTarget: document.getElementById("sheet-lang-target"),
       sheetFieldName: document.getElementById("sheet-field-name"),
-      sheetFieldDesc: document.getElementById("sheet-field-description")
+      sheetFieldDesc: document.getElementById("sheet-field-description"),
+      sheetProvider: document.getElementById("sheet-ai-provider"),
+      sheetModel: document.getElementById("sheet-ai-model")
     };
-    // Initialiser la liste des fournisseurs et des modeles
-    if (this.elements.provider) {
-      const providers = listProviders();
-      this.elements.provider.innerHTML = providers
-        .map(p => `<option value="${p}">${p}</option>`)
-        .join('');
-    }
-    applyToUI(this.elements.provider, this.elements.model);
-    fetchModels().then(models => {
-      if (this.elements.model && models.length > 0) {
-        this.updateModelDropdown(models);
-      }
-    });
+    this.initAiSettingsUI();
+  }
+
+  initAiSettingsUI() {
+    registerSettingsControls(this.elements.provider, this.elements.model);
+    registerSettingsControls(this.elements.configProvider, this.elements.configModel);
+    registerSettingsControls(this.elements.proposalsProvider, this.elements.proposalsModel);
+    registerSettingsControls(this.elements.translateProvider, this.elements.translateModel);
+    registerSettingsControls(this.elements.sheetProvider, this.elements.sheetModel);
   }
   
   /**
@@ -128,7 +131,6 @@ export class AIManager {
     // Sélectionner le premier modèle
     if (models.length > 0) {
       this.elements.model.value = models[0];
-      setModel(models[0]);
     }
   }
   
@@ -140,21 +142,17 @@ export class AIManager {
       this.elements.sendBtn.addEventListener("click", () => this.handleGenerateGraph());
     }
 
-    if (this.elements.provider) {
-      this.elements.provider.addEventListener('change', () => {
-        setProvider(this.elements.provider.value);
-        fetchModels().then(models => this.updateModelDropdown(models));
-      });
-    }
-
-    if (this.elements.model) {
-      this.elements.model.addEventListener('change', () => {
-        setModel(this.elements.model.value.trim());
-      });
-    }
-    
     if (this.elements.stopBtn) {
       this.elements.stopBtn.addEventListener("click", () => this.handleStopRequest());
+    }
+    if (this.elements.stopProposalsBtn) {
+      this.elements.stopProposalsBtn.addEventListener("click", () => this.handleStopRequest());
+    }
+    if (this.elements.translateStopBtn) {
+      this.elements.translateStopBtn.addEventListener("click", () => this.handleStopRequest());
+    }
+    if (this.elements.sheetTranslateStop) {
+      this.elements.sheetTranslateStop.addEventListener("click", () => this.handleStopRequest());
     }
     
     if (this.elements.importBtn) {
@@ -244,9 +242,10 @@ export class AIManager {
     this.updateLoadingState(this.elements.sendBtn, true, "generation");
     
     // Envoyer la requête à Ollama
-    getProvider().sendRequest({
+    sendAiRequest({
       prompt: promptTemplate,
       model,
+      context: 'Graph generation',
       abortController: this.currentAbortController,
       onChunk: (chunk, fullText) => {
         if (this.elements.raw) this.elements.raw.value = fullText;
@@ -420,7 +419,9 @@ export class AIManager {
     this.updateLoadingState(this.elements.proposalsBtn, true, "proposals");
     
     this.currentAbortController = new AbortController();
-    const model = this.elements.model?.value.trim() || getModel();
+    const model = this.elements.proposalsModel?.value?.trim()
+      || this.elements.model?.value?.trim()
+      || getModel();
     
     // Générer le prompt pour les propositions
     const proposalPrompt = proposalTemplates.getProposalPrompt(this.graphState);
@@ -432,9 +433,10 @@ export class AIManager {
     if (this.elements.raw) this.elements.raw.value = "Envoi de la requête à Ollama...";
     
     // Envoyer la requête
-    getProvider().sendRequest({
+    sendAiRequest({
       prompt: proposalPrompt,
       model,
+      context: 'Graph proposals',
       abortController: this.currentAbortController,
       onChunk: (chunk, fullText) => {
         if (this.elements.raw) this.elements.raw.value = fullText;
@@ -620,12 +622,15 @@ export class AIManager {
     }
 
     this.currentAbortController = new AbortController();
-    const model = this.elements.model?.value.trim() || getModel();
+    const model = this.elements.translateModel?.value?.trim()
+      || this.elements.model?.value?.trim()
+      || getModel();
     const prompt = `Traduire en ${targetLang}. Répondre uniquement avec la traduction.\nTexte:\n${value}`;
 
-    getProvider().sendRequest({
+    sendAiRequest({
       prompt,
       model,
+      context: 'Translate selection',
       abortController: this.currentAbortController,
       onComplete: (translation) => {
         const newValue = typeof translation === 'string' ? translation : (translation?.text || "");
@@ -841,7 +846,9 @@ export class AIManager {
     }
 
     this.currentAbortController = new AbortController();
-    const model = this.elements.model?.value.trim() || getModel();
+    const model = this.elements.sheetModel?.value?.trim()
+      || this.elements.model?.value?.trim()
+      || getModel();
     const payload = selected.map((s, idx) => ({
       index: idx,
       type: s.type,
@@ -861,9 +868,10 @@ Entrée:
 ${JSON.stringify(payload, null, 2)}
 `;
 
-    getProvider().sendRequest({
+    sendAiRequest({
       prompt,
       model,
+      context: 'Translate sheet',
       abortController: this.currentAbortController,
       onComplete: (result) => {
         let parsed = result;

@@ -45,6 +45,9 @@
               <li class="nav-item">
                 <a class="nav-link" href="#tab5" data-toggle="tab">Tableur</a>
               </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#tab6" data-toggle="tab">Config logiciel</a>
+              </li>
             </ul>
             <span class="arrow arrow-down"></span>
           </div>
@@ -87,8 +90,8 @@
                     <td><object type="image/svg+xml" data="svg/delete.svg" width="40" height="40" title="Delete"></object></td>
                     <td><b>Delete</b> (node/edge)</td>
                     <td>
-                      <b>Select a node/edge</b> and press <b>Delete</b> or
-                      <b>Backspace</b>
+                      <b>Select a node/edge</b> and press <b>Ctrl+Delete</b> or
+                      <b>Ctrl+Backspace</b>
                     </td>
                   </tr>
                   <tr>
@@ -581,12 +584,15 @@
                           <!-- Conteneur pour la génération par prompt -->
                           <div id="div-generation">
                             <div class="mb-2">
-                            <label for="aiProvider">Fournisseur IA:</label>
-                            <select id="aiProvider" class="w-100" title="Fournisseur IA">
-                              <option value="ollama">Ollama</option>
-                            </select>
-                            <label for="aiModel" class="mt-2">Modele d'IA:</label>
-                            <input id="aiModel" type="text" placeholder="ex: mistral" class="w-100" title="Nom du modele IA a utiliser">
+                            <details class="mt-2">
+                              <summary>Configuration IA</summary>
+                              <label for="aiProvider" class="mt-2">Fournisseur IA:</label>
+                              <select id="aiProvider" class="w-100" title="Fournisseur IA">
+                                <option value="ollama">Ollama</option>
+                              </select>
+                              <label for="aiModel" class="mt-2">Modele d'IA:</label>
+                              <select id="aiModel" class="w-100 form-control form-control-sm" title="Nom du modele IA a utiliser"></select>
+                            </details>
                             </div>
                             <textarea id="ollamaPrompt" placeholder="Saisissez votre requête ici" class="w-100 prompt-textarea" title="Votre requête pour générer un graph"></textarea>
                             <br>
@@ -612,6 +618,20 @@
                           <!-- Conteneur pour les propositions -->
                           <div id="div-proposals">
                             <button id="ollamaSendProposals">Envoyer le graph actuel pour propositions</button>
+                            <button id="ollamaStopProposals">Stop Generation</button>
+                            <details class="mt-2">
+                              <summary class="small">Configuration IA</summary>
+                              <div class="row mt-2">
+                                <div class="col-md-6">
+                                  <label class="small">Fournisseur</label>
+                                  <select id="proposals-ai-provider" class="form-control form-control-sm"></select>
+                                </div>
+                                <div class="col-md-6">
+                                  <label class="small">Modele</label>
+                                  <select id="proposals-ai-model" class="form-control form-control-sm"></select>
+                                </div>
+                              </div>
+                            </details>
                             <div id="proposalLists" class="mt-3">
                               <div>
                                 <h4>Noeuds proposés</h4>
@@ -641,12 +661,26 @@
                       <div id="collapseTranslate" class="collapse show" aria-labelledby="headingTranslate">
                         <div class="card-body">
                           <label for="translateField">Champ à traduire (ex: name_fr)</label>
-                          <input id="translateField" class="form-control form-control-sm" placeholder="ex: name_fr">
-                          <label for="translateTarget" class="mt-2">Langue cible (ex: en)</label>
-                          <input id="translateTarget" class="form-control form-control-sm" placeholder="ex: en">
-                          <button id="translateBtn" class="btn btn-sm btn-outline-primary mt-2">Traduire le champ</button>
+                            <input id="translateField" class="form-control form-control-sm" placeholder="ex: name_fr">
+                            <label for="translateTarget" class="mt-2">Langue cible (ex: en)</label>
+                            <input id="translateTarget" class="form-control form-control-sm" placeholder="ex: en">
+                            <button id="translateBtn" class="btn btn-sm btn-outline-primary mt-2">Traduire le champ</button>
+                            <button id="translateStop" class="btn btn-sm btn-outline-secondary mt-2">Stop Generation</button>
+                            <details class="mt-2">
+                              <summary class="small">Configuration IA</summary>
+                              <div class="row mt-2">
+                                <div class="col-md-6">
+                                  <label class="small">Fournisseur</label>
+                                  <select id="translate-ai-provider" class="form-control form-control-sm"></select>
+                                </div>
+                                <div class="col-md-6">
+                                  <label class="small">Modele</label>
+                                  <select id="translate-ai-model" class="form-control form-control-sm"></select>
+                                </div>
+                              </div>
+                            </details>
+                          </div>
                         </div>
-                      </div>
                     </div>
                   </div>
                   
@@ -784,12 +818,51 @@
                       <tbody id="multilingual-sheet-body"></tbody>
                     </table>
                   </div>
+                  <details class="mt-2">
+                    <summary class="small">Configuration IA</summary>
+                    <div class="row mt-2">
+                      <div class="col-md-6">
+                        <label class="small">Fournisseur</label>
+                        <select id="sheet-ai-provider" class="form-control form-control-sm"></select>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="small">Modele</label>
+                        <select id="sheet-ai-model" class="form-control form-control-sm"></select>
+                      </div>
+                    </div>
+                  </details>
                   <div class="mt-2 d-flex flex-wrap">
                     <button id="sheet-select-all" class="btn btn-sm btn-outline-secondary m-1">Tout cocher</button>
                     <button id="sheet-apply" class="btn btn-sm btn-outline-primary m-1">Appliquer modifications</button>
                     <button id="sheet-translate" class="btn btn-sm btn-success m-1">Traduire la sélection</button>
+                    <button id="sheet-translate-stop" class="btn btn-sm btn-outline-secondary m-1">Stop Generation</button>
                     <button id="sheet-export-csv" class="btn btn-sm btn-outline-primary m-1">Exporter CSV</button>
                   </div>
+                </div>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="tab6">
+              <div class="card">
+                <div class="card-header section-header">
+                  <button class="btn btn-link" type="button">
+                    Configuration IA
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <label class="small">Fournisseur IA par defaut</label>
+                      <select id="config-ai-provider" class="form-control form-control-sm"></select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="small">Modele IA par defaut</label>
+                      <select id="config-ai-model" class="form-control form-control-sm"></select>
+                    </div>
+                  </div>
+                  <details class="mt-3">
+                    <summary class="small">Log IA (echanges complets)</summary>
+                    <textarea id="ai-log" class="w-100 log-textarea mt-2" readonly></textarea>
+                  </details>
                 </div>
               </div>
             </div>
@@ -948,34 +1021,46 @@
             </select>
             <button id="conditional-ai-fill" class="btn btn-sm btn-outline-secondary mb-1">Remplir suggestion</button>
             <textarea id="conditional-ai-request" class="form-control form-control-sm" rows="2" placeholder="Decris la formule souhaitee"></textarea>
+            <details class="mt-2">
+              <summary class="small">Configuration IA</summary>
+              <div class="mt-2">
+                <label class="small">Fournisseur</label>
+                <select id="conditional-ai-provider" class="form-control form-control-sm"></select>
+                <label class="small mt-2">Modele</label>
+                <select id="conditional-ai-model" class="form-control form-control-sm"></select>
+              </div>
+            </details>
             <div class="d-flex flex-wrap mt-1">
               <button id="conditional-ai-generate" class="btn btn-sm btn-outline-primary m-1">Proposer expression</button>
+              <button id="conditional-ai-stop" class="btn btn-sm btn-outline-secondary m-1">Stop</button>
               <span id="conditional-ai-status" class="small text-muted mt-1"></span>
             </div>
           </div>
 
-        <div class="row mt-2">
-          <div class="col-md-6">
-            <label class="small">Type de resultat</label>
-            <select id="conditional-result-type" class="form-control form-control-sm">
-              <option value="auto">Auto</option>
+          <div class="row mt-2">
+            <div class="col-md-6">
+              <label class="small">Type de resultat</label>
+              <select id="conditional-result-type" class="form-control form-control-sm">
+                <option value="auto">Auto</option>
               <option value="text">Texte</option>
               <option value="number">Nombre</option>
               <option value="number_comma">Nombre (virgule)</option>
               <option value="boolean">Booleen</option>
               <option value="date">Date</option>
             </select>
+            </div>
+            <div class="col-md-6">
+              <label class="small">Expression canonique</label>
+              <input id="conditional-expression-canonical" class="form-control form-control-sm">
+            </div>
           </div>
-          <div class="col-md-6">
-            <label class="small">Expression canonique</label>
-            <input id="conditional-expression-canonical" class="form-control form-control-sm" readonly>
+          <div class="mt-2 d-flex flex-wrap">
+            <button id="conditional-validate" class="btn btn-sm btn-outline-secondary m-1">Verifier</button>
+            <button id="conditional-apply" class="btn btn-sm btn-success m-1">Appliquer</button>
           </div>
-        </div>
-        <div class="mt-2 d-flex flex-wrap">
-          <button id="conditional-apply" class="btn btn-sm btn-success m-1">Appliquer</button>
+          <div id="conditional-validate-output" class="pre-scroll mt-2"></div>
         </div>
       </div>
-    </div>
     <div id="multilingual-convert-overlay" class="advanced-import-overlay hidden">
       <div class="advanced-import-modal">
         <div class="d-flex justify-content-between align-items-center mb-2">

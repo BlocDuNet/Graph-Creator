@@ -268,7 +268,8 @@ export class InteractionManager {
   initKeyboardHandlers() {
     window.addEventListener('keyup', event => {
       // Suppression avec Delete ou Backspace
-      if (['Delete', 'Backspace'].includes(event.key)) {
+      const isEditable = ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target?.tagName) || event.target?.isContentEditable;
+      if (!isEditable && event.ctrlKey && ['Delete', 'Backspace'].includes(event.key)) {
         let didDelete = false;
         if (this.graphState.selectedNode) {
           this.graphState.deleteNode(this.graphState.selectedNode);
