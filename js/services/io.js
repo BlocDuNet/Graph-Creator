@@ -2,7 +2,7 @@
  * Service pour l'import/export des données du graphe
  */
 import { performAction } from '../state/undo_redo.js';
-import { uiConfig } from '../config/index.js';
+import { uiConfig, graphConfig } from '../config/index.js';
 import { listJsonFiles } from './fileService.js';  // <— nouvel import
 import eventBus from './EventBus.js';
 import {
@@ -92,6 +92,8 @@ function exportJsonAdvanced(options = {}) {
   };
 
   exportData.schema = buildSchemaForExport(exportData.nodes, exportData.links, graphState?.schema);
+  exportData.styleRules = graphConfig?.styleRules || { nodes: [], links: [] };
+  exportData.pieRules = graphConfig?.pieRules || { nodes: [] };
 
   if (format === 'csv_nodes') {
     downloadDelimited(exportData.nodes, 'nodes.csv', ',');
@@ -134,7 +136,7 @@ function exportJsonAdvanced(options = {}) {
 function loadJSONGraph(jsonContent) {
   try {
     const jsonData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
-    const { nodes, links, schema } = normalizeImportedGraph(jsonData);
+      const { nodes, links, schema, styleRules, pieRules } = normalizeImportedGraph(jsonData);
     
     // Sauvegarder l'état précédent
     const oldState = {
@@ -155,6 +157,7 @@ function loadJSONGraph(jsonContent) {
     
     // Mettre à jour le graphe
     renderer.updateGraph();
+    applyImportedRules(styleRules, pieRules);
     
     // Émettre un événement personnalisé pour notifier l'importation
     eventBus.emit('graph-imported', { nodes, links });
@@ -186,13 +189,14 @@ function applyAdvancedImport() {
   if (!pendingAdvancedImport?.raw) return;
   const mapping = readAdvancedMapping();
   try {
-    const { nodes, links, schema } = normalizeImportedGraph(pendingAdvancedImport.raw, mapping);
+    const { nodes, links, schema, styleRules, pieRules } = normalizeImportedGraph(pendingAdvancedImport.raw, mapping);
     const oldState = { nodes: [...graphState.nodes], links: [...graphState.links], schema: graphState.getSchemaSnapshot?.() || graphState.schema };
     performAction({ 
       type: "import_graph", 
       data: { oldState, newState: { nodes, links, schema }, label: "Import JSON graph (advanced)" } 
     });
     renderer.updateGraph();
+    applyImportedRules(styleRules, pieRules);
     eventBus.emit('graph-imported', { nodes, links });
     // ensure UI selects are refreshed
     // compatibility: some UI code still listens on window
@@ -424,7 +428,51 @@ function normalizeImportedGraph(raw, mapping = null) {
   const schemaSource = raw.schema || data.schema || null;
   const schema = normalizeSchema(schemaSource, nodes, links);
 
-  return { nodes, links, schema };
+  const { styleRules, pieRules } = extractImportedRules(raw, data);
+
+  return { nodes, links, schema, styleRules, pieRules };
+}
+
+function applyImportedRules(styleRules, pieRules) {
+  if (styleRules) {
+    graphConfig.styleRules = styleRules;
+    eventBus.emit('style-rules-updated', { rules: styleRules });
+  }
+  if (pieRules) {
+    graphConfig.pieRules = pieRules;
+    eventBus.emit('pie-rules-updated', { rules: pieRules });
+  }
+}
+
+function extractImportedRules(raw, data) {
+  const configSource = pickConfigSource(raw, data);
+  const styleRulesRaw = configSource?.styleRules ?? raw.styleRules ?? data?.styleRules;
+  const pieRulesRaw = configSource?.pieRules ?? raw.pieRules ?? data?.pieRules;
+  const styleRules = styleRulesRaw !== undefined ? normalizeStyleRules(styleRulesRaw) : null;
+  const pieRules = pieRulesRaw !== undefined ? normalizePieRules(pieRulesRaw) : null;
+  return { styleRules, pieRules };
+}
+
+function pickConfigSource(raw, data) {
+  const candidates = [raw?.config, raw?.graphConfig, raw?.settings, data];
+  return candidates.find(c => c && typeof c === 'object' && !Array.isArray(c)) || null;
+}
+
+function normalizeStyleRules(data) {
+  if (!data) return { nodes: [], links: [] };
+  if (Array.isArray(data)) return { nodes: data, links: [] };
+  return {
+    nodes: Array.isArray(data.nodes) ? data.nodes : [],
+    links: Array.isArray(data.links) ? data.links : []
+  };
+}
+
+function normalizePieRules(data) {
+  if (!data) return { nodes: [] };
+  if (Array.isArray(data)) return { nodes: data };
+  return {
+    nodes: Array.isArray(data.nodes) ? data.nodes : []
+  };
 }
 
 function extractNodeId(node, idx) {

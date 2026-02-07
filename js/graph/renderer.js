@@ -584,11 +584,8 @@ console.log("Renderer initialized with graph config:", graphConfig);
         .scaleExtent([0.5, 3])
         .filter(event => event.button === 2 || event.type === "wheel")
         .on('zoom', event => {
-          if (event.sourceEvent && event.sourceEvent.button === 2) {
-            this.g.attr('transform', `translate(${event.transform.x},${event.transform.y})`);
-          } else {
-            this.g.attr('transform', `translate(${event.transform.x},${event.transform.y}) scale(${event.transform.k})`);
-          }
+          // Toujours appliquer translate + scale pour garder une transformation cohérente
+          this.g.attr('transform', event.transform);
         })
     );
     

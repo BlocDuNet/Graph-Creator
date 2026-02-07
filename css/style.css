@@ -83,7 +83,7 @@ svg {
 .cluster-1 { fill: #4e79a7; }
 .cluster-2 { fill: #59a14f; }
 .cluster-3 { fill: #e15759; }
-/* â€¦ vous pouvez ajouter plus de classes cluster-N â€¦ */
+/* ... vous pouvez ajouter plus de classes cluster-N ... */
 
 /* ======================================
    3. LAYOUT COMPONENTS
@@ -190,7 +190,7 @@ th, td {
 }
 
 .section-header .btn-link::before {
-  content: "â–¶";
+  content: "\25B6";
   margin-right: 0.5rem;
   font-size: 0.8rem;
   transition: transform 0.2s;

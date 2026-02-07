@@ -211,6 +211,7 @@ export class InteractionManager {
     const transform = d3.zoomTransform(this.svg.node());
     const point = transform.invert(d3.pointer(event));
     const newNode = this.graphState.createNode(point[0], point[1]);
+    this.pinNewNode(newNode);
     
     // Sélectionner explicitement le nouveau nœud
     this.graphState.clearSelection();
@@ -234,6 +235,7 @@ export class InteractionManager {
       // Appliquer la transformation inverse du zoom/pan si elle existe
       const transform = d3.zoomTransform(svgElement);
       const adjustedPoint = transform.invert(point);
+      if (!Number.isFinite(adjustedPoint[0]) || !Number.isFinite(adjustedPoint[1])) return;
       
       const defaultNodeSize = this.graphState.globalSettings.defaultNodeSize;
       
@@ -244,6 +246,7 @@ export class InteractionManager {
       
       if (!existing) {
         const newNode = this.graphState.createNode(adjustedPoint[0], adjustedPoint[1]);
+        this.pinNewNode(newNode);
         this.graphState.createLink(this.graphState.selectedNode, newNode);
         this.renderer.updateGraph();
         
@@ -311,5 +314,17 @@ export class InteractionManager {
         event.preventDefault();
       }
     });
+  }
+
+  pinNewNode(node) {
+    if (!node) return;
+    node.fx = node.x;
+    node.fy = node.y;
+    // RelÃ¢cher rapidement pour laisser la simulation agir ensuite
+    setTimeout(() => {
+      if (!node) return;
+      delete node.fx;
+      delete node.fy;
+    }, 300);
   }
 }
