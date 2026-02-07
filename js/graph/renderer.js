@@ -1,5 +1,5 @@
 ﻿/**
- * GÃ¨re le rendu du graphe avec D3
+ * Gere le rendu du graphe avec D3
  */
 import { graphConfig } from '../config/index.js';
 import eventBus from '../services/EventBus.js';
@@ -12,16 +12,16 @@ export class GraphRenderer {
     this.width = +this.svg.attr('width');
     this.height = +this.svg.attr('height');
     
-    // CrÃ©ation du groupe principal pour le graphe
+    // Creation du groupe principal pour le graphe
     this.g = this.svg.append('g');
     
     // Configuration de la simulation de forces
     this.simulation = this.createForceSimulation();
     
-    // CrÃ©ation des dÃ©finitions de marqueurs (flÃ¨ches)
+    // Creation des definitions de marqueurs (fleches)
     this.createArrowDefinitions();
     
-    // MÃ©morisation de la derniÃ¨re configuration de marqueurs
+    // Memorisation de la derniere configuration de marqueurs
     
     this.ruleCache = new Map();
     eventBus.on('style-rules-updated', () => this.ruleCache.clear());
@@ -30,7 +30,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
   }
   
   /**
-   * CrÃ©e la simulation de forces D3
+   * Cree la simulation de forces D3
    */
   createForceSimulation() {
     const idField = this.graphState.globalSettings.nodeIdField;
@@ -39,7 +39,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
     console.log(`Creating force simulation with: linkStrength=${linkStrength}, linkDistance=${linkDistance}, chargeStrength=${chargeStrength}, centerStrength=${centerStrength}`);
     
     const forceLink = d3.forceLink()
-      .id(d => d[idField] ?? d.id)     // â† use custom id field
+      .id(d => d[idField] ?? d.id)     // use custom id field
       .distance(linkDistance)
       .strength(linkStrength);
       
@@ -49,7 +49,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
     const forceCenter = d3.forceCenter(this.width / 2, this.height / 2)
       .strength(centerStrength);
     
-    // RÃ©duire alpha et decay pour une simulation plus stable
+    // Reduire alpha et decay pour une simulation plus stable
     return d3.forceSimulation()
       .force('link', forceLink)
       .force('charge', forceCharge)
@@ -59,7 +59,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
   }
   
   /**
-   * Met Ã  jour les forces de la simulation
+   * Met a jour les forces de la simulation
    */
   updateForces() {
     const { linkStrength, linkDistance, chargeStrength, centerStrength } = graphConfig.forces;
@@ -76,26 +76,26 @@ console.log("Renderer initialized with graph config:", graphConfig);
     this.simulation.force('center')
       .strength(centerStrength);
     
-    // RedÃ©marrer la simulation avec une alpha Ã©levÃ©e pour appliquer les changements
+    // Redemarrer la simulation avec une alpha elevee pour appliquer les changements
     this.simulation.alpha(1).restart();
   }
 
   /**
-   * CrÃ©e les dÃ©finitions de marqueurs (flÃ¨ches) pour les liens
+   * Cree les definitions de marqueurs (fleches) pour les liens
    */
   createArrowDefinitions() {
-    // SÃ©rialiser la config courante
+    // Serialiser la config courante
     const currentConfig = JSON.stringify(graphConfig.markers);
-    // Ne rien faire si inchangÃ©
+    // Ne rien faire si inchange
     if (this._lastMarkerConfig === currentConfig) return;
-    // Mettre Ã  jour le cache
+    // Mettre a jour le cache
     this._lastMarkerConfig = currentConfig;
     
-    // Supprimer et recrÃ©er les dÃ©finitions
+    // Supprimer et recreer les definitions
     d3.select("svg defs").selectAll("*").remove();
     const defs = d3.select("svg defs");
     
-    // CrÃ©er un marqueur de flÃ¨che standard
+    // Creer un marqueur de fleche standard
     defs.append("marker")
       .attr("id", "arrowhead")
       .attr("viewBox", "-10 -10 20 20")
@@ -109,7 +109,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
       .attr("fill", "#000")
       .attr("stroke", "none");
       
-    // Marqueur pour les liens sÃ©lectionnÃ©s
+    // Marqueur pour les liens selectionnes
     defs.append("marker")
       .attr("id", "arrowhead-selected")
       .attr("viewBox", "-10 -10 20 20")
@@ -137,7 +137,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
       .attr("fill", "#000")
       .attr("stroke", "none");
     
-    // Marqueur pour les auto-liens sÃ©lectionnÃ©s
+    // Marqueur pour les auto-liens selectionnes
     defs.append("marker")
       .attr("id", "arrowhead-loop-selected")
       .attr("viewBox", "-10 -10 20 20")
@@ -159,51 +159,51 @@ console.log("Renderer initialized with graph config:", graphConfig);
     const idField = this.graphState.globalSettings.nodeIdField;
     const { baseCurvature, loopCurvature, curvatureStep } = graphConfig.linkStyle;
     
-    // Cas spÃ©cial pour les auto-liens (boucles)
+    // Cas special pour les auto-liens (boucles)
     if (source[idField] === target[idField]) {
       return loopCurvature;
     }
     
-    // DÃ©terminer la direction de ce lien
+    // Determiner la direction de ce lien
     const isForward = source[idField] < target[idField];
     
-    // Trouver tous les liens entre cette paire de nÅ“uds
+    // Trouver tous les liens entre cette paire de n"uds
     const parallelLinks = this.graphState.links.filter(l => 
       (l.source[idField] === source[idField] && l.target[idField] === target[idField]) || 
       (l.source[idField] === target[idField] && l.target[idField] === source[idField])
     );
     
-    // SÃ©parer en deux groupes selon la direction
+    // Separer en deux groupes selon la direction
     const forwardLinks = parallelLinks.filter(l => l.source[idField] < l.target[idField]);
     const backwardLinks = parallelLinks.filter(l => l.source[idField] > l.target[idField]);
     
-    // Si c'est le seul lien entre ces nÅ“uds, appliquer la courbure de base
+    // Si c'est le seul lien entre ces n"uds, appliquer la courbure de base
     if (parallelLinks.length === 1) {
       return isForward ? baseCurvature : -baseCurvature;
     }
     
-    // Trouver l'index de ce lien spÃ©cifique dans le groupe appropriÃ©
+    // Trouver l'index de ce lien specifique dans le groupe approprie
     const targetGroup = isForward ? forwardLinks : backwardLinks;
     const linkIndex = targetGroup.findIndex(l => l.id === linkId);
     
     // Calculer la courbure en fonction de l'index et du pas de courbure
     const calculatedCurvature = baseCurvature + (curvatureStep * linkIndex);
     
-    // Assurer que les directions opposÃ©es ont des courbures opposÃ©es
+    // Assurer que les directions opposees ont des courbures opposees
     return isForward ? calculatedCurvature : -calculatedCurvature;
   }
   
   /**
-   * Met Ã  jour les nÅ“uds du graphe
+   * Met a jour les n"uds du graphe
    */
   updateNodes() {
     const { nodeLabelField, nodeSizeField, defaultNodeSize, nodeIdField } = this.graphState.globalSettings;
 
-    // SÃ©lection des nÅ“uds avec correspondance de donnÃ©es
+    // Selection des n"uds avec correspondance de donnees
     const nodeSelection = this.g.selectAll('.node')
       .data(this.graphState.nodes, d => d.id);
 
-    // CrÃ©ation des nouveaux nÅ“uds
+    // Creation des nouveaux n"uds
     const nodeEnter = nodeSelection.enter()
       .append('g')
       .attr('class', 'node');
@@ -223,7 +223,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
         return nodeIdField ? (d[nodeIdField] || "") : "";
       });
 
-    // Fusion et mise Ã  jour des nÅ“uds existants
+    // Fusion et mise a jour des n"uds existants
     const merged = nodeSelection.merge(nodeEnter)
       .classed('selected', d => d === this.graphState.selectedNode);
 
@@ -237,7 +237,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
       d.__pie = this.getPieForNode(d, renderSize);
     });
 
-    // Mise Ã  jour du cercle
+    // Mise a jour du cercle
     merged.select('circle')
       .attr('r', d => d.__renderSize || defaultNodeSize)
       .attr('fill', d => this.getNodeFill(d))
@@ -246,7 +246,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
       .attr('opacity', d => this.getNodeOpacity(d))
       .style('display', d => (d.__style?.shape === 'rect' ? 'none' : ''));
 
-    // Mise Ã  jour du rectangle (si besoin)
+    // Mise a jour du rectangle (si besoin)
     merged.select('.node-rect')
       .attr('x', d => -(d.__renderSize || defaultNodeSize))
       .attr('y', d => -(d.__renderSize || defaultNodeSize))
@@ -258,7 +258,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
       .attr('opacity', d => this.getNodeOpacity(d))
       .style('display', d => (d.__style?.shape === 'rect' ? '' : 'none'));
 
-    // Mise Ã  jour du texte
+    // Mise a jour du texte
     merged.select('text')
       .attr('dx', d => (d.__renderSize || defaultNodeSize) + 5)
       .attr('fill', d => d.__style?.labelColor || null)
@@ -272,37 +272,37 @@ console.log("Renderer initialized with graph config:", graphConfig);
 
     this.updateNodePieCharts(merged);
 
-    // Suppression des nÅ“uds qui ne sont plus dans les donnÃ©es
+    // Suppression des n"uds qui ne sont plus dans les donnees
     nodeSelection.exit().remove();
 
     return nodeEnter;
   }
   
   /**
-   * Met Ã  jour les liens du graphe
+   * Met a jour les liens du graphe
    */
   updateLinks() {
     const idField = this.graphState.globalSettings.nodeIdField;
-    const { defaultLinkWidth } = this.graphState.globalSettings; // â† utilisation unique
+    const { defaultLinkWidth } = this.graphState.globalSettings; // utilisation unique
     const { curvedLinks } = graphConfig.linkStyle;
     
-    // PrÃ©calculer les courbures pour chaque lien
+    // Precalculer les courbures pour chaque lien
     this.graphState.links.forEach(link => {
-      // VÃ©rifier si c'est un auto-lien
+      // Verifier si c'est un auto-lien
       link.isLoop = link.source[idField] === link.target[idField];
       link.curvature = this.calculateLinkCurvature(link.source, link.target, link.id);
       
-      // Toujours remplacer la largeur par la valeur par dÃ©faut si non dÃ©finie
+      // Toujours remplacer la largeur par la valeur par defaut si non definie
       if (link.width === undefined) {
         link.width = parseFloat(defaultLinkWidth);
       }
     });
     
-    // SÃ©lectionner les liens avec un ID unique pour chaque lien
+    // Selectionner les liens avec un ID unique pour chaque lien
     const getLinkId = link =>
       `${link.source[idField] ?? link.source.id}` +
       `-${link.target[idField] ?? link.target.id}` +
-      `-${link.id}`;              // â† include custom id in key
+      `-${link.id}`;              // include custom id in key
 
     const linkSelection = this.g.selectAll('.link').data(this.graphState.links, getLinkId);
     const linkEnter = linkSelection.enter()
@@ -311,7 +311,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
       .attr('fill', 'none')
       .attr('vector-effect', 'non-scaling-stroke');
     
-    // Fusion et mise Ã  jour
+    // Fusion et mise a jour
     const allLinks = linkSelection.merge(linkEnter)
       .each(d => {
         const baseWidth = parseFloat(d.width) || defaultLinkWidth;
@@ -337,32 +337,32 @@ console.log("Renderer initialized with graph config:", graphConfig);
     
     linkSelection.exit().remove();
 
-    // Stocker la sÃ©lection pour le ticked()
+    // Stocker la selection pour le ticked()
     this.linkPaths = allLinks;
 
     return linkEnter;
   }
   
   /**
-   * Met Ã  jour les labels des liens
+   * Met a jour les labels des liens
    */
   updateLinkLabels() {
     const idField = this.graphState.globalSettings.nodeIdField;
     const { linkLabelField } = this.graphState.globalSettings;
     
-    // SÃ©lectionner les labels des liens
+    // Selectionner les labels des liens
     const linkLabels = this.g.selectAll('.link-label')
       .data(this.graphState.links, d =>
         `${d.source[idField] ?? d.source.id}-${d.target[idField] ?? d.target.id}-${d.id}`
-      );  // â† include link id to disambiguate parallel links
+      );  // include link id to disambiguate parallel links
     
-    // CrÃ©er les nouveaux labels
+    // Creer les nouveaux labels
     const labelEnter = linkLabels.enter()
       .append('text')
       .attr('class', 'link-label')
       .attr('dx', 10);
     
-    // Fusion et mise Ã  jour
+    // Fusion et mise a jour
     labelEnter.merge(linkLabels)
       .classed('selected', d => d === this.graphState.selectedLink)
       .attr('fill', d => d.__style?.labelColor || null)
@@ -372,26 +372,26 @@ console.log("Renderer initialized with graph config:", graphConfig);
         return this.resolveLangValue(val) || "";
       });
     
-    // Suppression des labels qui ne sont plus dans les donnÃ©es
+    // Suppression des labels qui ne sont plus dans les donnees
     linkLabels.exit().remove();
     
     return labelEnter;
   }
   
   /**
-   * Fonction appelÃ©e Ã  chaque pas de simulation
+   * Fonction appelee a chaque pas de simulation
    */
   ticked() {
     const { curvedLinks } = graphConfig.linkStyle;
     
-    // Utiliser la sÃ©lection mise en cache au lieu de relancer selectAll
+    // Utiliser la selection mise en cache au lieu de relancer selectAll
     (this.linkPaths || this.g.selectAll('.link'))
       .attr('d', d => {
-        // RÃ©cupÃ©rer les rayons des nÅ“uds (avec regles de style)
+        // Recuperer les rayons des n"uds (avec regles de style)
         const rSource = this.getNodeRenderSize(d.source);
         const rTarget = this.getNodeRenderSize(d.target);
         
-        // VÃ©rifier s'il s'agit d'un auto-lien
+        // Verifier s'il s'agit d'un auto-lien
         if (d.isLoop) {
           return this.drawSelfLoop(d.source.x, d.source.y, rSource);
         }
@@ -401,14 +401,14 @@ console.log("Renderer initialized with graph config:", graphConfig);
         const dy = d.target.y - d.source.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
-        // Protection contre division par zÃ©ro
+        // Protection contre division par zero
         if (dist < 0.1) return `M${d.source.x},${d.source.y}L${d.source.x},${d.source.y}`;
         
         // Vecteur unitaire
         const unitX = dx / dist;
         const unitY = dy / dist;
         
-        // Points ajustÃ©s
+        // Points ajustes
         const adjustedStart = {
           x: d.source.x + unitX * rSource,
           y: d.source.y + unitY * rSource
@@ -425,14 +425,14 @@ console.log("Renderer initialized with graph config:", graphConfig);
           return `M${adjustedStart.x},${adjustedStart.y} L${adjustedEnd.x},${adjustedEnd.y}`;
         }
         
-        // Courbe de BÃ©zier
+        // Courbe de Bezier
         const curvature = d.curvature || 0.05;
         
         // Vecteur perpendiculaire
         const perpX = -unitY;
         const perpY = unitX;
         
-        // Point mÃ©dian dÃ©calÃ©
+        // Point median decale
         const midX = (adjustedStart.x + adjustedEnd.x) / 2;
         const midY = (adjustedStart.y + adjustedEnd.y) / 2;
         
@@ -442,11 +442,11 @@ console.log("Renderer initialized with graph config:", graphConfig);
         return `M${adjustedStart.x},${adjustedStart.y} Q${ctrlX},${ctrlY} ${adjustedEnd.x},${adjustedEnd.y}`;
       });
     
-    // Mise Ã  jour des positions des nÅ“uds
+    // Mise a jour des positions des n"uds
     this.g.selectAll('.node')
       .attr('transform', d => `translate(${d.x},${d.y})`);
     
-    // Mise Ã  jour des positions des labels de liens
+    // Mise a jour des positions des labels de liens
     this.g.selectAll('.link-label')
       .attr('transform', d => {
         const { curvedLinks } = graphConfig.linkStyle;
@@ -474,12 +474,12 @@ console.log("Renderer initialized with graph config:", graphConfig);
         if (dist === 0) return "translate(0,0)";
         
         const curvature = d.curvature || 0.05;
-        const t = 0.55; // ParamÃ¨tre pour la position le long de la courbe
+        const t = 0.55; // Parametre pour la position le long de la courbe
         
         const perpX = -(ty - sy) / dist;
         const perpY = (tx - sx) / dist;
         
-        // Calcul du point sur la courbe de BÃ©zier
+        // Calcul du point sur la courbe de Bezier
         const midX = (1-t)*(1-t)*sx + 2*(1-t)*t*((sx + tx)/2 + perpX*dist*curvature) + t*t*tx;
         const midY = (1-t)*(1-t)*sy + 2*(1-t)*t*((sy + ty)/2 + perpY*dist*curvature) + t*t*ty;
         
@@ -495,18 +495,18 @@ console.log("Renderer initialized with graph config:", graphConfig);
   drawSelfLoop(x, y, radius) {
     const { loopCurvature } = graphConfig.linkStyle;
     
-    // Dessiner une boucle au-dessus du nÅ“ud
+    // Dessiner une boucle au-dessus du n"ud
     const loopRadius = radius * loopCurvature;
     const startAngle = -Math.PI/2 - Math.PI/6;
     const endAngle = -Math.PI/2 + Math.PI/6;
     
-    // Points de contrÃ´le pour la courbe de BÃ©zier
+    // Points de controle pour la courbe de Bezier
     const startX = x + radius * Math.cos(startAngle);
     const startY = y + radius * Math.sin(startAngle);
     const endX = x + radius * Math.cos(endAngle);
     const endY = y + radius * Math.sin(endAngle);
     
-    // Point de contrÃ´le pour une courbe plus arrondie
+    // Point de controle pour une courbe plus arrondie
     const controlX = x;
     const controlY = y - loopRadius * 2;
     
@@ -514,10 +514,10 @@ console.log("Renderer initialized with graph config:", graphConfig);
   }
   
   /**
-   * Met Ã  jour l'affichage complet du graphe
+   * Met a jour l'affichage complet du graphe
    */
   updateGraph() {
-    // apply userâ€selected x/y fields before simulation
+    // apply user-selected x/y fields before simulation
     const { xField, yField } = this.graphState.globalSettings;
     if (xField || yField) {
       this.graphState.nodes.forEach(d => {
@@ -532,39 +532,39 @@ console.log("Renderer initialized with graph config:", graphConfig);
       });
     }
 
-    // CrÃ©er les dÃ©finitions de marqueurs
+    // Creer les definitions de marqueurs
     this.createArrowDefinitions();
     
-    // Stabiliser les nÅ“uds initiaux en les maintenant fixes temporairement
+    // Stabiliser les n"uds initiaux en les maintenant fixes temporairement
     const firstRun = !this._initialized;
     if (firstRun) {
-      // LibÃ©rer les positions fixes aprÃ¨s la premiÃ¨re initialisation
+      // Liberer les positions fixes apres la premiere initialisation
       setTimeout(() => {
         this.graphState.nodes.forEach(node => {
           delete node.fx;
           delete node.fy;
         });
-        // RedÃ©marrer la simulation avec une faible alpha
+        // Redemarrer la simulation avec une faible alpha
         this.simulation.alpha(0.3).restart();
       }, 1000);
       this._initialized = true;
     }
     
-    // Mettre Ã  jour les Ã©lÃ©ments visuels
+    // Mettre a jour les elements visuels
     const nodeEnter = this.updateNodes();
     const linkEnter = this.updateLinks();
     const labelEnter = this.updateLinkLabels();
     
-    // Mettre Ã  jour la simulation
+    // Mettre a jour la simulation
     this.simulation.nodes(this.graphState.nodes).on('tick', () => this.ticked());
     this.simulation.force('link').links(this.graphState.links);
     
-    // RedÃ©marrer la simulation avec une faible alpha pour Ã©viter trop de mouvement
+    // Redemarrer la simulation avec une faible alpha pour eviter trop de mouvement
     if (!firstRun) {
       this.simulation.alpha(0.3).restart();
     }
     
-    // notifier la mise Ã  jour du graphe
+    // notifier la mise a jour du graphe
     eventBus.emit('graph-updated');
     
     return {
@@ -584,7 +584,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
         .scaleExtent([0.5, 3])
         .filter(event => event.button === 2 || event.type === "wheel")
         .on('zoom', event => {
-          // Toujours appliquer translate + scale pour garder une transformation cohérente
+          // Toujours appliquer translate + scale pour garder une transformation cohrente
           this.g.attr('transform', event.transform);
         })
     );
@@ -661,6 +661,9 @@ console.log("Renderer initialized with graph config:", graphConfig);
     if (!ast) return false;
     try {
       return !!evaluateExpression(ast, {
+        graph: this.graphState,
+        target,
+        item,
         getField: name => this.graphState.resolveFieldValue(target, item, name)
       });
     } catch (e) {

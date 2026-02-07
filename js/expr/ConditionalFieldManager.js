@@ -20,6 +20,9 @@ export class ConditionalFieldManager {
     this.draggedEl = null;
     this.dropTarget = null;
     this.dropTargetEl = null;
+    this.conditionOnly = false;
+    this.conditionRequestId = null;
+    this.aiContextLabel = '';
     this.bindElements();
     this.bindEvents();
     this.initAiControls();
@@ -90,6 +93,9 @@ export class ConditionalFieldManager {
       validateBtn: document.getElementById('conditional-validate'),
       validateOutput: document.getElementById('conditional-validate-output')
     };
+    this.el.title = this.el.overlay?.querySelector('h6') || null;
+    this.el.description = this.el.overlay?.querySelector('p') || null;
+    this.el.resultTypeWrap = this.el.resultType?.closest('.col-md-6') || null;
   }
 
   initAiControls() {
@@ -103,7 +109,7 @@ export class ConditionalFieldManager {
       this.open(target, field);
     });
 
-    this.el.cancel?.addEventListener('click', () => this.hide());
+    this.el.cancel?.addEventListener('click', () => this.cancelConditionEditor());
     this.el.apply?.addEventListener('click', () => this.apply());
     this.el.mode?.addEventListener('change', () => this.toggleMode());
     this.el.visualKind?.addEventListener('change', () => this.toggleVisualKind());
@@ -163,9 +169,17 @@ export class ConditionalFieldManager {
       this.el.conditionRoot.addEventListener('drop', e => this.onDrop(e));
       this.el.conditionRoot.addEventListener('dragend', e => this.onDragEnd(e));
     }
+
+    eventBus.on('condition-editor-requested', e => {
+      const { requestId, target, expr, title } = e.detail || {};
+      if (!requestId || !target) return;
+      this.openConditionEditor({ requestId, target, expr: expr || '', title: title || '' });
+    });
   }
 
   open(target, field) {
+    this.setConditionOnlyMode(false);
+    this.aiContextLabel = 'Champ personnalise';
     this.current = { target, field };
     this.canonicalDirty = false;
     if (!this.el.overlay) return;
@@ -220,6 +234,85 @@ export class ConditionalFieldManager {
 
   hide() {
     this.el.overlay?.classList.add('hidden');
+    this.setConditionOnlyMode(false);
+    this.aiContextLabel = '';
+    this.conditionRequestId = null;
+  }
+
+  cancelConditionEditor() {
+    if (this.conditionOnly && this.conditionRequestId) {
+      eventBus.emit('condition-editor-cancelled', { requestId: this.conditionRequestId });
+    }
+    this.hide();
+  }
+
+  setConditionOnlyMode(enabled) {
+    this.conditionOnly = enabled;
+    if (this.el.thenElseBlock) this.el.thenElseBlock.classList.toggle('hidden', enabled);
+    if (this.el.elseBlock) this.el.elseBlock.classList.toggle('hidden', enabled);
+    if (this.el.resultTypeWrap) this.el.resultTypeWrap.classList.toggle('hidden', enabled);
+    if (this.el.visualKind) {
+      this.el.visualKind.disabled = enabled;
+      if (enabled) {
+        this.el.visualKind.value = 'condition';
+      }
+    }
+    if (enabled) {
+      if (this.el.title) this.el.title.textContent = 'Condition (regle)';
+      if (this.el.description) this.el.description.textContent = "Definissez une condition pour filtrer les elements.";
+    } else {
+      if (this.el.title) this.el.title.textContent = 'Champ personnalise';
+      if (this.el.description) {
+        this.el.description.textContent = 'Creez une expression simple ou avancee. Le mode visuel couvre les cas courants.';
+      }
+    }
+  }
+
+  openConditionEditor({ requestId, target, expr, title }) {
+    this.setConditionOnlyMode(true);
+    this.aiContextLabel = 'Regle';
+    this.conditionRequestId = requestId;
+    this.current = { target, field: '__condition__' };
+    this.canonicalDirty = false;
+    if (!this.el.overlay) return;
+
+    const fields = this.graphState.getFieldsByType(target);
+    this.availableFields = fields;
+    this.fillSelect(this.el.thenField, fields);
+    this.fillSelect(this.el.elseField, fields);
+    this.fillSelect(this.el.thenConcatA, fields);
+    this.fillSelect(this.el.thenConcatB, fields);
+    this.fillSelect(this.el.elseConcatA, fields);
+    this.fillSelect(this.el.elseConcatB, fields);
+    this.fillSelect(this.el.thenCalcLeftField, fields);
+    this.fillSelect(this.el.thenCalcRightField, fields);
+    this.fillSelect(this.el.elseCalcLeftField, fields);
+    this.fillSelect(this.el.elseCalcRightField, fields);
+
+    if (this.el.fieldName) {
+      this.el.fieldName.textContent = title ? `${title} (${target})` : `Regle (${target})`;
+    }
+
+    if (this.el.mode) this.el.mode.value = 'visual';
+    if (this.el.exprText) this.el.exprText.value = expr || '';
+    if (this.el.exprCanonical) this.el.exprCanonical.value = '';
+    if (this.el.exprError) this.el.exprError.textContent = '';
+    if (this.el.resultType) this.el.resultType.value = 'boolean';
+    this.setAiStatus('');
+    if (this.el.validateOutput) this.el.validateOutput.textContent = '';
+
+    if (expr) {
+      this.updateCanonicalFromExpression();
+      if (this.el.mode) this.el.mode.value = 'expression';
+    } else {
+      this.renderConditionGroup({});
+    }
+
+    this.toggleMode();
+    this.toggleVisualKind();
+    this.toggleThenElse();
+    this.toggleSources();
+    this.show();
   }
 
   detectVisualKind(entry) {
@@ -249,6 +342,9 @@ export class ConditionalFieldManager {
     this.el.elseBlock?.classList.toggle('hidden', !isCondition);
     if (this.el.thenLabel) this.el.thenLabel.textContent = isCondition ? 'Alors' : 'Expression';
     if (this.el.elseLabel && isCondition) this.el.elseLabel.textContent = 'Sinon';
+    if (this.conditionOnly && this.el.elseBlock) {
+      this.el.elseBlock.classList.add('hidden');
+    }
   }
 
   toggleThenElse() {
@@ -759,8 +855,19 @@ export class ConditionalFieldManager {
     if ((this.el.mode?.value || 'visual') !== 'visual') return;
     this.isSyncing = true;
     try {
-      const ast = this.buildAstFromVisual();
-      const canonical = serializeToFunctional(ast);
+      let canonical = '';
+      if (this.conditionOnly) {
+        const groupEl = this.el.conditionRoot?.querySelector('.condition-group');
+        const groupConfig = this.serializeConditionGroup(groupEl);
+        const hasItems = Array.isArray(groupConfig?.items) && groupConfig.items.length > 0;
+        if (hasItems) {
+          const conditionAst = this.buildConditionAstFromGroup(groupConfig);
+          canonical = serializeToFunctional(conditionAst);
+        }
+      } else {
+        const ast = this.buildAstFromVisual();
+        canonical = serializeToFunctional(ast);
+      }
       this.el.exprCanonical.value = canonical;
       this.el.exprError.textContent = '';
     } catch (e) {
@@ -790,7 +897,7 @@ export class ConditionalFieldManager {
     }
     const { target, field } = this.current;
     const fields = this.graphState.getFieldsByType(target).filter(f => f !== field);
-    const desiredType = this.el.resultType?.value || 'auto';
+    const desiredType = this.conditionOnly ? 'boolean' : (this.el.resultType?.value || 'auto');
     const prompt = getExpressionAssistantPrompt({
       request,
       target,
@@ -804,7 +911,7 @@ export class ConditionalFieldManager {
     sendAiRequest({
       prompt,
       model,
-      context: 'Champ personnalise',
+      context: this.aiContextLabel || 'Champ personnalise',
       abortController: this.aiAbortController,
       onComplete: (result) => {
         const expression = result?.expression || result?.expr || '';
@@ -836,6 +943,36 @@ export class ConditionalFieldManager {
 
   apply() {
     if (!this.current) return;
+    if (this.conditionOnly) {
+      const mode = this.el.mode?.value || 'visual';
+      let expr = '';
+      if (mode === 'expression') {
+        const raw = (this.el.exprText?.value || '').trim();
+        if (raw) {
+          try {
+            const ast = parseExpression(raw);
+            expr = serializeToFunctional(ast);
+          } catch (e) {
+            if (this.el.exprError) this.el.exprError.textContent = e.message || 'Expression invalide';
+            return;
+          }
+        }
+      } else {
+        const groupEl = this.el.conditionRoot?.querySelector('.condition-group');
+        const groupConfig = this.serializeConditionGroup(groupEl);
+        const hasItems = Array.isArray(groupConfig?.items) && groupConfig.items.length > 0;
+        if (hasItems) {
+          const conditionAst = this.buildConditionAstFromGroup(groupConfig);
+          expr = serializeToFunctional(conditionAst);
+        }
+      }
+
+      if (this.conditionRequestId) {
+        eventBus.emit('condition-editor-applied', { requestId: this.conditionRequestId, expr });
+      }
+      this.hide();
+      return;
+    }
     const { target, field } = this.current;
     const mode = this.el.mode?.value || 'visual';
     let ast = null;
@@ -1018,7 +1155,12 @@ export class ConditionalFieldManager {
 
     items.forEach(item => {
       try {
-        const ctx = { getField: name => this.graphState.resolveFieldValue(target, item, name) };
+        const ctx = {
+          graph: this.graphState,
+          target,
+          item,
+          getField: name => this.graphState.resolveFieldValue(target, item, name)
+        };
         if (conditionAst) {
           const ok = !!evaluateExpression(conditionAst, ctx);
           if (ok) matchedIds.push(item.id);

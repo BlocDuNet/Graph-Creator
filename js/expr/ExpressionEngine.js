@@ -405,20 +405,150 @@ function dateDiff(a, b, unit = 'days') {
   return diffMs / 86400000;
 }
 
-function formatNumber(value, decimals = 0, decimalSep = '.') {
-  const num = toNumber(value);
-  let dec = Math.round(toNumber(decimals));
-  if (Number.isNaN(dec) || dec < 0) dec = 0;
-  if (dec > 20) dec = 20;
-  let out = num.toFixed(dec);
-  const sep = String(decimalSep || '.').toLowerCase();
-  if (sep === ',' || sep === 'comma' || sep === 'virgule') {
-    out = out.replace('.', ',');
+  function formatNumber(value, decimals = 0, decimalSep = '.') {
+    const num = toNumber(value);
+    let dec = Math.round(toNumber(decimals));
+    if (Number.isNaN(dec) || dec < 0) dec = 0;
+    if (dec > 20) dec = 20;
+    let out = num.toFixed(dec);
+    const sep = String(decimalSep || '.').toLowerCase();
+    if (sep === ',' || sep === 'comma' || sep === 'virgule') {
+      out = out.replace('.', ',');
+    }
+    return out;
   }
-  return out;
-}
 
-const FUNCTIONS = {
+  function getGraph(ctx) {
+    return ctx && ctx.graph ? ctx.graph : null;
+  }
+
+  function getNodeFromContext(ctx, which = '') {
+    const graph = getGraph(ctx);
+    if (!graph) return null;
+    if (ctx?.target === 'node') return ctx.item || null;
+    if (ctx?.target === 'link') {
+      if (!ctx.item) return null;
+      if (String(which).toLowerCase() === 'target') return ctx.item.target || null;
+      return ctx.item.source || null;
+    }
+    return null;
+  }
+
+  function getExprAstFromCache(text, ctx) {
+    const trimmed = String(text || '').trim();
+    if (!trimmed) return null;
+    if (!ctx.__exprCache) ctx.__exprCache = new Map();
+    if (ctx.__exprCache.has(trimmed)) return ctx.__exprCache.get(trimmed);
+    try {
+      const ast = parseExpression(trimmed);
+      ctx.__exprCache.set(trimmed, ast);
+      return ast;
+    } catch (e) {
+      ctx.__exprCache.set(trimmed, null);
+      return null;
+    }
+  }
+
+  function evalForNode(ast, ctx, node) {
+    if (!ast || !ctx || !node) return null;
+    const graph = getGraph(ctx);
+    if (!graph) return null;
+    return evaluateExpression(ast, {
+      graph,
+      target: 'node',
+      item: node,
+      __exprCache: ctx.__exprCache,
+      getField: name => graph.resolveFieldValue('node', node, name)
+    });
+  }
+
+  function evalForLink(ast, ctx, link) {
+    if (!ast || !ctx || !link) return null;
+    const graph = getGraph(ctx);
+    if (!graph) return null;
+    return evaluateExpression(ast, {
+      graph,
+      target: 'link',
+      item: link,
+      __exprCache: ctx.__exprCache,
+      getField: name => graph.resolveFieldValue('link', link, name)
+    });
+  }
+
+  const GRAPH_FUNCTIONS = {
+    degree: (args, ctx) => {
+      const graph = getGraph(ctx);
+      const node = getNodeFromContext(ctx, args?.[0]);
+      if (!graph || !node) return 0;
+      return graph.getNeighbors(node.id)?.length || 0;
+    },
+    linkCount: (args, ctx) => {
+      const graph = getGraph(ctx);
+      const node = getNodeFromContext(ctx, args?.[0]);
+      if (!graph || !node) return 0;
+      return graph.getNodeLinks(node.id)?.length || 0;
+    },
+    hasNeighbor: (args, ctx) => {
+      const graph = getGraph(ctx);
+      const node = getNodeFromContext(ctx);
+      const exprText = String(args?.[0] ?? '').trim();
+      if (!graph || !node || !exprText) return false;
+      const ast = getExprAstFromCache(exprText, ctx);
+      if (!ast) return false;
+      const neighbors = graph.getNeighbors(node.id) || [];
+      for (const n of neighbors) {
+        if (toBoolean(evalForNode(ast, ctx, n))) return true;
+      }
+      return false;
+    },
+    neighborCount: (args, ctx) => {
+      const graph = getGraph(ctx);
+      const node = getNodeFromContext(ctx);
+      const exprText = String(args?.[0] ?? '').trim();
+      if (!graph || !node || !exprText) return 0;
+      const ast = getExprAstFromCache(exprText, ctx);
+      if (!ast) return 0;
+      const neighbors = graph.getNeighbors(node.id) || [];
+      let count = 0;
+      neighbors.forEach(n => {
+        if (toBoolean(evalForNode(ast, ctx, n))) count += 1;
+      });
+      return count;
+    },
+    sumNeighbors: (args, ctx) => {
+      const graph = getGraph(ctx);
+      const node = getNodeFromContext(ctx);
+      const exprText = String(args?.[0] ?? '').trim();
+      if (!graph || !node || !exprText) return 0;
+      const ast = getExprAstFromCache(exprText, ctx);
+      if (!ast) return 0;
+      const neighbors = graph.getNeighbors(node.id) || [];
+      let total = 0;
+      neighbors.forEach(n => {
+        total += toNumber(evalForNode(ast, ctx, n));
+      });
+      return total;
+    },
+    sumLinks: (args, ctx) => {
+      const graph = getGraph(ctx);
+      const node = getNodeFromContext(ctx);
+      const exprText = String(args?.[0] ?? '').trim();
+      const direction = String(args?.[1] ?? 'both').toLowerCase();
+      if (!graph || !node || !exprText) return 0;
+      const ast = getExprAstFromCache(exprText, ctx);
+      if (!ast) return 0;
+      const links = graph.getNodeLinks(node.id) || [];
+      let total = 0;
+      links.forEach(l => {
+        if (direction === 'out' && l.source?.id !== node.id) return;
+        if (direction === 'in' && l.target?.id !== node.id) return;
+        total += toNumber(evalForLink(ast, ctx, l));
+      });
+      return total;
+    }
+  };
+
+  const FUNCTIONS = {
   if: (cond, a, b) => (toBoolean(cond) ? a : b),
   concat: (...args) => args.map(v => (v == null ? '' : String(v))).join(''),
   add: (a, b) => toNumber(a) + toNumber(b),
@@ -495,17 +625,19 @@ export function evaluateExpression(ast, ctx = {}) {
       const fn = FUNCTIONS[ast.op];
       return fn ? fn(left, right) : '';
     }
-    case 'call': {
-      if (ast.name === 'field' && ast.args?.length === 1) {
-        const arg = evaluateExpression(ast.args[0], ctx);
-        const getter = ctx.getField || (() => null);
-        return getter(String(arg));
+      case 'call': {
+        if (ast.name === 'field' && ast.args?.length === 1) {
+          const arg = evaluateExpression(ast.args[0], ctx);
+          const getter = ctx.getField || (() => null);
+          return getter(String(arg));
+        }
+        const args = (ast.args || []).map(arg => evaluateExpression(arg, ctx));
+        const graphFn = GRAPH_FUNCTIONS[ast.name];
+        if (graphFn) return graphFn(args, ctx);
+        const fn = FUNCTIONS[ast.name];
+        if (!fn) return '';
+        return fn(...args);
       }
-      const fn = FUNCTIONS[ast.name];
-      if (!fn) return '';
-      const args = (ast.args || []).map(arg => evaluateExpression(arg, ctx));
-      return fn(...args);
-    }
     default:
       return '';
   }
@@ -537,8 +669,8 @@ export function inferExpressionType(ast, getFieldType) {
         const t2 = infer(node.args?.[2]);
         return t1 === t2 ? t1 : 'text';
       }
-      if (['add', 'sub', 'mul', 'div', 'len', 'round', 'min', 'max', 'toNumber'].includes(name)) return 'number';
-      if (['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'and', 'or', 'not', 'toBool', 'contains', 'startsWith', 'endsWith', 'regex'].includes(name)) return 'boolean';
+      if (['add', 'sub', 'mul', 'div', 'len', 'round', 'min', 'max', 'toNumber', 'degree', 'linkCount', 'neighborCount', 'sumNeighbors', 'sumLinks'].includes(name)) return 'number';
+      if (['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'and', 'or', 'not', 'toBool', 'contains', 'startsWith', 'endsWith', 'regex', 'hasNeighbor'].includes(name)) return 'boolean';
       if (['concat', 'upper', 'lower', 'trim', 'toText', 'coalesce', 'replace', 'substring', 'formatNumber'].includes(name)) return 'text';
       if (['dateDiff'].includes(name)) return 'number';
       if (name === 'field') return 'text';

@@ -55,6 +55,7 @@ export class StyleRuleManager {
     this.rules.links = this.rules.links || [];
     this.pieRules = graphConfig.pieRules || { nodes: [] };
     this.pieRules.nodes = this.pieRules.nodes || [];
+    this.conditionRequests = new Map();
     this.bindElements();
     this.bindEvents();
     this.render();
@@ -107,6 +108,31 @@ export class StyleRuleManager {
       this.pieRules = graphConfig.pieRules;
       this.renderPieRules();
     });
+
+    eventBus.on('condition-editor-applied', event => {
+      const detail = event?.detail || {};
+      const requestId = detail.requestId;
+      if (!requestId) return;
+      const req = this.conditionRequests.get(requestId);
+      if (!req) return;
+      this.conditionRequests.delete(requestId);
+      const expr = (detail.expr || '').trim();
+      if (req.type === 'style') {
+        const rule = this.findStyleRule(req.ruleId);
+        if (!rule) return;
+        rule.when = expr;
+        this.commitStyleRules();
+      } else if (req.type === 'pie') {
+        const rule = this.findPieRule(req.ruleId);
+        if (!rule) return;
+        rule.when = expr;
+        this.commitPieRules();
+      }
+    });
+    eventBus.on('condition-editor-cancelled', event => {
+      const detail = event?.detail || {};
+      if (detail.requestId) this.conditionRequests.delete(detail.requestId);
+    });
   }
 
   render() {
@@ -151,7 +177,10 @@ export class StyleRuleManager {
         </div>
         <div class="rule-row">
           <label class="small">Condition (expression)</label>
-          <input class="form-control form-control-sm" data-field="when" value="${rule.when || ''}" placeholder='ex: contains(status,"ok")'>
+          <div class="rule-when">
+            <input class="form-control form-control-sm" data-field="when" value="${rule.when || ''}" placeholder='ex: contains(status,"ok")'>
+            <button class="btn btn-sm btn-outline-secondary" data-action="edit-when">Builder</button>
+          </div>
         </div>
         ${rule.target === 'node' ? `
         <div class="rule-grid">
@@ -242,7 +271,10 @@ export class StyleRuleManager {
         </div>
         <div class="rule-row">
           <label class="small">Condition (expression)</label>
-          <input class="form-control form-control-sm" data-field="when" value="${rule.when || ''}" placeholder='ex: gt(score,50)'>
+          <div class="rule-when">
+            <input class="form-control form-control-sm" data-field="when" value="${rule.when || ''}" placeholder='ex: gt(score,50)'>
+            <button class="btn btn-sm btn-outline-secondary" data-action="edit-when">Builder</button>
+          </div>
         </div>
         <div class="rule-grid">
           <div>
@@ -314,6 +346,10 @@ export class StyleRuleManager {
     if (!ruleId) return;
     if (btn.dataset.action === 'remove') {
       this.removeStyleRule(ruleId);
+    } else if (btn.dataset.action === 'edit-when') {
+      const rule = this.findStyleRule(ruleId);
+      if (!rule) return;
+      this.openConditionEditor('style', ruleId, rule.target, rule.when || '', rule.name || 'Regle');
     }
   }
 
@@ -359,7 +395,22 @@ export class StyleRuleManager {
     if (!ruleId) return;
     if (btn.dataset.action === 'remove') {
       this.removePieRule(ruleId);
+    } else if (btn.dataset.action === 'edit-when') {
+      const rule = this.findPieRule(ruleId);
+      if (!rule) return;
+      this.openConditionEditor('pie', ruleId, 'node', rule.when || '', rule.name || 'Pie chart');
     }
+  }
+
+  openConditionEditor(type, ruleId, target, expr, name) {
+    const requestId = uid('cond');
+    this.conditionRequests.set(requestId, { type, ruleId });
+    eventBus.emit('condition-editor-requested', {
+      requestId,
+      target,
+      expr,
+      title: `${type === 'pie' ? 'Pie chart' : 'Regle'}: ${name || ''}`.trim()
+    });
   }
 
   setRuleValue(rule, path, value) {

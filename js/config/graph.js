@@ -16,22 +16,22 @@ export const graphConfig = {
   forces: {
     linkStrength: 0,
     linkDistance: 200,
-    chargeStrength: -300, // Valeur nÃ©gative par dÃ©faut pour une rÃ©pulsion entre nÅ“uds
-    centerStrength: 0.3   // Force de centrage modÃ©rÃ©e
+    chargeStrength: 0, // Force de charge
+    centerStrength: 0  // Force de centrage
   },
   
   // Style des liens
   linkStyle: {
-    curvedLinks: true,   // Valeur par dÃ©faut: liens courbes
+    curvedLinks: true,   // Valeur par défaut: liens courbes
     baseCurvature: 0.2,
     loopCurvature: 1.5,
     curvatureStep: 0.1
   },
   
-  // Option pour forcer la recrÃ©ation des liens
+  // Option pour forcer la recréation des liens
   forceRecreateLinks: true,
   
-  // Configuration des marqueurs (flÃ¨ches)
+  // Configuration des marqueurs (flèches)
   markers: {
     arrowWidth: 8,
     arrowHeight: 8,
@@ -67,8 +67,8 @@ function normalizePieRules(data) {
 
 /**
  * Charge un fichier de configuration JSON
- * @param {string} filePath - Chemin du fichier Ã  charger
- * @returns {Promise<Object>} - DonnÃ©es de configuration JSON
+ * @param {string} filePath - Chemin du fichier à charger
+ * @returns {Promise<Object>} - Données de configuration JSON
  */
 async function loadConfigFile(filePath) {
   try {
@@ -76,7 +76,7 @@ async function loadConfigFile(filePath) {
     const response = await fetch(filePath);
     if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
     const jsonObj = await response.json();
-    console.log(`Fichier chargÃ© avec succÃ¨s: ${filePath}`, jsonObj);
+    console.log(`Fichier chargé avec succès: ${filePath}`, jsonObj);
     return jsonObj;
   } catch (error) {
     console.error(`Erreur lors du chargement du fichier ${filePath}:`, error);
@@ -86,25 +86,25 @@ async function loadConfigFile(filePath) {
 
 /**
  * Initialise la liste des fichiers de configuration disponibles
- * @param {Function} updateCallback - Fonction Ã  appeler lors du changement de configuration
+ * @param {Function} updateCallback - Fonction à appeler lors du changement de configuration
  */
 export async function initConfigFilesList(updateCallback) {
   try {
     const jsonFiles = await listJsonFiles(graphConfig.paths.configDirectory);
     if (jsonFiles.length === 0) {
-      console.log('Aucun fichier JSON de configuration trouvÃ©!');
+      console.log('Aucun fichier JSON de configuration trouvé!');
       return;
     }
-    console.log(`Fichiers JSON trouvÃ©s: ${jsonFiles.join(', ')}`);
+    console.log(`Fichiers JSON trouvés: ${jsonFiles.join(', ')}`);
     
     // Obtenir le conteneur
     const container = document.getElementById("import-config-json");
     if (!container) {
-      console.error("Conteneur import-config-json non trouvÃ©!");
+      console.error("Conteneur import-config-json non trouvé!");
       return;
     }
     
-    // VÃ©rifier si la liste dÃ©roulante existe dÃ©jÃ 
+    // Vérifier si la liste déroulante existe déjà
     let select = document.getElementById('json-files');
     if (select) {
       // Vider la liste existante
@@ -112,12 +112,12 @@ export async function initConfigFilesList(updateCallback) {
         select.removeChild(select.firstChild);
       }
     } else {
-      // CrÃ©er la liste dÃ©roulante
+      // Créer la liste déroulante
       select = document.createElement('select');
       select.id = 'json-files';
       select.className = 'form-control form-control-sm';
       
-      // Ajouter la liste aprÃ¨s le texte "Config:"
+      // Ajouter la liste après le texte "Config:"
       container.appendChild(document.createTextNode(' '));
       container.appendChild(select);
     }
@@ -130,10 +130,10 @@ export async function initConfigFilesList(updateCallback) {
       select.appendChild(option);
     });
     
-    // DÃ©finir la valeur par dÃ©faut
+    // Définir la valeur par défaut
     select.value = graphConfig.paths.defaultFile;
     
-    // Ajouter l'Ã©couteur d'Ã©vÃ©nement
+    // Ajouter l'écouteur d'événement
     select.addEventListener('change', async function() {
       const selectedFile = this.value;
       if (selectedFile) {
@@ -149,7 +149,7 @@ export async function initConfigFilesList(updateCallback) {
       }
     });
     
-    // Charger le fichier par dÃ©faut au dÃ©marrage
+    // Charger le fichier par défaut au démarrage
     loadConfigFile(graphConfig.paths.configDirectory + graphConfig.paths.defaultFile)
       .then(configData => {
         if (configData && updateCallback) {
@@ -157,39 +157,39 @@ export async function initConfigFilesList(updateCallback) {
         }
       })
       .catch(error => {
-        console.error(`Erreur lors du chargement du fichier par dÃ©faut:`, error);
+        console.error(`Erreur lors du chargement du fichier par défaut:`, error);
       });
     
-    console.log(`Liste dÃ©roulante de configuration initialisÃ©e avec ${jsonFiles.length} fichiers`);
+    console.log(`Liste déroulante de configuration initialisée avec ${jsonFiles.length} fichiers`);
     
   } catch (error) {
-    console.error('Erreur lors de la rÃ©cupÃ©ration des fichiers JSON de configuration:', error);
+    console.error('Erreur lors de la récupération des fichiers JSON de configuration:', error);
   }
 }
 
 /**
- * Met Ã  jour la configuration du graphe Ã  partir des donnÃ©es JSON
- * @param {Object} configData - DonnÃ©es de configuration
- * @param {Object} renderer - Renderer du graphe pour la mise Ã  jour
+ * Met à jour la configuration du graphe à partir des données JSON
+ * @param {Object} configData - Données de configuration
+ * @param {Object} renderer - Renderer du graphe pour la mise à jour
  */
 export function updateGraphConfig(configData, renderer) {
   if (!configData) {
-    console.error("DonnÃ©es de configuration invalides ou manquantes");
+    console.error("Données de configuration invalides ou manquantes");
     return;
   }
   
-  console.log("Mise Ã  jour de la configuration:", configData);
+  console.log("Mise à jour de la configuration:", configData);
   
-  // Mettre Ã  jour la configuration des forces
+  // Mettre à jour la configuration des forces
   if (configData.linkStrength !== undefined) graphConfig.forces.linkStrength = configData.linkStrength;
   if (configData.linkDistance !== undefined) graphConfig.forces.linkDistance = configData.linkDistance;
   if (configData.chargeStrength !== undefined) graphConfig.forces.chargeStrength = configData.chargeStrength;
   if (configData.centerStrength !== undefined) graphConfig.forces.centerStrength = configData.centerStrength;
   
-  // Mettre Ã  jour la configuration du style des liens
+  // Mettre à jour la configuration du style des liens
   if (configData.curvedLinks !== undefined) {
     graphConfig.linkStyle.curvedLinks = configData.curvedLinks;
-    console.log(`Mise Ã  jour curvedLinks Ã : ${configData.curvedLinks}`);
+    console.log(`Mise à jour curvedLinks à: ${configData.curvedLinks}`);
   }
   if (configData.baseCurvature !== undefined) graphConfig.linkStyle.baseCurvature = configData.baseCurvature;
   if (configData.loopCurvature !== undefined) graphConfig.linkStyle.loopCurvature = configData.loopCurvature;
@@ -205,7 +205,7 @@ export function updateGraphConfig(configData, renderer) {
     eventBus.emit('pie-rules-updated', { rules: graphConfig.pieRules });
   }
   
-  // Mettre Ã  jour la simulation de forces si le renderer est fourni
+  // Mettre à jour la simulation de forces si le renderer est fourni
   if (renderer && renderer.simulation) {
     const { linkStrength, linkDistance, chargeStrength, centerStrength } = graphConfig.forces;
     
@@ -224,22 +224,22 @@ export function updateGraphConfig(configData, renderer) {
     }
   }
   
-  // Mettre Ã  jour les contrÃ´les HTML
+  // Mettre à jour les contrôles HTML
   updateConfigControls();
   
-  // Mettre Ã  jour le graphe si le renderer est fourni
+  // Mettre à jour le graphe si le renderer est fourni
   if (renderer) {
     renderer.updateGraph();
   }
   
-  console.log("Configuration mise Ã  jour avec succÃ¨s, curvedLinks =", graphConfig.linkStyle.curvedLinks);
+  console.log("Configuration mise à jour avec succès, curvedLinks =", graphConfig.linkStyle.curvedLinks);
 }
 
 /**
- * Met Ã  jour les contrÃ´les HTML avec les valeurs actuelles de la configuration
+ * Met à jour les contrôles HTML avec les valeurs actuelles de la configuration
  */
 function updateConfigControls() {
-  console.log("Mise Ã  jour des contrÃ´les HTML...");
+  console.log("Mise à jour des contrôles HTML...");
   
   // Force de lien
   const linkForceCheckbox = document.getElementById('link-force');
@@ -265,14 +265,14 @@ function updateConfigControls() {
     centerForceCheckbox.checked = graphConfig.forces.centerStrength > 0;
   }
   
-  // Liens courbÃ©s
+  // Liens courbés
   const curvedLinksCheckbox = document.getElementById('curved-links');
   if (curvedLinksCheckbox) {
     curvedLinksCheckbox.checked = graphConfig.linkStyle.curvedLinks;
-    console.log("Mise Ã  jour de la case Ã  cocher curvedLinks:", graphConfig.linkStyle.curvedLinks);
+    console.log("Mise à jour de la case à cocher curvedLinks:", graphConfig.linkStyle.curvedLinks);
   }
   
-  // ParamÃ¨tres de courbure
+  // Paramètres de courbure
   const baseCurvatureInput = document.getElementById('base-curvature');
   const loopCurvatureInput = document.getElementById('loop-curvature');
   const curvatureStepInput = document.getElementById('curvature-step');
@@ -281,26 +281,26 @@ function updateConfigControls() {
   if (loopCurvatureInput) loopCurvatureInput.value = graphConfig.linkStyle.loopCurvature;
   if (curvatureStepInput) curvatureStepInput.value = graphConfig.linkStyle.curvatureStep;
   
-  // RecrÃ©ation des liens
+  // Recréation des liens
   const forceRecreateLinksCheckbox = document.getElementById('forceRecreateLinks');
   if (forceRecreateLinksCheckbox) {
     forceRecreateLinksCheckbox.checked = graphConfig.forceRecreateLinks;
   }
   
-  // Mise Ã  jour des Ã©tiquettes d'affichage pour les sliders
+  // Mise à jour des étiquettes d'affichage pour les sliders
   updateRangeValues();
   
-  // Afficher/masquer les contrÃ´les de courbure selon l'Ã©tat
+  // Afficher/masquer les contrôles de courbure selon l'état
   updateCurvatureControlsVisibility();
   
-  console.log("ContrÃ´les HTML mis Ã  jour avec succÃ¨s");
+  console.log("Contrôles HTML mis à jour avec succès");
 }
 
 /**
- * Met Ã  jour les valeurs affichÃ©es pour les contrÃ´les de plage
+ * Met à jour les valeurs affichées pour les contrôles de plage
  */
 function updateRangeValues() {
-  // Mise Ã  jour des affichages de valeur
+  // Mise à jour des affichages de valeur
   const baseCurvatureValue = document.getElementById('base-curvature-value');
   const loopCurvatureValue = document.getElementById('loop-curvature-value');
   const curvatureStepValue = document.getElementById('curvature-step-value');
@@ -311,7 +311,7 @@ function updateRangeValues() {
 }
 
 /**
- * Met Ã  jour la visibilitÃ© des contrÃ´les de courbure
+ * Met à jour la visibilité des contrôles de courbure
  */
 function updateCurvatureControlsVisibility() {
   const curvatureControls = document.getElementById('curvature-controls');
@@ -320,6 +320,6 @@ function updateCurvatureControlsVisibility() {
   }
 }
 
-// (Les Ã©couteurs UI sont gÃ©rÃ©s par EventManager pour centraliser la configuration)
+// (Les écouteurs UI sont gérés par EventManager pour centraliser la configuration)
 
 

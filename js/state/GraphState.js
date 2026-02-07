@@ -1,5 +1,5 @@
 /**
- * Gère l'état global du graphe et fournit des méthodes pour le manipuler
+ * Gere l'tat global du graphe et fournit des mthodes pour le manipuler
  */
 import { performAction } from './undo_redo.js';
 import { graphConfig } from '../config/index.js';
@@ -18,7 +18,7 @@ import {
 
 export class GraphState {
   constructor() {
-    // Initialisation avec des données par défaut
+    // Initialisation avec des donnes par dfaut
     this.nodes = [
       // Utiliser fx et fy pour fixer les positions initiales
       { id: '1', name: 'Node1', description: 'Description1', x: 100, y: 300, size: 30, fx: 100, fy: 300 },
@@ -26,14 +26,14 @@ export class GraphState {
       { id: '3', name: 'Node3', description: 'Description3', x: 300, y: 300, size: 30, fx: 300, fy: 300 }
     ];
     
-    // Initialisation des liens avec références directes aux objets nœuds
+    // Initialisation des liens avec references directes aux objets noeuds
     this.links = [];
     
     // Compteurs pour les IDs
     this.nextNodeId = this.nodes.length + 1;
     this.nextLinkId = 1;
     
-    // État de sélection
+    // tat de selection
     this.selectedNode = null;
     this.selectedLink = null;
     
@@ -53,15 +53,15 @@ export class GraphState {
       currentLanguage: "fr"
     };
     
-    // Initialiser les liens après avoir créé les nodes
+    // Initialiser les liens apres avoir cr les nodes
     this.initializeLinks();
 
-    // SchÃ©ma de types pour les champs
+    // Schema de types pour les champs
     this.schema = { nodes: {}, links: {} };
     this.initializeSchema();
 
     // -- ajout start --
-    // Mettre nextLinkId juste après le plus grand ID de lien existant
+    // Mettre nextLinkId juste apres le plus grand ID de lien existant
     const maxId = this.links.reduce((max, l) => {
       const n = parseInt(l.id, 10);
       return isNaN(n) ? max : Math.max(max, n);
@@ -71,19 +71,19 @@ export class GraphState {
   }
   
   /**
-   * Initialise les liens avec références aux objets nœuds
+   * Initialise les liens avec references aux objets noeuds
    */
   initializeLinks() {
-    // Récupérer les nœuds par ID
+    // recuperer les noeuds par ID
     const getNodeById = (id) => this.nodes.find(n => n.id === id);
     
-    // Créer les liens avec références directes
+    // creer les liens avec references directes
     const linksData = [
       { id: '1', name: 'Link1', description: 'Description1', source: '1', target: '2', width: this.globalSettings.defaultLinkWidth },
       { id: '2', name: 'Link2', description: 'Description2', source: '2', target: '3', width: this.globalSettings.defaultLinkWidth }
     ];
     
-    // Convertir les références d'ID en références d'objets
+    // Convertir les references d'ID en references d'objets
     this.links = linksData.map(link => ({
       ...link,
       source: getNodeById(link.source),
@@ -92,7 +92,7 @@ export class GraphState {
   }
   
   /**
-   * Crée un nouveau nœud à la position spécifiée
+   * Cre un nouveau noeud  la position specifie
    */
   createNode(x, y) {
     const id = String(this.nextNodeId++);
@@ -105,15 +105,15 @@ export class GraphState {
       size: this.globalSettings.defaultNodeSize || 30
     };
 
-    // Ajouter les champs manquants selon le schÃ©ma
+    // Ajouter les champs manquants selon le schema
     Object.keys(this.schema.nodes).forEach(field => {
       if (newNode[field] === undefined) {
         newNode[field] = getDefaultValueForType(this.getFieldType('node', field));
       }
     });
 
-    // Si l'utilisateur utilise des champs de coordonnées personnalisés,
-    // initialiser ces champs avec la position créée.
+    // Si l'utilisateur utilise des champs de coordonnes personnaliss,
+    // initialiser ces champs avec la position cre.
     const { xField, yField } = this.globalSettings;
     if (xField && xField !== 'x') newNode[xField] = x;
     if (yField && yField !== 'y') newNode[yField] = y;
@@ -130,7 +130,7 @@ export class GraphState {
   }
   
   /**
-   * Supprime un nœud du graphe
+   * Supprime un noeud du graphe
    */
   deleteNode(node) {
     const relatedLinks = this.links.filter(link => 
@@ -148,7 +148,7 @@ export class GraphState {
   }
   
   /**
-   * Crée un nouveau lien entre deux nœuds
+   * Cre un nouveau lien entre deux noeuds
    */
   createLink(source, target) {
     const id = String(this.nextLinkId++);
@@ -171,7 +171,7 @@ export class GraphState {
       type: "create_link", 
       data: { 
         link: newLink, 
-        label: `Create link (${source[this.globalSettings.nodeLabelField] || source.name} → ${target[this.globalSettings.nodeLabelField] || target.name})` 
+        label: `Create link (${source[this.globalSettings.nodeLabelField] || source.name} ? ${target[this.globalSettings.nodeLabelField] || target.name})` 
       } 
     });
     
@@ -192,7 +192,7 @@ export class GraphState {
   }
   
   /**
-   * Met à jour un nœud avec une nouvelle valeur
+   * Met  jour un noeud avec une nouvelle valeur
    */
   updateNodeField(nodeId, field, newValue) {
     const node = this.nodes.find(n => n.id === nodeId);
@@ -208,13 +208,13 @@ export class GraphState {
         field,
         from: oldValue,
         to: newValue,
-        label: `Update node ${field} (${oldValue} → ${newValue})`
+        label: `Update node ${field} (${oldValue} ? ${newValue})`
       }
     });
   }
   
   /**
-   * Met à jour un lien avec une nouvelle valeur
+   * Met  jour un lien avec une nouvelle valeur
    */
   updateLinkField(linkId, field, newValue) {
     const link = this.links.find(l => l.id === linkId);
@@ -230,20 +230,20 @@ export class GraphState {
         field,
         from: oldValue,
         to: newValue,
-        label: `Update link ${field} (${oldValue} → ${newValue})`
+        label: `Update link ${field} (${oldValue} ? ${newValue})`
       }
     });
   }
   
   /**
-   * Ajoute un champ à tous les nœuds ou liens
+   * Ajoute un champ  tous les noeuds ou liens
    */
   addField(fieldName, target) {
     return this.addFieldWithType(fieldName, target, 'text');
   }
 
   /**
-   * Ajoute un champ Ã  tous les nÅ“uds ou liens avec un type
+   * Ajoute un champ a tous les n"uds ou liens avec un type
    */
   addFieldWithType(fieldName, target, fieldType) {
     if (fieldName.trim() === '') return;
@@ -294,7 +294,7 @@ export class GraphState {
   }
 
   /**
-   * Initialise le schÃ©ma de types Ã  partir des donnÃ©es et des dÃ©fauts connus
+   * Initialise le schema de types a partir des donnees et des defauts connus
    */
   initializeSchema() {
     const defaults = {
@@ -430,6 +430,9 @@ export class GraphState {
     }
     if (!ast) return '';
     const ctx = {
+      graph: this,
+      target,
+      item,
       getField: name => this.resolveFieldValue(target, item, name, nextStack)
     };
     try {
@@ -462,7 +465,7 @@ export class GraphState {
         field,
         from: oldType,
         to: newType,
-        label: `Update ${target} field type ${field} (${oldType} â†’ ${newType})`
+        label: `Update ${target} field type ${field} (${oldType} ?' ${newType})`
       }
     });
   }
@@ -573,7 +576,7 @@ export class GraphState {
   }
   
   /**
-   * Supprime un champ de tous les nœuds ou liens
+   * Supprime un champ de tous les noeuds ou liens
    */
   removeField(fieldName, target) {
     performAction({ 
@@ -588,7 +591,7 @@ export class GraphState {
   }
   
   /**
-   * Met à jour un paramètre de configuration global
+   * Met  jour un paramtre de configuration global
    */
   updateGlobalSetting(field, value) {
     const oldValue = this.globalSettings[field];
@@ -600,7 +603,7 @@ export class GraphState {
         field, 
         from: oldValue, 
         to: value, 
-        label: `Update global setting ${field} (${oldValue} → ${value})` 
+        label: `Update global setting ${field} (${oldValue} ? ${value})` 
       } 
     });
     
@@ -628,50 +631,50 @@ export class GraphState {
   }
   
   /**
-   * Sélectionne un nœud
+   * selectionne un noeud
    */
   selectNode(node) {
     if (!node) return;
     
-    // Désélection de tout élément actuellement sélectionné
+    // Dselection de tout lment actuellement selectionn
     this.selectedNode = null;
     this.selectedLink = null;
     
-    // Sélection du nouveau nœud
+    // selection du nouveau noeud
     this.selectedNode = node;
     
-    console.log(`Nœud sélectionné: ${node.id}`);
+    console.log(`noeud selectionn: ${node.id}`);
   }
   
   /**
-   * Sélectionne un lien
-   * @param {Object} link - Le lien à sélectionner
+   * selectionne un lien
+   * @param {Object} link - Le lien  selectionner
    */
   selectLink(link) {
     if (!link || typeof link !== 'object') {
-      console.error("Tentative de sélection d'un lien invalide:", link);
+      console.error("Tentative de selection d'un lien invalide:", link);
       return;
     }
     
     this.selectedLink = link;
     this.selectedNode = null;
     
-    console.log("Lien sélectionné:", link);
+    console.log("Lien selectionn:", link);
   }
   
   /**
-   * Efface toutes les sélections actuelles
+   * Efface toutes les selections actuelles
    */
   clearSelection() {
     if (this.selectedNode || this.selectedLink) {
-      console.log("Effacement de la sélection");
+      console.log("Effacement de la selection");
       this.selectedNode = null;
       this.selectedLink = null;
     }
   }
   
   /**
-   * Retourne les champs de nœuds disponibles
+   * Retourne les champs de noeuds disponibles
    */
   getNodeFields() {
     return this.getFieldsByType('node');

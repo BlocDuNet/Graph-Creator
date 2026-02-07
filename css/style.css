@@ -24,6 +24,11 @@ svg {
   fill: #000000bb;
 }
 
+.node-pie,
+.node-pie * {
+  pointer-events: none;
+}
+
 /* Link styles */
 .link {
   fill: none;
@@ -485,6 +490,20 @@ input[type="checkbox"] {
   gap: 6px;
 }
 
+.rule-when {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.rule-when .form-control {
+  margin-bottom: 0;
+}
+
+.rule-when .btn {
+  white-space: nowrap;
+}
+
 .color-input {
   display: flex;
   gap: 6px;
@@ -715,7 +734,7 @@ input:checked + .slider:before {
   overflow: auto;
 }
 
-/* Confirmation personnalisÃ©e */
+/* Confirmation personnalisée */
 .confirm-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
