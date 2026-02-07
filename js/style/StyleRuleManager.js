@@ -55,6 +55,7 @@ export class StyleRuleManager {
     this.rules.links = this.rules.links || [];
     this.pieRules = graphConfig.pieRules || { nodes: [] };
     this.pieRules.nodes = this.pieRules.nodes || [];
+    this.ensureRuleIds();
     this.conditionRequests = new Map();
     this.bindElements();
     this.bindEvents();
@@ -100,12 +101,14 @@ export class StyleRuleManager {
       // éviter de rerender pendant la saisie (perte de focus)
       if (event?.detail?.source === 'style-ui-input') return;
       this.rules = graphConfig.styleRules;
+      this.ensureRuleIds();
       this.renderStyleRules();
     });
     eventBus.on('pie-rules-updated', event => {
       // éviter de rerender pendant la saisie (perte de focus)
       if (event?.detail?.source === 'pie-ui-input') return;
       this.pieRules = graphConfig.pieRules;
+      this.ensureRuleIds();
       this.renderPieRules();
     });
 
@@ -142,6 +145,7 @@ export class StyleRuleManager {
 
   renderStyleRules() {
     if (!this.el.styleList) return;
+    this.ensureRuleIds();
     const items = [];
     const addCard = (rule, target) => {
       const normalized = ensureStyleRule(rule, target);
@@ -154,11 +158,24 @@ export class StyleRuleManager {
 
   renderPieRules() {
     if (!this.el.pieList) return;
+    this.ensureRuleIds();
     const items = (this.pieRules.nodes || []).map(rule => {
       const normalized = ensurePieRule(rule);
       return this.buildPieRuleCard(normalized);
     });
     this.el.pieList.innerHTML = items.join('');
+  }
+
+  ensureRuleIds() {
+    const ensureList = (list, prefix) => {
+      (list || []).forEach(rule => {
+        if (!rule || rule.id) return;
+        rule.id = uid(prefix);
+      });
+    };
+    ensureList(this.rules.nodes, 'style');
+    ensureList(this.rules.links, 'style');
+    ensureList(this.pieRules.nodes, 'pie');
   }
 
   buildStyleRuleCard(rule) {

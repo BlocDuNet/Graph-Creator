@@ -23,6 +23,7 @@ export class InteractionManager {
     
     // Garde une trace si un noeud a t rcemment double-cliqu pour viter de creer un nouveau noeud
     this.nodeDoubleClicked = false;
+    this.lastPointer = null;
   }
   
   /**
@@ -39,6 +40,12 @@ export class InteractionManager {
    * Initialise les gestionnaires de clic
    */
   initClickHandlers() {
+    // Suivre la derniere position souris dans l'espace du graphe
+    this.svg.on('mousemove', event => {
+      const p = this.getGraphPoint(event);
+      if (p) this.lastPointer = p;
+    });
+
     // Double-clic sur une zone vide pour creer un noeud
     this.svg.on('dblclick', event => {
       // verifier si l'evenement provient d'un noeud
@@ -261,9 +268,41 @@ export class InteractionManager {
   getGraphPoint(event) {
     const svgElement = this.svg?.node();
     if (!svgElement) return null;
+
+    const isValidPoint = p =>
+      Array.isArray(p) &&
+      p.length >= 2 &&
+      Number.isFinite(p[0]) &&
+      Number.isFinite(p[1]);
+
+    const safePointer = (evt, node) => {
+      if (!node) return null;
+      try {
+        const p = d3.pointer(evt, node);
+        return isValidPoint(p) ? p : null;
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const groupNode = this.renderer?.g?.node ? this.renderer.g.node() : null;
+
+    // 1) Pointer dans l'espace du groupe (déjà corrigé du zoom)
+    let point = safePointer(event, groupNode);
+    if (isValidPoint(point)) return point;
+
+    // 2) Pointer dans l'espace SVG puis inversion du zoom
+    point = safePointer(event, svgElement);
+    if (isValidPoint(point)) {
+      const transform = d3.zoomTransform(svgElement);
+      const adjusted = transform ? transform.invert(point) : point;
+      if (isValidPoint(adjusted)) return adjusted;
+    }
+
     const clientX = event?.clientX ?? event?.touches?.[0]?.clientX;
     const clientY = event?.clientY ?? event?.touches?.[0]?.clientY;
-    let point = null;
+
+    // 3) SVGPoint via clientX/clientY
     if (Number.isFinite(clientX) && Number.isFinite(clientY) && svgElement.createSVGPoint) {
       const pt = svgElement.createSVGPoint();
       pt.x = clientX;
@@ -271,25 +310,28 @@ export class InteractionManager {
       const ctm = svgElement.getScreenCTM && svgElement.getScreenCTM();
       if (ctm && typeof ctm.inverse === 'function') {
         const svgPoint = pt.matrixTransform(ctm.inverse());
-        point = [svgPoint.x, svgPoint.y];
+        const adjusted = d3.zoomTransform(svgElement).invert([svgPoint.x, svgPoint.y]);
+        if (isValidPoint(adjusted)) return adjusted;
       }
     }
-    if (!point) {
-      try {
-        point = d3.pointer(event, svgElement);
-      } catch (e) {
-        point = null;
-      }
+
+    // 4) offsetX/offsetY si disponibles
+    const offsetX = event?.offsetX;
+    const offsetY = event?.offsetY;
+    if (Number.isFinite(offsetX) && Number.isFinite(offsetY)) {
+      const adjusted = d3.zoomTransform(svgElement).invert([offsetX, offsetY]);
+      if (isValidPoint(adjusted)) return adjusted;
     }
-    if (!point || !Number.isFinite(point[0]) || !Number.isFinite(point[1])) {
+
+    // 5) Fallback bounding rect
+    if (Number.isFinite(clientX) && Number.isFinite(clientY)) {
       const rect = svgElement.getBoundingClientRect();
-      if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
-      point = [clientX - rect.left, clientY - rect.top];
+      const adjusted = d3.zoomTransform(svgElement).invert([clientX - rect.left, clientY - rect.top]);
+      if (isValidPoint(adjusted)) return adjusted;
     }
-    const transform = d3.zoomTransform(svgElement);
-    const adjustedPoint = transform.invert(point);
-    if (!Number.isFinite(adjustedPoint[0]) || !Number.isFinite(adjustedPoint[1])) return null;
-    return adjustedPoint;
+
+    if (isValidPoint(this.lastPointer)) return this.lastPointer;
+    return null;
   }
   
   /**

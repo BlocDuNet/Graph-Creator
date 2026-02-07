@@ -620,6 +620,8 @@ export class FormManager {
     list.addEventListener('click', event => {
       const btn = event.target.closest('button[data-rule-jump]');
       if (!btn) return;
+      event.preventDefault();
+      event.stopPropagation();
       this.jumpToRule(btn.dataset.ruleJump, btn.dataset.ruleType);
     });
   }
@@ -659,12 +661,13 @@ export class FormManager {
     const pushLine = (typeLabel, rule) => {
       const name = this.escapeHtml(rule?.name || '(sans nom)');
       const prio = rule?.priority ?? 0;
+      const ruleId = rule?.id || '';
       lines.push(`
         <div class="rule-match-item">
           <span class="badge badge-light">${typeLabel}</span>
           <span class="rule-match-name">${name}</span>
           <span class="rule-match-priority">P${prio}</span>
-          <button class="btn btn-sm btn-outline-secondary" data-rule-jump="${rule.id}" data-rule-type="${typeLabel === 'Pie' ? 'pie' : 'style'}">Modifier</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-rule-jump="${ruleId}" data-rule-type="${typeLabel === 'Pie' ? 'pie' : 'style'}" ${ruleId ? '' : 'disabled'}>Modifier</button>
         </div>
       `);
     };
