@@ -485,6 +485,27 @@ input[type="checkbox"] {
   gap: 6px;
 }
 
+.color-input {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.color-input .color-picker {
+  padding: 0;
+  width: 36px;
+  height: 32px;
+  flex: 0 0 auto;
+}
+
+.color-input .color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-input .color-picker::-webkit-color-swatch {
+  border: none;
+}
+
 .rule-row {
   margin-bottom: 6px;
 }

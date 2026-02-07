@@ -111,6 +111,12 @@ export class GraphState {
         newNode[field] = getDefaultValueForType(this.getFieldType('node', field));
       }
     });
+
+    // Si l'utilisateur utilise des champs de coordonnées personnalisés,
+    // initialiser ces champs avec la position créée.
+    const { xField, yField } = this.globalSettings;
+    if (xField && xField !== 'x') newNode[xField] = x;
+    if (yField && yField !== 'y') newNode[yField] = y;
     
     performAction({ 
       type: "create_node", 

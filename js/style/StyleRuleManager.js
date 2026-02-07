@@ -95,11 +95,15 @@ export class StyleRuleManager {
     this.el.pieList?.addEventListener('change', e => this.onPieRuleInput(e));
     this.el.pieList?.addEventListener('click', e => this.onPieRuleClick(e));
 
-    eventBus.on('style-rules-updated', () => {
+    eventBus.on('style-rules-updated', event => {
+      // éviter de rerender pendant la saisie (perte de focus)
+      if (event?.detail?.source === 'style-ui-input') return;
       this.rules = graphConfig.styleRules;
       this.renderStyleRules();
     });
-    eventBus.on('pie-rules-updated', () => {
+    eventBus.on('pie-rules-updated', event => {
+      // éviter de rerender pendant la saisie (perte de focus)
+      if (event?.detail?.source === 'pie-ui-input') return;
       this.pieRules = graphConfig.pieRules;
       this.renderPieRules();
     });
@@ -153,11 +157,17 @@ export class StyleRuleManager {
         <div class="rule-grid">
           <div>
             <label class="small">Couleur</label>
-            <input class="form-control form-control-sm" data-field="style.fill" value="${style.fill || ''}" placeholder="#ffcc00">
+            <div class="color-input">
+              <input type="color" class="form-control form-control-sm color-picker" data-color-for="style.fill" value="${this.getColorInputValue(style.fill)}">
+              <input class="form-control form-control-sm" data-field="style.fill" value="${style.fill || ''}" placeholder="#ffcc00">
+            </div>
           </div>
           <div>
             <label class="small">Contour</label>
-            <input class="form-control form-control-sm" data-field="style.stroke" value="${style.stroke || ''}" placeholder="#333">
+            <div class="color-input">
+              <input type="color" class="form-control form-control-sm color-picker" data-color-for="style.stroke" value="${this.getColorInputValue(style.stroke)}">
+              <input class="form-control form-control-sm" data-field="style.stroke" value="${style.stroke || ''}" placeholder="#333">
+            </div>
           </div>
           <div>
             <label class="small">Epaisseur</label>
@@ -180,13 +190,19 @@ export class StyleRuleManager {
           </div>
           <div>
             <label class="small">Couleur label</label>
-            <input class="form-control form-control-sm" data-field="style.labelColor" value="${style.labelColor || ''}" placeholder="#000">
+            <div class="color-input">
+              <input type="color" class="form-control form-control-sm color-picker" data-color-for="style.labelColor" value="${this.getColorInputValue(style.labelColor)}">
+              <input class="form-control form-control-sm" data-field="style.labelColor" value="${style.labelColor || ''}" placeholder="#000">
+            </div>
           </div>
         </div>` : `
         <div class="rule-grid">
           <div>
             <label class="small">Couleur lien</label>
-            <input class="form-control form-control-sm" data-field="style.linkColor" value="${style.linkColor || ''}" placeholder="#000">
+            <div class="color-input">
+              <input type="color" class="form-control form-control-sm color-picker" data-color-for="style.linkColor" value="${this.getColorInputValue(style.linkColor)}">
+              <input class="form-control form-control-sm" data-field="style.linkColor" value="${style.linkColor || ''}" placeholder="#000">
+            </div>
           </div>
           <div>
             <label class="small">Largeur</label>
@@ -202,7 +218,10 @@ export class StyleRuleManager {
           </div>
           <div>
             <label class="small">Couleur label</label>
-            <input class="form-control form-control-sm" data-field="style.labelColor" value="${style.labelColor || ''}" placeholder="#000">
+            <div class="color-input">
+              <input type="color" class="form-control form-control-sm color-picker" data-color-for="style.labelColor" value="${this.getColorInputValue(style.labelColor)}">
+              <input class="form-control form-control-sm" data-field="style.labelColor" value="${style.labelColor || ''}" placeholder="#000">
+            </div>
           </div>
         </div>`}
       </div>
@@ -232,7 +251,10 @@ export class StyleRuleManager {
           </div>
           <div>
             <label class="small">Couleurs</label>
-            <input class="form-control form-control-sm" data-field="colors" value="${rule.colors || ''}" placeholder="#f00,#0f0,#00f">
+            <div class="color-input">
+              <input type="color" class="form-control form-control-sm color-picker" data-color-append="colors" value="${this.getColorInputValue(this.getFirstColor(rule.colors))}">
+              <input class="form-control form-control-sm" data-field="colors" value="${rule.colors || ''}" placeholder="#f00,#0f0,#00f">
+            </div>
           </div>
           <div>
             <label class="small">Mode</label>
@@ -264,15 +286,25 @@ export class StyleRuleManager {
 
   onStyleRuleInput(event) {
     const target = event.target;
-    const ruleId = target?.closest('[data-rule-id]')?.dataset?.ruleId;
-    const field = target?.dataset?.field;
+    const card = target?.closest('[data-rule-id]');
+    const ruleId = card?.dataset?.ruleId;
+    const colorFor = target?.dataset?.colorFor;
+    const field = target?.dataset?.field || colorFor;
     if (!ruleId || !field) return;
     const rule = this.findStyleRule(ruleId);
     if (!rule) return;
 
     const value = target.type === 'checkbox' ? target.checked : target.value;
+    if (colorFor) {
+      const textInput = card?.querySelector(`[data-field="${colorFor}"]`);
+      if (textInput && textInput.value !== value) textInput.value = value;
+    } else {
+      const colorInput = card?.querySelector(`[data-color-for="${field}"]`);
+      const hex = this.normalizeHexColor(value);
+      if (colorInput && hex) colorInput.value = hex;
+    }
     this.setRuleValue(rule, field, value);
-    this.commitStyleRules();
+    this.commitStyleRules({ source: 'style-ui-input' });
   }
 
   onStyleRuleClick(event) {
@@ -287,15 +319,37 @@ export class StyleRuleManager {
 
   onPieRuleInput(event) {
     const target = event.target;
-    const ruleId = target?.closest('[data-rule-id]')?.dataset?.ruleId;
-    const field = target?.dataset?.field;
-    if (!ruleId || !field) return;
+    const card = target?.closest('[data-rule-id]');
+    const ruleId = card?.dataset?.ruleId;
+    const colorAppend = target?.dataset?.colorAppend;
+    let field = target?.dataset?.field;
+    if (!ruleId || (!field && !colorAppend)) return;
     const rule = this.findPieRule(ruleId);
     if (!rule) return;
 
+    if (colorAppend) {
+      const textInput = card?.querySelector(`[data-field="${colorAppend}"]`);
+      if (textInput) {
+        const list = this.parseColorList(textInput.value);
+        if (!list.includes(target.value)) list.push(target.value);
+        textInput.value = list.join(', ');
+        field = colorAppend;
+        const value = textInput.value;
+        this.setRuleValue(rule, field, value);
+        this.commitPieRules({ source: 'pie-ui-input' });
+        return;
+      }
+    }
+
     const value = target.type === 'checkbox' ? target.checked : target.value;
+    if (field === 'colors' && !colorAppend) {
+      const colorInput = card?.querySelector('[data-color-append="colors"]');
+      const first = this.getFirstColor(value);
+      const hex = this.normalizeHexColor(first);
+      if (colorInput && hex) colorInput.value = hex;
+    }
     this.setRuleValue(rule, field, value);
-    this.commitPieRules();
+    this.commitPieRules({ source: 'pie-ui-input' });
   }
 
   onPieRuleClick(event) {
@@ -341,15 +395,51 @@ export class StyleRuleManager {
     this.commitPieRules();
   }
 
-  commitStyleRules() {
+  commitStyleRules(opts = {}) {
     graphConfig.styleRules = this.rules;
-    eventBus.emit('style-rules-updated', { rules: this.rules });
+    eventBus.emit('style-rules-updated', { rules: this.rules, source: opts.source });
     this.renderer.updateGraph();
   }
 
-  commitPieRules() {
+  commitPieRules(opts = {}) {
     graphConfig.pieRules = this.pieRules;
-    eventBus.emit('pie-rules-updated', { rules: this.pieRules });
+    eventBus.emit('pie-rules-updated', { rules: this.pieRules, source: opts.source });
     this.renderer.updateGraph();
+  }
+
+  normalizeHexColor(value) {
+    if (!value) return null;
+    const v = String(value).trim();
+    const short = v.match(/^#([0-9a-f]{3})$/i);
+    if (short) {
+      const expanded = short[1].split('').map(ch => ch + ch).join('');
+      return `#${expanded.toLowerCase()}`;
+    }
+    const long = v.match(/^#([0-9a-f]{6})$/i);
+    if (long) return `#${long[1].toLowerCase()}`;
+    const rgb = v.match(/^rgb\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+    if (rgb) {
+      const toHex = (n) => Math.max(0, Math.min(255, Number(n)))
+        .toString(16)
+        .padStart(2, '0');
+      return `#${toHex(rgb[1])}${toHex(rgb[2])}${toHex(rgb[3])}`;
+    }
+    return null;
+  }
+
+  getColorInputValue(value) {
+    return this.normalizeHexColor(value) || '#000000';
+  }
+
+  parseColorList(value) {
+    return String(value || '')
+      .split(/[,;\n]/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  getFirstColor(value) {
+    const list = this.parseColorList(value);
+    return list[0] || '';
   }
 }
