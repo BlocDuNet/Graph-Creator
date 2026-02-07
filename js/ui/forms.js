@@ -696,9 +696,22 @@ export class FormManager {
     const containerId = type === 'pie' ? 'pie-rules-list' : 'style-rules-list';
     const container = document.getElementById(containerId);
     if (!container) return;
-    const esc = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(ruleId) : String(ruleId).replace(/"/g, '\\"');
-    const card = container.querySelector(`[data-rule-id="${esc}"]`);
+    const ruleIdStr = String(ruleId);
+    const cards = container.querySelectorAll('[data-rule-id]');
+    const card = Array.from(cards).find(el => String(el.dataset.ruleId) === ruleIdStr);
     if (!card) return;
+
+    // Activer l'onglet Config graph si besoin
+    const tabLink = document.querySelector('.nav-link[href="#tab3"]');
+    tabLink?.click();
+
+    // Ouvrir la section correspondante
+    const collapseId = type === 'pie' ? 'collapsePieRules' : 'collapseStyleRules';
+    const collapseEl = document.getElementById(collapseId);
+    if (collapseEl && !collapseEl.classList.contains('show')) {
+      collapseEl.classList.add('show');
+    }
+
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     card.classList.add('rule-card-highlight');
     setTimeout(() => card.classList.remove('rule-card-highlight'), 1200);

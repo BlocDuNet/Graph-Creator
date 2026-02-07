@@ -443,14 +443,13 @@ function normalizeImportedGraph(raw, mapping = null) {
 }
 
 function applyImportedRules(styleRules, pieRules) {
-  if (styleRules) {
-    graphConfig.styleRules = styleRules;
-    eventBus.emit('style-rules-updated', { rules: styleRules });
-  }
-  if (pieRules) {
-    graphConfig.pieRules = pieRules;
-    eventBus.emit('pie-rules-updated', { rules: pieRules });
-  }
+  const nextStyle = styleRules ?? { nodes: [], links: [] };
+  graphConfig.styleRules = nextStyle;
+  eventBus.emit('style-rules-updated', { rules: nextStyle });
+
+  const nextPie = pieRules ?? { nodes: [] };
+  graphConfig.pieRules = nextPie;
+  eventBus.emit('pie-rules-updated', { rules: nextPie });
 }
 
 function extractImportedRules(raw, data) {

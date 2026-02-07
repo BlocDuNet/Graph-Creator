@@ -42,8 +42,7 @@ export class InteractionManager {
   initClickHandlers() {
     // Suivre la derniere position souris dans l'espace du graphe
     this.svg.on('mousemove', event => {
-      const p = this.getGraphPoint(event);
-      if (p) this.lastPointer = p;
+      this.updateLastPointer(event);
     });
 
     // Double-clic sur une zone vide pour creer un noeud
@@ -214,6 +213,7 @@ export class InteractionManager {
    * Gere le double-clic sur le SVG
    */
   handleSvgDblClick(event) {
+    this.updateLastPointer(event);
     const point = this.getGraphPoint(event);
     if (!point) return;
     const newNode = this.graphState.createNode(point[0], point[1]);
@@ -234,6 +234,7 @@ export class InteractionManager {
    */
   handleSvgMouseDown(event) {
     if (event.ctrlKey && this.graphState.selectedNode) {
+      this.updateLastPointer(event);
       const adjustedPoint = this.getGraphPoint(event);
       if (!adjustedPoint) return;
       
@@ -332,6 +333,21 @@ export class InteractionManager {
 
     if (isValidPoint(this.lastPointer)) return this.lastPointer;
     return null;
+  }
+
+  updateLastPointer(event) {
+    const svgElement = this.svg?.node();
+    if (!svgElement) return;
+    const clientX = event?.clientX ?? event?.touches?.[0]?.clientX;
+    const clientY = event?.clientY ?? event?.touches?.[0]?.clientY;
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return;
+    const rect = svgElement.getBoundingClientRect();
+    const local = [clientX - rect.left, clientY - rect.top];
+    const transform = d3.zoomTransform(svgElement);
+    const adjusted = transform ? transform.invert(local) : local;
+    if (Array.isArray(adjusted) && Number.isFinite(adjusted[0]) && Number.isFinite(adjusted[1])) {
+      this.lastPointer = adjusted;
+    }
   }
   
   /**
