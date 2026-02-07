@@ -29,6 +29,12 @@ svg {
   pointer-events: none;
 }
 
+.node-hit {
+  fill: transparent;
+  stroke: none;
+  pointer-events: all;
+}
+
 /* Link styles */
 .link {
   fill: none;
@@ -65,12 +71,10 @@ svg {
 
 .selected text {
   font-size: 2em;
-  fill: #0077ff;
 }
 
 .selected .link-label {
   font-size: 2em;
-  fill: #0077ff;
 }
 
 /* Highlighted styles */
@@ -354,6 +358,29 @@ input[type="checkbox"] {
   margin-right: 5px;
 }
 
+#node-form .local-style-block,
+#link-form .local-style-block {
+  flex: 1 0 100%;
+  display: block;
+}
+
+#node-form .rule-match-block,
+#link-form .rule-match-block {
+  flex: 1 0 100%;
+  display: block;
+}
+
+#node-form .local-style-block .rule-grid,
+#link-form .local-style-block .rule-grid {
+  display: grid;
+  align-items: start;
+}
+
+#node-form .local-style-block .rule-grid > div,
+#link-form .local-style-block .rule-grid > div {
+  display: block;
+}
+
 #node-form select.field-type-select,
 #link-form select.field-type-select {
   flex: 0 0 120px;
@@ -468,6 +495,11 @@ input[type="checkbox"] {
   margin-bottom: 8px;
 }
 
+.rule-card-highlight {
+  outline: 2px solid #ffc107;
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.35);
+}
+
 .rule-header {
   display: flex;
   gap: 8px;
@@ -502,6 +534,26 @@ input[type="checkbox"] {
 
 .rule-when .btn {
   white-space: nowrap;
+}
+
+.rule-match-block {
+  margin-top: 0.75rem;
+}
+
+.rule-match-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.rule-match-name {
+  flex: 1 1 auto;
+}
+
+.rule-match-priority {
+  font-size: 0.75rem;
+  color: #6c757d;
 }
 
 .color-input {

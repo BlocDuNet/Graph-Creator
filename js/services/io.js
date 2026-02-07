@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Service pour l'import/export des données du graphe
  */
 import { performAction } from '../state/undo_redo.js';
@@ -28,6 +28,15 @@ export function initIOServices(state, graphRenderer) {
   initJSONModelsList();
 }
 
+function stripInternalFields(obj) {
+  const out = {};
+  Object.keys(obj || {}).forEach(key => {
+    if (key.startsWith('__') && !['__localStyle', '__localStyleEnabled'].includes(key)) return;
+    out[key] = obj[key];
+  });
+  return out;
+}
+
 /**
  * Exporte le graphe actuel en JSON
  */
@@ -45,7 +54,7 @@ function exportJsonAdvanced(options = {}) {
   const exportData = {
     nodes: graphState.nodes.map(node => {
       const { vx, vy, fx, fy, ...rest } = node;
-      let out = { ...rest };
+      let out = stripInternalFields({ ...rest });
 
       if (format === 'auto') {
         out = autoConvertMultilang(out, langs);
@@ -69,7 +78,7 @@ function exportJsonAdvanced(options = {}) {
     }),
     links: graphState.links.map(link => {
       const { source, target, ...rest } = link;
-      let out = { ...rest };
+      let out = stripInternalFields({ ...rest });
 
       if (format === 'auto') {
         out = autoConvertMultilang(out, langs);
@@ -973,3 +982,4 @@ export {
   applyAdvancedImport,
   cancelAdvancedImport
 };
+

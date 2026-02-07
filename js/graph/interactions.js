@@ -207,9 +207,8 @@ export class InteractionManager {
    * Gere le double-clic sur le SVG
    */
   handleSvgDblClick(event) {
-    // Utiliser d3.pointer au lieu de event.clientX/clientY pour obtenir les coordonnes correctes
-    const transform = d3.zoomTransform(this.svg.node());
-    const point = transform.invert(d3.pointer(event));
+    const point = this.getGraphPoint(event);
+    if (!point) return;
     const newNode = this.graphState.createNode(point[0], point[1]);
     this.pinNewNode(newNode);
     
@@ -228,14 +227,8 @@ export class InteractionManager {
    */
   handleSvgMouseDown(event) {
     if (event.ctrlKey && this.graphState.selectedNode) {
-      // Utiliser d3.pointer pour obtenir les coordonnes correctes dans l'espace SVG
-      const svgElement = this.svg.node();
-      const point = d3.pointer(event, svgElement);
-      
-      // Appliquer la transformation inverse du zoom/pan si elle existe
-      const transform = d3.zoomTransform(svgElement);
-      const adjustedPoint = transform.invert(point);
-      if (!Number.isFinite(adjustedPoint[0]) || !Number.isFinite(adjustedPoint[1])) return;
+      const adjustedPoint = this.getGraphPoint(event);
+      if (!adjustedPoint) return;
       
       const defaultNodeSize = this.graphState.globalSettings.defaultNodeSize;
       
@@ -263,6 +256,40 @@ export class InteractionManager {
         }
       }
     }
+  }
+
+  getGraphPoint(event) {
+    const svgElement = this.svg?.node();
+    if (!svgElement) return null;
+    const clientX = event?.clientX ?? event?.touches?.[0]?.clientX;
+    const clientY = event?.clientY ?? event?.touches?.[0]?.clientY;
+    let point = null;
+    if (Number.isFinite(clientX) && Number.isFinite(clientY) && svgElement.createSVGPoint) {
+      const pt = svgElement.createSVGPoint();
+      pt.x = clientX;
+      pt.y = clientY;
+      const ctm = svgElement.getScreenCTM && svgElement.getScreenCTM();
+      if (ctm && typeof ctm.inverse === 'function') {
+        const svgPoint = pt.matrixTransform(ctm.inverse());
+        point = [svgPoint.x, svgPoint.y];
+      }
+    }
+    if (!point) {
+      try {
+        point = d3.pointer(event, svgElement);
+      } catch (e) {
+        point = null;
+      }
+    }
+    if (!point || !Number.isFinite(point[0]) || !Number.isFinite(point[1])) {
+      const rect = svgElement.getBoundingClientRect();
+      if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
+      point = [clientX - rect.left, clientY - rect.top];
+    }
+    const transform = d3.zoomTransform(svgElement);
+    const adjustedPoint = transform.invert(point);
+    if (!Number.isFinite(adjustedPoint[0]) || !Number.isFinite(adjustedPoint[1])) return null;
+    return adjustedPoint;
   }
   
   /**

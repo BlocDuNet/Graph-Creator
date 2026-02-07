@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Gestion des formulaires pour éditer les nœuds et les liens
  */
 import { performAction } from '../state/undo_redo.js';
@@ -11,6 +11,7 @@ import {
   getTypeLabel
 } from '../services/FieldTypeService.js';
 import eventBus from '../services/EventBus.js';
+import { graphConfig } from '../config/index.js';
 
 export class FormManager {
   constructor(graphState, renderer) {
@@ -24,12 +25,18 @@ export class FormManager {
     // Stockage des inputs
     this.nodeInputs = {};
     this.linkInputs = {};
+    this.localStyleInputs = { node: {}, link: {} };
+    this.ruleMatchContainers = { node: null, link: null };
     
     // Initialiser les formulaires
     this.refreshForms();
     
     // Configurer les observateurs de sélection
     this.setupSelectionObservers();
+
+    // Rafraîchir l'affichage des règles actives
+    eventBus.on('style-rules-updated', () => this.refreshRuleMatches());
+    eventBus.on('pie-rules-updated', () => this.refreshRuleMatches());
   }
   
   /**
@@ -86,6 +93,9 @@ export class FormManager {
     fieldNames.forEach(fieldName =>
       this.createField(fieldName, formElement, inputObject, data, target)
     );
+
+    this.appendLocalStyleSection(formElement, target);
+    this.appendRuleMatchesSection(formElement, target);
   }
   
   /**
@@ -345,6 +355,8 @@ export class FormManager {
     
     // Mettre à jour les valeurs du formulaire avec les données du nœud
     this.updateForm(this.nodeInputs, node);
+    this.updateLocalStyleForm('node', node);
+    this.updateRuleMatches('node', node);
     
     // Rendre le formulaire visible
     this.nodeForm.classList.remove('hidden');
@@ -381,6 +393,8 @@ export class FormManager {
     
     // Mettre à jour les valeurs du formulaire avec les données du lien
     this.updateForm(this.linkInputs, link);
+    this.updateLocalStyleForm('link', link);
+    this.updateRuleMatches('link', link);
     
     // Rendre le formulaire visible
     this.linkForm.classList.remove('hidden');
@@ -442,9 +456,379 @@ export class FormManager {
   }
 
   /**
-   * Nouvelle méthode simplifiée pour focus et sélection d'un champ
-   * @param {HTMLInputElement} inputElement - L'élément input à sélectionner
+   * Ajoute la section d'override local
    */
+  appendLocalStyleSection(formElement, target) {
+    const inputs = {};
+    this.localStyleInputs[target] = inputs;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'local-style-block';
+
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = 'Style local';
+    wrapper.appendChild(title);
+
+    const toggleRow = document.createElement('div');
+    const toggleLabel = document.createElement('label');
+    toggleLabel.className = 'small';
+    const toggle = document.createElement('input');
+    toggle.type = 'checkbox';
+    toggle.className = 'mr-1';
+    toggle.checked = true;
+    toggleLabel.appendChild(toggle);
+    toggleLabel.appendChild(document.createTextNode(' Activer override local'));
+    toggleRow.appendChild(toggleLabel);
+    wrapper.appendChild(toggleRow);
+    inputs.__enabled = { input: toggle };
+    toggle.addEventListener('change', () => this.commitLocalStyleEnabled(target, toggle.checked));
+
+    const grid = document.createElement('div');
+    grid.className = 'rule-grid';
+
+    const addColor = (key, label, placeholder) => {
+      const field = document.createElement('div');
+      const lab = document.createElement('label');
+      lab.className = 'small';
+      lab.textContent = label;
+      const wrap = document.createElement('div');
+      wrap.className = 'color-input';
+
+      const color = document.createElement('input');
+      color.type = 'color';
+      color.className = 'form-control form-control-sm color-picker';
+
+      const text = document.createElement('input');
+      text.type = 'text';
+      text.className = 'form-control form-control-sm';
+      text.placeholder = placeholder || '';
+
+      wrap.appendChild(color);
+      wrap.appendChild(text);
+      field.appendChild(lab);
+      field.appendChild(wrap);
+      grid.appendChild(field);
+
+      inputs[key] = { input: text, color };
+
+      color.addEventListener('input', () => {
+        text.value = color.value;
+        this.commitLocalStyle(target, key, color.value);
+      });
+      text.addEventListener('change', () => {
+        const hex = this.normalizeHexColor(text.value);
+        if (hex) color.value = hex;
+        this.commitLocalStyle(target, key, text.value);
+      });
+    };
+
+    const addText = (key, label, placeholder) => {
+      const field = document.createElement('div');
+      const lab = document.createElement('label');
+      lab.className = 'small';
+      lab.textContent = label;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'form-control form-control-sm';
+      input.placeholder = placeholder || '';
+      field.appendChild(lab);
+      field.appendChild(input);
+      grid.appendChild(field);
+      inputs[key] = { input };
+      input.addEventListener('change', () => this.commitLocalStyle(target, key, input.value));
+    };
+
+    const addNumber = (key, label, placeholder) => {
+      const field = document.createElement('div');
+      const lab = document.createElement('label');
+      lab.className = 'small';
+      lab.textContent = label;
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = 'any';
+      input.className = 'form-control form-control-sm';
+      input.placeholder = placeholder || '';
+      field.appendChild(lab);
+      field.appendChild(input);
+      grid.appendChild(field);
+      inputs[key] = { input };
+      input.addEventListener('change', () => this.commitLocalStyle(target, key, input.value));
+    };
+
+    const addSelect = (key, label, options) => {
+      const field = document.createElement('div');
+      const lab = document.createElement('label');
+      lab.className = 'small';
+      lab.textContent = label;
+      const select = document.createElement('select');
+      select.className = 'form-control form-control-sm';
+      select.innerHTML = [''].concat(options || []).map(o => `<option value="${o}">${o}</option>`).join('');
+      field.appendChild(lab);
+      field.appendChild(select);
+      grid.appendChild(field);
+      inputs[key] = { input: select };
+      select.addEventListener('change', () => this.commitLocalStyle(target, key, select.value));
+    };
+
+    if (target === 'node') {
+      addColor('fill', 'Couleur', '#ffcc00');
+      addColor('stroke', 'Contour', '#333');
+      addNumber('strokeWidth', 'Epaisseur', '1');
+      addNumber('opacity', 'Opacite', '1');
+      addNumber('size', 'Taille', '30');
+      addSelect('shape', 'Forme', ['circle', 'rect']);
+      addColor('labelColor', 'Couleur label', '#000');
+    } else {
+      addColor('linkColor', 'Couleur lien', '#000');
+      addNumber('linkWidth', 'Largeur', '2');
+      addNumber('linkOpacity', 'Opacite', '1');
+      addText('linkDash', 'Dasharray', '5,3');
+      addColor('labelColor', 'Couleur label', '#000');
+    }
+
+    wrapper.appendChild(grid);
+
+    const clearRow = document.createElement('div');
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'btn btn-sm btn-outline-secondary';
+    clearBtn.textContent = 'Effacer overrides';
+    clearBtn.addEventListener('click', () => this.clearLocalStyle(target));
+    clearRow.appendChild(clearBtn);
+    wrapper.appendChild(clearRow);
+
+    formElement.appendChild(wrapper);
+  }
+
+  appendRuleMatchesSection(formElement, target) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'rule-match-block';
+
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = 'Regles actives';
+    wrapper.appendChild(title);
+
+    const list = document.createElement('div');
+    list.className = 'rule-match-list';
+    wrapper.appendChild(list);
+    formElement.appendChild(wrapper);
+
+    this.ruleMatchContainers[target] = list;
+
+    list.addEventListener('click', event => {
+      const btn = event.target.closest('button[data-rule-jump]');
+      if (!btn) return;
+      this.jumpToRule(btn.dataset.ruleJump, btn.dataset.ruleType);
+    });
+  }
+
+  updateRuleMatches(target, item) {
+    const list = this.ruleMatchContainers[target];
+    if (!list) return;
+    if (!item) {
+      list.innerHTML = '';
+      return;
+    }
+    if (!this.renderer || typeof this.renderer.ruleMatches !== 'function') {
+      list.innerHTML = '';
+      return;
+    }
+
+    const styleRules = target === 'node'
+      ? (graphConfig.styleRules?.nodes || [])
+      : (graphConfig.styleRules?.links || []);
+    const pieRules = target === 'node'
+      ? (graphConfig.pieRules?.nodes || [])
+      : [];
+
+    const styleMatches = (Array.isArray(styleRules) ? styleRules : [])
+      .filter(r => r && r.enabled !== false)
+      .filter(r => this.renderer.ruleMatches(r, target, item))
+      .slice()
+      .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+
+    const pieMatches = (Array.isArray(pieRules) ? pieRules : [])
+      .filter(r => r && r.enabled !== false)
+      .filter(r => this.renderer.ruleMatches(r, 'node', item))
+      .slice()
+      .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+
+    const lines = [];
+    const pushLine = (typeLabel, rule) => {
+      const name = this.escapeHtml(rule?.name || '(sans nom)');
+      const prio = rule?.priority ?? 0;
+      lines.push(`
+        <div class="rule-match-item">
+          <span class="badge badge-light">${typeLabel}</span>
+          <span class="rule-match-name">${name}</span>
+          <span class="rule-match-priority">P${prio}</span>
+          <button class="btn btn-sm btn-outline-secondary" data-rule-jump="${rule.id}" data-rule-type="${typeLabel === 'Pie' ? 'pie' : 'style'}">Modifier</button>
+        </div>
+      `);
+    };
+
+    styleMatches.forEach(rule => pushLine('Style', rule));
+    pieMatches.forEach(rule => pushLine('Pie', rule));
+
+    if (!lines.length) {
+      list.innerHTML = '<div class="small text-muted">Aucune regle active pour cet element.</div>';
+    } else {
+      list.innerHTML = lines.join('');
+    }
+  }
+
+  refreshRuleMatches() {
+    if (this.graphState.selectedNode) {
+      this.updateRuleMatches('node', this.graphState.selectedNode);
+    }
+    if (this.graphState.selectedLink) {
+      this.updateRuleMatches('link', this.graphState.selectedLink);
+    }
+  }
+
+  jumpToRule(ruleId, type) {
+    if (!ruleId) return;
+    const containerId = type === 'pie' ? 'pie-rules-list' : 'style-rules-list';
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const esc = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(ruleId) : String(ruleId).replace(/"/g, '\\"');
+    const card = container.querySelector(`[data-rule-id="${esc}"]`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.add('rule-card-highlight');
+    setTimeout(() => card.classList.remove('rule-card-highlight'), 1200);
+  }
+
+  escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  updateLocalStyleForm(target, item) {
+    const inputs = this.localStyleInputs[target] || {};
+    const local = item?.__localStyle || item?.localStyle || {};
+    const enabled = item?.__localStyleEnabled !== false;
+    const enabledEntry = inputs.__enabled;
+    if (enabledEntry?.input) enabledEntry.input.checked = enabled;
+    Object.keys(inputs).forEach(key => {
+      if (key === '__enabled') return;
+      const entry = inputs[key];
+      const raw = local && typeof local === 'object' ? local[key] : '';
+      const value = raw != null ? String(raw) : '';
+      if (entry.input) entry.input.value = value;
+      if (entry.color) {
+        const hex = this.normalizeHexColor(value);
+        entry.color.value = hex || '#000000';
+      }
+      if (entry.input) entry.input.disabled = !enabled;
+      if (entry.color) entry.color.disabled = !enabled;
+    });
+  }
+
+  commitLocalStyleEnabled(target, enabled) {
+    const item = target === 'node' ? this.graphState.selectedNode : this.graphState.selectedLink;
+    if (!item) return;
+    const next = !!enabled;
+    const current = item.__localStyleEnabled !== false;
+    if (next === current) return;
+    const payload = {
+      field: '__localStyleEnabled',
+      from: current,
+      to: next,
+      label: `Toggle local style (${target})`
+    };
+    if (target === 'node') {
+      payload.nodeId = item.id;
+      performAction({ type: "update_node", data: payload });
+    } else {
+      payload.linkId = item.id;
+      performAction({ type: "update_link", data: payload });
+    }
+    this.updateLocalStyleForm(target, item);
+    this.renderer.updateGraph();
+  }
+
+  commitLocalStyle(target, key, value) {
+    const item = target === 'node' ? this.graphState.selectedNode : this.graphState.selectedLink;
+    if (!item) return;
+    const current = item.__localStyle && typeof item.__localStyle === 'object'
+      ? { ...item.__localStyle }
+      : {};
+    const next = { ...current };
+    const cleaned = value == null ? '' : String(value).trim();
+    if (cleaned === '') {
+      delete next[key];
+    } else {
+      next[key] = value;
+    }
+
+    const same = JSON.stringify(current) === JSON.stringify(next);
+    if (same) return;
+
+    const payload = {
+      field: '__localStyle',
+      from: current,
+      to: next,
+      label: `Update local style (${target})`
+    };
+    if (target === 'node') {
+      payload.nodeId = item.id;
+      performAction({ type: "update_node", data: payload });
+    } else {
+      payload.linkId = item.id;
+      performAction({ type: "update_link", data: payload });
+    }
+    this.renderer.updateGraph();
+  }
+
+  clearLocalStyle(target) {
+    const item = target === 'node' ? this.graphState.selectedNode : this.graphState.selectedLink;
+    if (!item) return;
+    const current = item.__localStyle && typeof item.__localStyle === 'object'
+      ? { ...item.__localStyle }
+      : {};
+    if (!Object.keys(current).length) return;
+    const payload = {
+      field: '__localStyle',
+      from: current,
+      to: {},
+      label: `Clear local style (${target})`
+    };
+    if (target === 'node') {
+      payload.nodeId = item.id;
+      performAction({ type: "update_node", data: payload });
+    } else {
+      payload.linkId = item.id;
+      performAction({ type: "update_link", data: payload });
+    }
+    this.updateLocalStyleForm(target, item);
+    this.renderer.updateGraph();
+  }
+
+  normalizeHexColor(value) {
+    if (!value) return null;
+    const v = String(value).trim();
+    const short = v.match(/^#([0-9a-f]{3})$/i);
+    if (short) {
+      const expanded = short[1].split('').map(ch => ch + ch).join('');
+      return `#${expanded.toLowerCase()}`;
+    }
+    const long = v.match(/^#([0-9a-f]{6})$/i);
+    if (long) return `#${long[1].toLowerCase()}`;
+    const rgb = v.match(/^rgb\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+    if (rgb) {
+      const toHex = (n) => Math.max(0, Math.min(255, Number(n)))
+        .toString(16)
+        .padStart(2, '0');
+      return `#${toHex(rgb[1])}${toHex(rgb[2])}${toHex(rgb[3])}`;
+    }
+    return null;
+  }
+
   focusAndSelectField(inputElement) {
     if (!inputElement) return;
 
@@ -538,3 +922,4 @@ export class FormManager {
     }
   }
 }
+

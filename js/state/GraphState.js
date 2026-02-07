@@ -334,6 +334,7 @@ export class GraphState {
     const group = this.getSchemaGroup(target);
     (items || []).forEach(item => {
       Object.keys(item || {}).forEach(field => {
+        if (field.startsWith('__')) return;
         if (!group[field]) {
           const values = (items || []).map(i => i[field]);
           group[field] = { type: inferTypeFromValues(values) };
@@ -698,7 +699,7 @@ export class GraphState {
       Object.keys(item || {}).forEach(key => fields.add(key));
     });
     const allowedTypes = Array.isArray(opts.types) ? opts.types.map(normalizeType) : null;
-    const list = Array.from(fields).filter(f => !excluded.includes(f));
+    const list = Array.from(fields).filter(f => !excluded.includes(f) && !String(f).startsWith('__'));
     if (!allowedTypes) return list;
     return list.filter(f => allowedTypes.includes(this.getFieldResolvedType(target, f)));
   }

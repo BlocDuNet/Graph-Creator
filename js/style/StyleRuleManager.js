@@ -164,21 +164,22 @@ export class StyleRuleManager {
   buildStyleRuleCard(rule) {
     const targetLabel = rule.target === 'link' ? 'Lien' : 'Noeud';
     const style = rule.style || {};
+    const esc = v => this.escapeAttr(v);
     return `
-      <div class="rule-card" data-rule-id="${rule.id}" data-target="${rule.target}">
+      <div class="rule-card" data-rule-id="${esc(rule.id)}" data-target="${esc(rule.target)}">
         <div class="rule-header">
           <label class="small">
             <input type="checkbox" data-field="enabled" ${rule.enabled ? 'checked' : ''}> Actif
           </label>
           <span class="badge badge-light">${targetLabel}</span>
-          <input class="form-control form-control-sm rule-name" data-field="name" value="${rule.name || ''}" placeholder="Nom regle">
-          <input class="form-control form-control-sm rule-priority" data-field="priority" type="number" value="${rule.priority ?? 0}" title="Priorite">
+          <input class="form-control form-control-sm rule-name" data-field="name" value="${esc(rule.name || '')}" placeholder="Nom regle">
+          <input class="form-control form-control-sm rule-priority" data-field="priority" type="number" value="${esc(rule.priority ?? 0)}" title="Priorite">
           <button class="btn btn-sm btn-outline-danger" data-action="remove">Supprimer</button>
         </div>
         <div class="rule-row">
           <label class="small">Condition (expression)</label>
           <div class="rule-when">
-            <input class="form-control form-control-sm" data-field="when" value="${rule.when || ''}" placeholder='ex: contains(status,"ok")'>
+            <input class="form-control form-control-sm" data-field="when" value="${esc(rule.when || '')}" placeholder='ex: contains(status,"ok")'>
             <button class="btn btn-sm btn-outline-secondary" data-action="edit-when">Builder</button>
           </div>
         </div>
@@ -188,27 +189,27 @@ export class StyleRuleManager {
             <label class="small">Couleur</label>
             <div class="color-input">
               <input type="color" class="form-control form-control-sm color-picker" data-color-for="style.fill" value="${this.getColorInputValue(style.fill)}">
-              <input class="form-control form-control-sm" data-field="style.fill" value="${style.fill || ''}" placeholder="#ffcc00">
+              <input class="form-control form-control-sm" data-field="style.fill" value="${esc(style.fill || '')}" placeholder="#ffcc00">
             </div>
           </div>
           <div>
             <label class="small">Contour</label>
             <div class="color-input">
               <input type="color" class="form-control form-control-sm color-picker" data-color-for="style.stroke" value="${this.getColorInputValue(style.stroke)}">
-              <input class="form-control form-control-sm" data-field="style.stroke" value="${style.stroke || ''}" placeholder="#333">
+              <input class="form-control form-control-sm" data-field="style.stroke" value="${esc(style.stroke || '')}" placeholder="#333">
             </div>
           </div>
           <div>
             <label class="small">Epaisseur</label>
-            <input class="form-control form-control-sm" data-field="style.strokeWidth" value="${style.strokeWidth || ''}" placeholder="1">
+            <input class="form-control form-control-sm" data-field="style.strokeWidth" value="${esc(style.strokeWidth || '')}" placeholder="1">
           </div>
           <div>
             <label class="small">Opacite</label>
-            <input class="form-control form-control-sm" data-field="style.opacity" value="${style.opacity || ''}" placeholder="1">
+            <input class="form-control form-control-sm" data-field="style.opacity" value="${esc(style.opacity || '')}" placeholder="1">
           </div>
           <div>
             <label class="small">Taille</label>
-            <input class="form-control form-control-sm" data-field="style.size" value="${style.size || ''}" placeholder="30">
+            <input class="form-control form-control-sm" data-field="style.size" value="${esc(style.size || '')}" placeholder="30">
           </div>
           <div>
             <label class="small">Forme</label>
@@ -221,7 +222,7 @@ export class StyleRuleManager {
             <label class="small">Couleur label</label>
             <div class="color-input">
               <input type="color" class="form-control form-control-sm color-picker" data-color-for="style.labelColor" value="${this.getColorInputValue(style.labelColor)}">
-              <input class="form-control form-control-sm" data-field="style.labelColor" value="${style.labelColor || ''}" placeholder="#000">
+              <input class="form-control form-control-sm" data-field="style.labelColor" value="${esc(style.labelColor || '')}" placeholder="#000">
             </div>
           </div>
         </div>` : `
@@ -230,26 +231,26 @@ export class StyleRuleManager {
             <label class="small">Couleur lien</label>
             <div class="color-input">
               <input type="color" class="form-control form-control-sm color-picker" data-color-for="style.linkColor" value="${this.getColorInputValue(style.linkColor)}">
-              <input class="form-control form-control-sm" data-field="style.linkColor" value="${style.linkColor || ''}" placeholder="#000">
+              <input class="form-control form-control-sm" data-field="style.linkColor" value="${esc(style.linkColor || '')}" placeholder="#000">
             </div>
           </div>
           <div>
             <label class="small">Largeur</label>
-            <input class="form-control form-control-sm" data-field="style.linkWidth" value="${style.linkWidth || ''}" placeholder="2">
+            <input class="form-control form-control-sm" data-field="style.linkWidth" value="${esc(style.linkWidth || '')}" placeholder="2">
           </div>
           <div>
             <label class="small">Opacite</label>
-            <input class="form-control form-control-sm" data-field="style.linkOpacity" value="${style.linkOpacity || ''}" placeholder="1">
+            <input class="form-control form-control-sm" data-field="style.linkOpacity" value="${esc(style.linkOpacity || '')}" placeholder="1">
           </div>
           <div>
             <label class="small">Dasharray</label>
-            <input class="form-control form-control-sm" data-field="style.linkDash" value="${style.linkDash || ''}" placeholder="5,3">
+            <input class="form-control form-control-sm" data-field="style.linkDash" value="${esc(style.linkDash || '')}" placeholder="5,3">
           </div>
           <div>
             <label class="small">Couleur label</label>
             <div class="color-input">
               <input type="color" class="form-control form-control-sm color-picker" data-color-for="style.labelColor" value="${this.getColorInputValue(style.labelColor)}">
-              <input class="form-control form-control-sm" data-field="style.labelColor" value="${style.labelColor || ''}" placeholder="#000">
+              <input class="form-control form-control-sm" data-field="style.labelColor" value="${esc(style.labelColor || '')}" placeholder="#000">
             </div>
           </div>
         </div>`}
@@ -258,34 +259,36 @@ export class StyleRuleManager {
   }
 
   buildPieRuleCard(rule) {
+    const esc = v => this.escapeAttr(v);
+    const escText = v => this.escapeText(v);
     return `
-      <div class="rule-card" data-rule-id="${rule.id}" data-target="pie">
+      <div class="rule-card" data-rule-id="${esc(rule.id)}" data-target="pie">
         <div class="rule-header">
           <label class="small">
             <input type="checkbox" data-field="enabled" ${rule.enabled ? 'checked' : ''}> Actif
           </label>
           <span class="badge badge-light">Pie chart</span>
-          <input class="form-control form-control-sm rule-name" data-field="name" value="${rule.name || ''}" placeholder="Nom regle">
-          <input class="form-control form-control-sm rule-priority" data-field="priority" type="number" value="${rule.priority ?? 0}" title="Priorite">
+          <input class="form-control form-control-sm rule-name" data-field="name" value="${esc(rule.name || '')}" placeholder="Nom regle">
+          <input class="form-control form-control-sm rule-priority" data-field="priority" type="number" value="${esc(rule.priority ?? 0)}" title="Priorite">
           <button class="btn btn-sm btn-outline-danger" data-action="remove">Supprimer</button>
         </div>
         <div class="rule-row">
           <label class="small">Condition (expression)</label>
           <div class="rule-when">
-            <input class="form-control form-control-sm" data-field="when" value="${rule.when || ''}" placeholder='ex: gt(score,50)'>
+            <input class="form-control form-control-sm" data-field="when" value="${esc(rule.when || '')}" placeholder='ex: gt(score,50)'>
             <button class="btn btn-sm btn-outline-secondary" data-action="edit-when">Builder</button>
           </div>
         </div>
         <div class="rule-grid">
           <div>
             <label class="small">Champs (option B)</label>
-            <input class="form-control form-control-sm" data-field="fields" value="${rule.fields || ''}" placeholder="ex: a,b,c">
+            <input class="form-control form-control-sm" data-field="fields" value="${esc(rule.fields || '')}" placeholder="ex: a,b,c">
           </div>
           <div>
             <label class="small">Couleurs</label>
             <div class="color-input">
               <input type="color" class="form-control form-control-sm color-picker" data-color-append="colors" value="${this.getColorInputValue(this.getFirstColor(rule.colors))}">
-              <input class="form-control form-control-sm" data-field="colors" value="${rule.colors || ''}" placeholder="#f00,#0f0,#00f">
+              <input class="form-control form-control-sm" data-field="colors" value="${esc(rule.colors || '')}" placeholder="#f00,#0f0,#00f">
             </div>
           </div>
           <div>
@@ -297,20 +300,20 @@ export class StyleRuleManager {
           </div>
           <div>
             <label class="small">Epaisseur anneau</label>
-            <input class="form-control form-control-sm" data-field="ringWidth" value="${rule.ringWidth || ''}" placeholder="6">
+            <input class="form-control form-control-sm" data-field="ringWidth" value="${esc(rule.ringWidth || '')}" placeholder="6">
           </div>
           <div>
             <label class="small">Offset anneau</label>
-            <input class="form-control form-control-sm" data-field="offset" value="${rule.offset || ''}" placeholder="2">
+            <input class="form-control form-control-sm" data-field="offset" value="${esc(rule.offset || '')}" placeholder="2">
           </div>
           <div>
             <label class="small">Taille min</label>
-            <input class="form-control form-control-sm" data-field="minSize" value="${rule.minSize || ''}" placeholder="0">
+            <input class="form-control form-control-sm" data-field="minSize" value="${esc(rule.minSize || '')}" placeholder="0">
           </div>
         </div>
         <div class="rule-row">
           <label class="small">Segments JSON (option A)</label>
-          <textarea class="form-control form-control-sm" data-field="segmentsJson" rows="2" placeholder='[{"label":"A","value":10,"color":"#f00"}]'>${rule.segmentsJson || ''}</textarea>
+          <textarea class="form-control form-control-sm" data-field="segmentsJson" rows="2" placeholder='[{"label":"A","value":10,"color":"#f00"}]'>${escText(rule.segmentsJson || '')}</textarea>
         </div>
       </div>
     `;
@@ -492,5 +495,21 @@ export class StyleRuleManager {
   getFirstColor(value) {
     const list = this.parseColorList(value);
     return list[0] || '';
+  }
+
+  escapeAttr(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  escapeText(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 }

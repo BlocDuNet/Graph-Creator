@@ -210,7 +210,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
 
     nodeEnter.append('g').attr('class', 'node-pie');
     nodeEnter.append('rect').attr('class', 'node-rect').attr('rx', 4).attr('ry', 4);
-    nodeEnter.append('circle');
+    nodeEnter.append('circle').attr('class', 'node-circle');
 
     // Ajout du texte
     nodeEnter.append('text')
@@ -222,6 +222,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
         }
         return nodeIdField ? (d[nodeIdField] || "") : "";
       });
+    nodeEnter.append('circle').attr('class', 'node-hit');
 
     // Fusion et mise a jour des n"uds existants
     const merged = nodeSelection.merge(nodeEnter)
@@ -235,16 +236,26 @@ console.log("Renderer initialized with graph config:", graphConfig);
       d.__renderSize = renderSize;
       d.__style = style;
       d.__pie = this.getPieForNode(d, renderSize);
+      const pieOuter = d.__pie && d.__pie.mode === 'ring'
+        ? renderSize + (d.__pie.offset || 2) + (d.__pie.ringWidth || 6)
+        : renderSize;
+      const baseHit = d.__style?.shape === 'rect'
+        ? renderSize * Math.SQRT2
+        : renderSize;
+      d.__hitRadius = Math.max(baseHit || 0, pieOuter || 0);
     });
 
     // Mise a jour du cercle
-    merged.select('circle')
+    merged.select('.node-circle')
       .attr('r', d => d.__renderSize || defaultNodeSize)
       .attr('fill', d => this.getNodeFill(d))
       .attr('stroke', d => this.getNodeStroke(d))
       .attr('stroke-width', d => this.getNodeStrokeWidth(d))
       .attr('opacity', d => this.getNodeOpacity(d))
       .style('display', d => (d.__style?.shape === 'rect' ? 'none' : ''));
+
+    merged.select('.node-hit')
+      .attr('r', d => d.__hitRadius || d.__renderSize || defaultNodeSize);
 
     // Mise a jour du rectangle (si besoin)
     merged.select('.node-rect')
@@ -261,7 +272,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
     // Mise a jour du texte
     merged.select('text')
       .attr('dx', d => (d.__renderSize || defaultNodeSize) + 5)
-      .attr('fill', d => d.__style?.labelColor || null)
+      .attr('fill', d => d.__style?.labelColor || (d === this.graphState.selectedNode ? '#0077ff' : null))
       .text(d => {
         if (nodeLabelField) {
           const val = this.graphState.resolveFieldValue('node', d, nodeLabelField);
@@ -365,7 +376,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
     // Fusion et mise a jour
     labelEnter.merge(linkLabels)
       .classed('selected', d => d === this.graphState.selectedLink)
-      .attr('fill', d => d.__style?.labelColor || null)
+      .attr('fill', d => d.__style?.labelColor || (d === this.graphState.selectedLink ? '#0077ff' : null))
       .text(d => {
         if (linkLabelField === '') return '';
         const val = this.graphState.resolveFieldValue('link', d, linkLabelField);
@@ -675,18 +686,37 @@ console.log("Renderer initialized with graph config:", graphConfig);
     const list = target === 'link'
       ? (graphConfig.styleRules?.links || [])
       : (graphConfig.styleRules?.nodes || []);
-    if (!Array.isArray(list) || !list.length) return {};
-    const sorted = list
-      .filter(r => r && r.enabled !== false)
-      .slice()
-      .sort((a, b) => this.resolveStyleNumber(a.priority, 0) - this.resolveStyleNumber(b.priority, 0));
     let style = {};
-    sorted.forEach(rule => {
-      if (this.ruleMatches(rule, target, item)) {
-        style = { ...style, ...(rule.style || {}) };
-      }
-    });
+    if (Array.isArray(list) && list.length) {
+      const sorted = list
+        .filter(r => r && r.enabled !== false)
+        .slice()
+        .sort((a, b) => this.resolveStyleNumber(a.priority, 0) - this.resolveStyleNumber(b.priority, 0));
+      sorted.forEach(rule => {
+        if (this.ruleMatches(rule, target, item)) {
+          style = { ...style, ...(rule.style || {}) };
+        }
+      });
+    }
+    const local = this.getLocalStyle(item);
+    if (local && Object.keys(local).length) {
+      return { ...style, ...local };
+    }
     return style;
+  }
+
+  getLocalStyle(item) {
+    if (!item || typeof item !== 'object') return {};
+    if (item.__localStyleEnabled === false) return {};
+    const local = item.__localStyle || item.localStyle;
+    if (!local || typeof local !== 'object') return {};
+    const cleaned = {};
+    Object.keys(local).forEach(key => {
+      const value = local[key];
+      if (value === '' || value === null || value === undefined) return;
+      cleaned[key] = value;
+    });
+    return cleaned;
   }
 
   parseList(value) {

@@ -302,8 +302,14 @@ export class ConditionalFieldManager {
     if (this.el.validateOutput) this.el.validateOutput.textContent = '';
 
     if (expr) {
-      this.updateCanonicalFromExpression();
-      if (this.el.mode) this.el.mode.value = 'expression';
+      const ast = this.updateCanonicalFromExpression();
+      const group = this.astToConditionGroup(ast);
+      if (group) {
+        this.renderConditionGroup({ conditionGroup: group });
+        if (this.el.mode) this.el.mode.value = 'visual';
+      } else {
+        if (this.el.mode) this.el.mode.value = 'expression';
+      }
     } else {
       this.renderConditionGroup({});
     }
@@ -692,6 +698,89 @@ export class ConditionalFieldManager {
       return { type: 'call', name: op, args: [left, right] };
     }
     return { type: 'binary', op, left, right };
+  }
+
+  astToConditionGroup(ast) {
+    if (!ast) return null;
+    if (ast.type === 'binary' && (ast.op === 'and' || ast.op === 'or')) {
+      const join = ast.op;
+      const items = [];
+      const collect = node => {
+        if (node?.type === 'binary' && node.op === join) {
+          return collect(node.left) && collect(node.right);
+        }
+        const item = this.astToConditionItem(node);
+        if (!item) return false;
+        items.push(item);
+        return true;
+      };
+      if (!collect(ast)) return null;
+      return { type: 'group', join, items };
+    }
+    if (ast.type === 'call' && (ast.name === 'and' || ast.name === 'or')) {
+      const join = ast.name;
+      const items = [];
+      const collect = node => {
+        if (!node) return false;
+        if (node.type === 'call' && node.name === join) {
+          return (node.args || []).every(arg => collect(arg));
+        }
+        if (node.type === 'binary' && node.op === join) {
+          return collect(node.left) && collect(node.right);
+        }
+        const item = this.astToConditionItem(node);
+        if (!item) return false;
+        items.push(item);
+        return true;
+      };
+      if (!(ast.args || []).length) return null;
+      if (!(ast.args || []).every(arg => collect(arg))) return null;
+      return { type: 'group', join, items };
+    }
+    const single = this.astToConditionItem(ast);
+    if (!single) return null;
+    return { type: 'group', join: 'and', items: [single] };
+  }
+
+  astToConditionItem(ast) {
+    if (!ast || typeof ast !== 'object') return null;
+    if (ast.type === 'binary' && ['gt', 'gte', 'lt', 'lte', 'eq', 'neq'].includes(ast.op)) {
+      const left = this.astToOperand(ast.left);
+      const right = this.astToOperand(ast.right);
+      if (!left || !right) return null;
+      return { type: 'condition', left, op: ast.op, right };
+    }
+    if (ast.type === 'call' && ['contains', 'startsWith', 'endsWith', 'regex'].includes(ast.name)) {
+      const left = this.astToOperand(ast.args?.[0]);
+      const right = this.astToOperand(ast.args?.[1]);
+      if (!left || !right) return null;
+      return { type: 'condition', left, op: ast.name, right };
+    }
+    if (ast.type === 'call' && ['gt', 'gte', 'lt', 'lte', 'eq', 'neq'].includes(ast.name)) {
+      const left = this.astToOperand(ast.args?.[0]);
+      const right = this.astToOperand(ast.args?.[1]);
+      if (!left || !right) return null;
+      return { type: 'condition', left, op: ast.name, right };
+    }
+    return null;
+  }
+
+  astToOperand(ast) {
+    if (!ast || typeof ast !== 'object') return null;
+    if (ast.type === 'field') {
+      return { source: 'field', field: ast.name || '', value: '' };
+    }
+    if (ast.type === 'literal') {
+      return { source: 'value', field: '', value: this.literalToString(ast) };
+    }
+    return null;
+  }
+
+  literalToString(ast) {
+    if (!ast) return '';
+    if (ast.valueType === 'boolean') return ast.value ? 'true' : 'false';
+    if (ast.valueType === 'number') return String(ast.value);
+    return String(ast.value ?? '');
   }
 
   parseLiteral(value) {
