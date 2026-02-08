@@ -39,6 +39,13 @@ class HistoryManager extends EventTarget {
         this.graphState.schema = { nodes: {}, links: {} };
         this.graphState.initializeSchema();
       }
+      if (typeof this.graphState.syncNextIds === 'function') {
+        this.graphState.syncNextIds();
+      }
+      // Reset selection after import to avoid stale focus/state
+      this.graphState.selectedNode = null;
+      this.graphState.selectedLink = null;
+      eventBus.emit('selection-cleared');
     } else if (action.type === "add_field") {
       const { field, target, oldValues, fieldType, defaultValue, oldType } = action.data;
       const items = (target === "node") ? this.graphState.nodes : this.graphState.links;

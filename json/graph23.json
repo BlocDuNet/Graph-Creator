@@ -1,0 +1,292 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Node1",
+      "description": "Description1",
+      "x": 100,
+      "y": 300,
+      "size": 30,
+      "index": 0,
+      "aa": "",
+      "aaa": ""
+    },
+    {
+      "id": "2",
+      "name": "Node2",
+      "description": "Description2",
+      "x": 194,
+      "y": 199,
+      "size": 30,
+      "index": 1,
+      "aa": "",
+      "aaa": "",
+      "__localStyle": {
+        "fill": "#402626",
+        "labelColor": "#e7440d",
+        "strokeWidth": "10",
+        "opacity": "0.5",
+        "shape": "rect"
+      }
+    },
+    {
+      "id": "3",
+      "name": "Description3",
+      "description": "Description3",
+      "x": 300,
+      "y": 300,
+      "size": 30,
+      "index": 2,
+      "aa": "",
+      "aaa": ""
+    },
+    {
+      "id": "4",
+      "name": "Node4",
+      "description": "Description4",
+      "x": 381,
+      "y": 201,
+      "size": 30,
+      "index": 3,
+      "aa": "",
+      "aaa": ""
+    }
+  ],
+  "links": [
+    {
+      "id": "1",
+      "name": "Link1",
+      "description": "Description1",
+      "width": 5,
+      "isLoop": false,
+      "curvature": 0.2,
+      "index": 0,
+      "source": "1",
+      "target": "2"
+    },
+    {
+      "id": "2",
+      "name": "Link2",
+      "description": "Description2",
+      "width": 5,
+      "isLoop": false,
+      "curvature": 0.2,
+      "index": 1,
+      "source": "2",
+      "target": "3"
+    },
+    {
+      "id": "3",
+      "name": "Link3",
+      "description": "Description3",
+      "width": 5,
+      "isLoop": false,
+      "curvature": 0.2,
+      "index": 2,
+      "source": "3",
+      "target": "4"
+    }
+  ],
+  "schema": {
+    "nodes": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "x": {
+        "type": "number"
+      },
+      "y": {
+        "type": "number"
+      },
+      "size": {
+        "type": "number"
+      },
+      "index": {
+        "type": "number"
+      },
+      "aa": {
+        "type": "conditional",
+        "expr": "if(gt(x, y), 1, 0)",
+        "ast": {
+          "type": "call",
+          "name": "if",
+          "args": [
+            {
+              "type": "binary",
+              "op": "gt",
+              "left": {
+                "type": "field",
+                "name": "x"
+              },
+              "right": {
+                "type": "field",
+                "name": "y"
+              }
+            },
+            {
+              "type": "literal",
+              "value": 1,
+              "valueType": "number"
+            },
+            {
+              "type": "literal",
+              "value": 0,
+              "valueType": "number"
+            }
+          ]
+        },
+        "resultType": "boolean",
+        "visual": {
+          "condLeftSource": "field",
+          "condLeftField": "x",
+          "condLeftValue": "",
+          "condOperator": "gt",
+          "condRightSource": "field",
+          "condRightField": "y",
+          "condRightValue": "",
+          "thenMode": "value",
+          "thenSource": "value",
+          "thenField": "",
+          "thenValue": "1",
+          "thenConcatA": "",
+          "thenConcatSep": "",
+          "thenConcatB": "",
+          "elseMode": "value",
+          "elseSource": "value",
+          "elseField": "",
+          "elseValue": "0",
+          "elseConcatA": "",
+          "elseConcatSep": "",
+          "elseConcatB": ""
+        }
+      },
+      "aaa": {
+        "type": "number"
+      },
+      "__localStyle": {
+        "type": "object"
+      }
+    },
+    "links": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "width": {
+        "type": "number"
+      },
+      "isLoop": {
+        "type": "boolean"
+      },
+      "curvature": {
+        "type": "number"
+      },
+      "index": {
+        "type": "boolean"
+      },
+      "source": {
+        "type": "string"
+      },
+      "target": {
+        "type": "string"
+      }
+    }
+  },
+  "styleRules": {
+    "nodes": [
+      {
+        "id": "style-1770493225457-h8ba",
+        "name": "Noeud",
+        "enabled": true,
+        "target": "node",
+        "priority": 0,
+        "when": "contains(name, \"1\")",
+        "style": {
+          "fill": "#e31616",
+          "stroke": "",
+          "strokeWidth": "",
+          "opacity": "",
+          "size": "",
+          "shape": "circle",
+          "labelColor": "",
+          "linkColor": "",
+          "linkWidth": "",
+          "linkOpacity": "",
+          "linkDash": ""
+        }
+      },
+      {
+        "id": "style-1770496539872-vgmk",
+        "name": "Noeud",
+        "enabled": true,
+        "target": "node",
+        "priority": 0,
+        "when": "contains(name, description)",
+        "style": {
+          "fill": "#09ff05",
+          "stroke": "#1e00ff",
+          "strokeWidth": "",
+          "opacity": "",
+          "size": "",
+          "shape": "circle",
+          "labelColor": "",
+          "linkColor": "",
+          "linkWidth": "",
+          "linkOpacity": "",
+          "linkDash": ""
+        }
+      },
+      {
+        "id": "style-1770497350564-g5vt",
+        "name": "Noeud",
+        "enabled": true,
+        "target": "node",
+        "priority": "-10",
+        "when": "gt(sumNeighbors(\"size\"), 31)",
+        "style": {
+          "fill": "",
+          "stroke": "#c60606",
+          "strokeWidth": "",
+          "opacity": "",
+          "size": "",
+          "shape": "rect",
+          "labelColor": "",
+          "linkColor": "",
+          "linkWidth": "",
+          "linkOpacity": "",
+          "linkDash": ""
+        }
+      }
+    ],
+    "links": []
+  },
+  "pieRules": {
+    "nodes": [
+      {
+        "id": "pie-1770493182316-5hj5",
+        "name": "Pie chart",
+        "enabled": true,
+        "priority": 0,
+        "when": "contains(name,\"2\")",
+        "fields": "x,y",
+        "colors": "#1c2a97, #612c9a, #1c2b9b, #1c2b9c, #1c2ca0, #1d2da5, #1c2ca6, #1d2daa, #1c2dab, #1d2eaf, #1c2db0, #1d2fb4, #1c2eb5, #1b2db6, #1c2eba, #1b2ebb, #1d2fbf, #1b2fc0, #1a2ec1, #1a2ec7, #192dc8, #192ecc, #182dcd, #172dd3, #162cd4, #162dda, #142cdb, #132bdd, #122ade, #142ce1, #122be2, #112ae4, #1029e5, #102aea, #0f28e6, #0f29eb, #0e28ec, #0c27ed, #0d28f2, #0b27f4, #0b26ef, #0a26f5, #0824f7, #0b27f9, #0925fb, #0824fd, #0522ff, #0623fe",
+        "segmentsJson": "",
+        "mode": "inside",
+        "ringWidth": "6",
+        "offset": "2",
+        "minSize": "0"
+      }
+    ]
+  }
+}

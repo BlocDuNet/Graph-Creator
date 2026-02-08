@@ -202,15 +202,27 @@ export class FormManager {
       }
 
       const empty = v => v === null || v === undefined || v === '';
+      const isNodeTarget = inputObject === this.nodeInputs;
+      const ownerId = input.dataset.ownerId;
+      const item = isNodeTarget
+        ? (ownerId ? this.graphState.nodes.find(n => n.id === ownerId) : this.graphState.selectedNode)
+        : (ownerId ? this.graphState.links.find(l => l.id === ownerId) : this.graphState.selectedLink);
+      if (!item) return;
 
-      if (this.graphState.selectedNode && inputObject === this.nodeInputs) {
-        const oldValue = this.graphState.selectedNode[fieldName] ?? "";
+      if (isNodeTarget) {
+        const oldValue = item[fieldName] ?? "";
+        const isCoordField = fieldName === 'x' || fieldName === 'y';
+        if (isCoordField && empty(result.value) && !empty(oldValue)) {
+          input.value = formatValueForInput(oldValue, fieldType);
+          input.classList.remove('value-invalid');
+          return;
+        }
         if (empty(result.value) && empty(oldValue)) return;
         if (result.value !== oldValue) {
           performAction({
             type: "update_node",
             data: {
-              nodeId: this.graphState.selectedNode.id,
+              nodeId: item.id,
               field: fieldName,
               from: oldValue,
               to: result.value,
@@ -218,14 +230,14 @@ export class FormManager {
             }
           });
         }
-      } else if (this.graphState.selectedLink && inputObject === this.linkInputs) {
-        const oldValue = this.graphState.selectedLink[fieldName] ?? "";
+      } else {
+        const oldValue = item[fieldName] ?? "";
         if (empty(result.value) && empty(oldValue)) return;
         if (result.value !== oldValue) {
           performAction({
             type: "update_link",
             data: {
-              linkId: this.graphState.selectedLink.id,
+              linkId: item.id,
               field: fieldName,
               from: oldValue,
               to: result.value,
@@ -240,6 +252,14 @@ export class FormManager {
       input.value = formatValueForInput(result.value, fieldType);
       this.renderer.updateGraph();
     };
+
+    const rememberOwner = () => {
+      const current = target === 'node' ? this.graphState.selectedNode : this.graphState.selectedLink;
+      if (current?.id) input.dataset.ownerId = current.id;
+    };
+
+    input.addEventListener('focus', rememberOwner);
+    input.addEventListener('mousedown', rememberOwner);
 
     if (isBoolean) {
       input.addEventListener('change', commitValue);

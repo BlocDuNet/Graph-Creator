@@ -11,3 +11,8 @@
     1. [ ] export configurations (individuelle et complete)
     2. [ ] export PNG/jpeg, SVG, mermaid...
 8. [ ] Ajouter import rapide pour config générale
+9. [ ] Règles avoir aussi un mode réduit (sur une ligne) pour facilement se déplacer parmis beaucoup de règles. + mode recherche
+1. [ ] gestion des liens doubles sens, et multiples
+1. [ ] affichage visuel des noeuds et lien possible avec des filtres (dont filtre conditionnel) (affiché les liens entre les noeuds si lien contient champ "poids" > 10 ou encore afficher noeud si statut= "à faire""
+1. [ ] ajouter champs liste déroulante avec variable prédéfini
+1. [ ] exporter et importer rapidement des règles, condition (style raw, json, copier coller...)

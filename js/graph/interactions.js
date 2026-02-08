@@ -216,7 +216,10 @@ export class InteractionManager {
     this.updateLastPointer(event);
     const point = this.getGraphPoint(event);
     if (!point) return;
-    const newNode = this.graphState.createNode(point[0], point[1]);
+    const px = Number(point[0]);
+    const py = Number(point[1]);
+    if (!Number.isFinite(px) || !Number.isFinite(py)) return;
+    const newNode = this.graphState.createNode(px, py);
     this.pinNewNode(newNode);
     
     // selectionner explicitement le nouveau noeud
@@ -237,16 +240,19 @@ export class InteractionManager {
       this.updateLastPointer(event);
       const adjustedPoint = this.getGraphPoint(event);
       if (!adjustedPoint) return;
+      const px = Number(adjustedPoint[0]);
+      const py = Number(adjustedPoint[1]);
+      if (!Number.isFinite(px) || !Number.isFinite(py)) return;
       
       const defaultNodeSize = this.graphState.globalSettings.defaultNodeSize;
       
       // verifier s'il existe dj un noeud  cet endroit
       const existing = this.graphState.nodes.find(node => 
-        Math.hypot(adjustedPoint[0] - node.x, adjustedPoint[1] - node.y) < defaultNodeSize
+        Math.hypot(px - node.x, py - node.y) < defaultNodeSize
       );
       
       if (!existing) {
-        const newNode = this.graphState.createNode(adjustedPoint[0], adjustedPoint[1]);
+        const newNode = this.graphState.createNode(px, py);
         this.pinNewNode(newNode);
         this.graphState.createLink(this.graphState.selectedNode, newNode);
         this.renderer.updateGraph();
@@ -286,48 +292,31 @@ export class InteractionManager {
       }
     };
 
-    const groupNode = this.renderer?.g?.node ? this.renderer.g.node() : null;
+    const transform = d3.zoomTransform(svgElement);
 
-    // 1) Pointer dans l'espace du groupe (déjà corrigé du zoom)
-    let point = safePointer(event, groupNode);
-    if (isValidPoint(point)) return point;
-
-    // 2) Pointer dans l'espace SVG puis inversion du zoom
-    point = safePointer(event, svgElement);
+    // 1) Pointer dans l'espace SVG puis inversion du zoom
+    let point = safePointer(event, svgElement);
     if (isValidPoint(point)) {
-      const transform = d3.zoomTransform(svgElement);
       const adjusted = transform ? transform.invert(point) : point;
       if (isValidPoint(adjusted)) return adjusted;
     }
 
-    const clientX = event?.clientX ?? event?.touches?.[0]?.clientX;
-    const clientY = event?.clientY ?? event?.touches?.[0]?.clientY;
+    // 2) Coordonnees x/y (preferees) puis clientX/clientY
+    const rawX = Number.isFinite(event?.x) ? event.x : (event?.clientX ?? event?.touches?.[0]?.clientX);
+    const rawY = Number.isFinite(event?.y) ? event.y : (event?.clientY ?? event?.touches?.[0]?.clientY);
 
-    // 3) SVGPoint via clientX/clientY
-    if (Number.isFinite(clientX) && Number.isFinite(clientY) && svgElement.createSVGPoint) {
-      const pt = svgElement.createSVGPoint();
-      pt.x = clientX;
-      pt.y = clientY;
-      const ctm = svgElement.getScreenCTM && svgElement.getScreenCTM();
-      if (ctm && typeof ctm.inverse === 'function') {
-        const svgPoint = pt.matrixTransform(ctm.inverse());
-        const adjusted = d3.zoomTransform(svgElement).invert([svgPoint.x, svgPoint.y]);
-        if (isValidPoint(adjusted)) return adjusted;
-      }
-    }
-
-    // 4) offsetX/offsetY si disponibles
-    const offsetX = event?.offsetX;
-    const offsetY = event?.offsetY;
-    if (Number.isFinite(offsetX) && Number.isFinite(offsetY)) {
-      const adjusted = d3.zoomTransform(svgElement).invert([offsetX, offsetY]);
+    if (Number.isFinite(rawX) && Number.isFinite(rawY)) {
+      const rect = svgElement.getBoundingClientRect();
+      const local = [rawX - rect.left, rawY - rect.top];
+      const adjusted = transform ? transform.invert(local) : local;
       if (isValidPoint(adjusted)) return adjusted;
     }
 
-    // 5) Fallback bounding rect
-    if (Number.isFinite(clientX) && Number.isFinite(clientY)) {
-      const rect = svgElement.getBoundingClientRect();
-      const adjusted = d3.zoomTransform(svgElement).invert([clientX - rect.left, clientY - rect.top]);
+    // 3) offsetX/offsetY (si la cible est bien le SVG)
+    const offsetX = event?.offsetX;
+    const offsetY = event?.offsetY;
+    if (event?.target === svgElement && Number.isFinite(offsetX) && Number.isFinite(offsetY)) {
+      const adjusted = transform ? transform.invert([offsetX, offsetY]) : [offsetX, offsetY];
       if (isValidPoint(adjusted)) return adjusted;
     }
 
@@ -338,18 +327,19 @@ export class InteractionManager {
   updateLastPointer(event) {
     const svgElement = this.svg?.node();
     if (!svgElement) return;
-    const clientX = event?.clientX ?? event?.touches?.[0]?.clientX;
-    const clientY = event?.clientY ?? event?.touches?.[0]?.clientY;
-    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return;
+    const rawX = Number.isFinite(event?.x) ? event.x : (event?.clientX ?? event?.touches?.[0]?.clientX);
+    const rawY = Number.isFinite(event?.y) ? event.y : (event?.clientY ?? event?.touches?.[0]?.clientY);
+    if (!Number.isFinite(rawX) || !Number.isFinite(rawY)) return;
     const rect = svgElement.getBoundingClientRect();
-    const local = [clientX - rect.left, clientY - rect.top];
+    const local = [rawX - rect.left, rawY - rect.top];
     const transform = d3.zoomTransform(svgElement);
     const adjusted = transform ? transform.invert(local) : local;
     if (Array.isArray(adjusted) && Number.isFinite(adjusted[0]) && Number.isFinite(adjusted[1])) {
       this.lastPointer = adjusted;
+      this.graphState.lastPointer = adjusted;
     }
   }
-  
+
   /**
    * Initialise les gestionnaires de clavier
    */

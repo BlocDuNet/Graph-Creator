@@ -16,6 +16,8 @@ import {
   serializeToFunctional
 } from '../expr/ExpressionEngine.js';
 
+const INTERNAL_NODE_FIELDS = new Set(['vx', 'vy', 'fx', 'fy', 'index']);
+
 export class GraphState {
   constructor() {
     // Initialisation avec des donnes par dfaut
@@ -60,14 +62,8 @@ export class GraphState {
     this.schema = { nodes: {}, links: {} };
     this.initializeSchema();
 
-    // -- ajout start --
-    // Mettre nextLinkId juste apres le plus grand ID de lien existant
-    const maxId = this.links.reduce((max, l) => {
-      const n = parseInt(l.id, 10);
-      return isNaN(n) ? max : Math.max(max, n);
-    }, 0);
-    this.nextLinkId = maxId + 1;
-    // -- ajout end --
+    // Mettre a jour les compteurs d'IDs a partir des donnees actuelles
+    this.syncNextIds();
   }
   
   /**
@@ -95,18 +91,34 @@ export class GraphState {
    * Cre un nouveau noeud  la position specifie
    */
   createNode(x, y) {
-    const id = String(this.nextNodeId++);
+    let id = String(this.nextNodeId++);
+    while (this.nodes.find(n => String(n.id) === id)) {
+      id = String(this.nextNodeId++);
+    }
+    const nx = Number(x);
+    const ny = Number(y);
+    let finalX = Number.isFinite(nx) ? nx : null;
+    let finalY = Number.isFinite(ny) ? ny : null;
+    if ((!Number.isFinite(finalX) || !Number.isFinite(finalY)) && Array.isArray(this.lastPointer)) {
+      const lpX = Number(this.lastPointer[0]);
+      const lpY = Number(this.lastPointer[1]);
+      if (!Number.isFinite(finalX) && Number.isFinite(lpX)) finalX = lpX;
+      if (!Number.isFinite(finalY) && Number.isFinite(lpY)) finalY = lpY;
+    }
+    if (!Number.isFinite(finalX)) finalX = 0;
+    if (!Number.isFinite(finalY)) finalY = 0;
     const newNode = {
       id,
       name: `Node${id}`,
       description: `Description${id}`,
-      x,
-      y,
+      x: finalX,
+      y: finalY,
       size: this.globalSettings.defaultNodeSize || 30
     };
 
     // Ajouter les champs manquants selon le schema
     Object.keys(this.schema.nodes).forEach(field => {
+      if (INTERNAL_NODE_FIELDS.has(field)) return;
       if (newNode[field] === undefined) {
         newNode[field] = getDefaultValueForType(this.getFieldType('node', field));
       }
@@ -115,8 +127,8 @@ export class GraphState {
     // Si l'utilisateur utilise des champs de coordonnes personnaliss,
     // initialiser ces champs avec la position cre.
     const { xField, yField } = this.globalSettings;
-    if (xField && xField !== 'x') newNode[xField] = x;
-    if (yField && yField !== 'y') newNode[yField] = y;
+    if (xField && xField !== 'x') newNode[xField] = finalX;
+    if (yField && yField !== 'y') newNode[yField] = finalY;
     
     performAction({ 
       type: "create_node", 
@@ -127,6 +139,26 @@ export class GraphState {
     });
     
     return newNode;
+  }
+
+  _computeNextId(items) {
+    let found = false;
+    let max = 0;
+    (items || []).forEach(item => {
+      const raw = item?.id;
+      const num = Number.parseInt(raw, 10);
+      if (Number.isFinite(num)) {
+        found = true;
+        if (num > max) max = num;
+      }
+    });
+    if (found) return max + 1;
+    return (items?.length || 0) + 1;
+  }
+
+  syncNextIds() {
+    this.nextNodeId = this._computeNextId(this.nodes);
+    this.nextLinkId = this._computeNextId(this.links);
   }
   
   /**
