@@ -92,6 +92,8 @@ export class InteractionManager {
    */
   createDragBehavior() {
     return d3.drag()
+      // d3.drag default filter blocks Ctrl+drag; keep only left-button constraint.
+      .filter(event => event.button === 0 || event.button === undefined)
       .clickDistance(3)
       .on('start', (event, d) => {
         this.updateModifierState(event);
