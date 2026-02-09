@@ -9,6 +9,17 @@ export class InteractionManager {
     this.graphState = graphState;
     this.renderer = renderer;
     this.svg = svgSelection;
+    this.lastPointer = null;
+    this.marquee = {
+      active: false,
+      start: null,
+      current: null,
+      additive: false,
+      moved: false,
+      rect: null
+    };
+    this.boundMarqueeMouseMove = event => this.handleMarqueeMouseMove(event);
+    this.boundMarqueeMouseUp = event => this.handleMarqueeMouseUp(event);
     
     this.initDragHandlers();
     this.initClickHandlers();
@@ -20,8 +31,6 @@ export class InteractionManager {
     
     // Enable zoom.
     this.renderer.enableZoom();
-    
-    this.lastPointer = null;
   }
   
   /**
@@ -46,7 +55,7 @@ export class InteractionManager {
     // Double-click on empty space to create a node.
     this.svg.on('dblclick', event => {
       // Check if the event comes from a node.
-      if (event.target.closest('.node')) {
+      if (event.target.closest('.node, .link, .link-label')) {
         event.stopPropagation();
         return;
       }
@@ -79,6 +88,7 @@ export class InteractionManager {
    */
   createDragBehavior() {
     return d3.drag()
+      .clickDistance(3)
       .on('start', (event, d) => {
         if (!event.active) this.renderer.simulation.alphaTarget(0.3).restart();
         d.initialPosition = { x: d.x, y: d.y };
@@ -144,22 +154,24 @@ export class InteractionManager {
       console.error("Erreur: noeud sans identifiant:", d);
       return;
     }
+    const activeSelectedNode = this.getActiveSelectedNode();
     
     // Allow creating a self-link with Alt+Click.
-    if (event.altKey && this.graphState.selectedNode) {
+    if (event.altKey && activeSelectedNode) {
       // If Alt+Click is on the same selected node.
-      if (d.id === this.graphState.selectedNode.id) {
+      if (String(d.id) === String(activeSelectedNode.id)) {
         this.graphState.createLink(d, d); // Self-link.
         this.renderer.updateGraph();
         this.graphState.clearSelection();
+        eventBus.emit('selection-cleared');
         return;
       }
     }
     
     // CTRL+Click on a node to create a link.
-    if (event.ctrlKey && this.graphState.selectedNode) {
+    if (event.ctrlKey && activeSelectedNode) {
       // Create a link between the selected node and the clicked node.
-      this.graphState.createLink(this.graphState.selectedNode, d);
+      this.graphState.createLink(activeSelectedNode, d);
       this.renderer.updateGraph();
       
       // Important: do not change selection or clear selectedNode.
@@ -169,22 +181,31 @@ export class InteractionManager {
       event.stopPropagation();
       return;
     }
-    
-    // Normal click to select or deselect.
-    if (this.graphState.selectedNode === d) {
-      // Deselect only the node (keep link selection if any).
-      this.graphState.selectedNode = null;
-      
-      // Explicitly emit the deselection event.
-      eventBus.emit('selection-cleared');
-    } else {
-      // Select the new node.
-      this.graphState.selectNode(d);
-      
-      // Emit a custom event for selection.
-      eventBus.emit('node-selected', { node: d });
+
+    // Shift+click toggles node membership in the current selection.
+    if (event.shiftKey) {
+      this.graphState.selectNode(d, { toggle: true, autoFocus: false });
+      this.emitSelectionEvents();
+      this.renderer.updateGraph();
+      event.stopPropagation();
+      return;
     }
-    
+
+    const selectedNodes = this.getSelectedNodes();
+    const selectedLinks = this.getSelectedLinks();
+    const isOnlySelectedNode =
+      selectedNodes.length === 1 &&
+      selectedLinks.length === 0 &&
+      String(selectedNodes[0].id) === String(d.id);
+
+    // Normal click: select only this node (or clear if it is the sole selection).
+    if (isOnlySelectedNode) {
+      this.graphState.clearSelection();
+    } else {
+      this.graphState.selectNode(d, { clearLinks: true, autoFocus: true });
+    }
+
+    this.emitSelectionEvents();
     this.renderer.updateGraph();
   }
 
@@ -192,16 +213,33 @@ export class InteractionManager {
    * Handle link clicks.
    */
   handleLinkClick(event, d) {
-    if (this.graphState.selectedLink === d) {
-      this.graphState.selectedLink = null;
-    } else {
-      this.graphState.selectLink(d);
+    if (!d || typeof d !== 'object' || !d.id) return;
+
+    // Shift+click toggles link membership in the current selection.
+    if (event.shiftKey) {
+      this.graphState.selectLink(d, { toggle: true, autoFocus: false });
+      this.emitSelectionEvents();
+      this.renderer.updateGraph();
+      event.stopPropagation();
+      return;
     }
-    
+
+    const selectedNodes = this.getSelectedNodes();
+    const selectedLinks = this.getSelectedLinks();
+    const isOnlySelectedLink =
+      selectedLinks.length === 1 &&
+      selectedNodes.length === 0 &&
+      String(selectedLinks[0].id) === String(d.id);
+
+    // Normal click: select only this link (or clear if it is the sole selection).
+    if (isOnlySelectedLink) {
+      this.graphState.clearSelection();
+    } else {
+      this.graphState.selectLink(d, { clearNodes: true, autoFocus: true });
+    }
+
+    this.emitSelectionEvents();
     this.renderer.updateGraph();
-    
-    // Emit a custom event.
-    eventBus.emit('link-selected', { link: this.graphState.selectedLink });
   }
   
   /**
@@ -218,8 +256,12 @@ export class InteractionManager {
     this.pinNewNode(newNode);
     
     // Explicitly select the new node.
-    this.graphState.clearSelection();
-    this.graphState.selectNode(newNode);
+    this.graphState.setSelection({
+      nodes: [newNode],
+      links: [],
+      activeNode: newNode,
+      activeLink: null
+    });
     
     // Emit a specific event for creation.
     eventBus.emit('node-created', { node: newNode });
@@ -231,7 +273,12 @@ export class InteractionManager {
    * Handle mouse click on the SVG.
    */
   handleSvgMouseDown(event) {
-    if (event.ctrlKey && this.graphState.selectedNode) {
+    if (event.button !== 0) return;
+
+    const interactiveTarget = !!event.target?.closest?.('.node, .link, .link-label');
+    const activeSelectedNode = this.getActiveSelectedNode();
+
+    if (event.ctrlKey && activeSelectedNode && !interactiveTarget) {
       this.updateLastPointer(event);
       const adjustedPoint = this.getGraphPoint(event);
       if (!adjustedPoint) return;
@@ -249,18 +296,21 @@ export class InteractionManager {
       if (!existing) {
         const newNode = this.graphState.createNode(px, py);
         this.pinNewNode(newNode);
-        this.graphState.createLink(this.graphState.selectedNode, newNode);
+        this.graphState.createLink(activeSelectedNode, newNode);
         this.renderer.updateGraph();
         
         // If SHIFT is held, select the new node.
         if (event.shiftKey) {
-          this.graphState.selectNode(newNode);
+          this.graphState.selectNode(newNode, { additive: true, autoFocus: false });
+          this.emitSelectionEvents();
           this.renderer.updateGraph();
-          
-          // Emit a custom event.
-          eventBus.emit('node-selected', { node: newNode });
         }
       }
+      return;
+    }
+
+    if (!interactiveTarget) {
+      this.beginMarqueeSelection(event);
     }
   }
 
@@ -332,6 +382,245 @@ export class InteractionManager {
     }
   }
 
+  beginMarqueeSelection(event) {
+    this.updateLastPointer(event);
+    const start = this.getGraphPoint(event);
+    if (!start) return;
+
+    this.marquee.active = true;
+    this.marquee.start = start;
+    this.marquee.current = start;
+    this.marquee.additive = !!event.shiftKey;
+    this.marquee.moved = false;
+    this.ensureMarqueeRect();
+    this.updateMarqueeRect(start, start);
+
+    window.addEventListener('mousemove', this.boundMarqueeMouseMove);
+    window.addEventListener('mouseup', this.boundMarqueeMouseUp);
+    event.preventDefault();
+  }
+
+  handleMarqueeMouseMove(event) {
+    if (!this.marquee.active) return;
+    this.updateLastPointer(event);
+    const point = this.getGraphPoint(event);
+    if (!point) return;
+
+    this.marquee.current = point;
+    const dx = point[0] - this.marquee.start[0];
+    const dy = point[1] - this.marquee.start[1];
+    if (Math.abs(dx) >= 3 || Math.abs(dy) >= 3) {
+      this.marquee.moved = true;
+    }
+    this.updateMarqueeRect(this.marquee.start, point);
+    event.preventDefault();
+  }
+
+  handleMarqueeMouseUp(event) {
+    if (!this.marquee.active) return;
+    this.updateLastPointer(event);
+
+    const end = this.getGraphPoint(event) || this.marquee.current || this.marquee.start;
+    const start = this.marquee.start;
+    const moved = this.marquee.moved;
+    const additive = this.marquee.additive;
+
+    this.stopMarqueeSelection();
+
+    if (!start || !end) return;
+
+    if (!moved) {
+      if (!additive) {
+        this.graphState.clearSelection();
+        this.emitSelectionEvents();
+        this.renderer.updateGraph();
+      }
+      return;
+    }
+
+    const bounds = this.getSelectionBounds(start, end);
+    this.applyMarqueeSelection(bounds, additive);
+  }
+
+  stopMarqueeSelection() {
+    this.marquee.active = false;
+    this.marquee.start = null;
+    this.marquee.current = null;
+    this.marquee.additive = false;
+    this.marquee.moved = false;
+    if (this.marquee.rect) {
+      this.marquee.rect.style('display', 'none');
+    }
+    window.removeEventListener('mousemove', this.boundMarqueeMouseMove);
+    window.removeEventListener('mouseup', this.boundMarqueeMouseUp);
+  }
+
+  ensureMarqueeRect() {
+    if (this.marquee.rect || !this.renderer?.g) return;
+    this.marquee.rect = this.renderer.g
+      .append('rect')
+      .attr('class', 'selection-marquee')
+      .attr('pointer-events', 'none')
+      .style('display', 'none');
+  }
+
+  updateMarqueeRect(start, end) {
+    if (!this.marquee.rect || !start || !end) return;
+    const bounds = this.getSelectionBounds(start, end);
+    this.marquee.rect
+      .attr('x', bounds.minX)
+      .attr('y', bounds.minY)
+      .attr('width', bounds.width)
+      .attr('height', bounds.height)
+      .style('display', '');
+  }
+
+  getSelectionBounds(start, end) {
+    const minX = Math.min(start[0], end[0]);
+    const maxX = Math.max(start[0], end[0]);
+    const minY = Math.min(start[1], end[1]);
+    const maxY = Math.max(start[1], end[1]);
+    return {
+      minX,
+      maxX,
+      minY,
+      maxY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+  }
+
+  applyMarqueeSelection(bounds, additive = false) {
+    const nodesInBox = this.graphState.nodes.filter(node => this.isPointInsideRect(node?.x, node?.y, bounds));
+    const linksInBox = this.graphState.links.filter(link => this.isLinkInsideRect(link, bounds));
+
+    if (additive) {
+      const mergedNodes = this.mergeById(this.getSelectedNodes(), nodesInBox);
+      const mergedLinks = this.mergeById(this.getSelectedLinks(), linksInBox);
+      const activeNode = nodesInBox.length ? nodesInBox[nodesInBox.length - 1] : this.getActiveSelectedNode();
+      const activeLink = linksInBox.length ? linksInBox[linksInBox.length - 1] : this.getActiveSelectedLink();
+      this.graphState.setSelection({
+        nodes: mergedNodes,
+        links: mergedLinks,
+        activeNode,
+        activeLink
+      });
+    } else {
+      this.graphState.setSelection({
+        nodes: nodesInBox,
+        links: linksInBox,
+        activeNode: nodesInBox.length ? nodesInBox[nodesInBox.length - 1] : null,
+        activeLink: linksInBox.length ? linksInBox[linksInBox.length - 1] : null
+      });
+    }
+
+    this.emitSelectionEvents();
+    this.renderer.updateGraph();
+  }
+
+  mergeById(baseItems, newItems) {
+    const merged = [];
+    const seen = new Set();
+    (baseItems || []).concat(newItems || []).forEach(item => {
+      if (!item || item.id == null) return;
+      const id = String(item.id);
+      if (seen.has(id)) return;
+      seen.add(id);
+      merged.push(item);
+    });
+    return merged;
+  }
+
+  isPointInsideRect(x, y, bounds) {
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !bounds) return false;
+    return x >= bounds.minX && x <= bounds.maxX && y >= bounds.minY && y <= bounds.maxY;
+  }
+
+  isLinkInsideRect(link, bounds) {
+    if (!link?.source || !link?.target) return false;
+    const sx = Number(link.source.x);
+    const sy = Number(link.source.y);
+    const tx = Number(link.target.x);
+    const ty = Number(link.target.y);
+    if (![sx, sy, tx, ty].every(Number.isFinite)) return false;
+
+    if (this.isPointInsideRect(sx, sy, bounds) || this.isPointInsideRect(tx, ty, bounds)) return true;
+    if (String(link.source.id) === String(link.target.id)) return this.isPointInsideRect(sx, sy, bounds);
+    return this.segmentIntersectsRect(sx, sy, tx, ty, bounds);
+  }
+
+  segmentIntersectsRect(x1, y1, x2, y2, bounds) {
+    const edges = [
+      [bounds.minX, bounds.minY, bounds.maxX, bounds.minY],
+      [bounds.maxX, bounds.minY, bounds.maxX, bounds.maxY],
+      [bounds.maxX, bounds.maxY, bounds.minX, bounds.maxY],
+      [bounds.minX, bounds.maxY, bounds.minX, bounds.minY]
+    ];
+    return edges.some(edge => this.segmentsIntersect(x1, y1, x2, y2, edge[0], edge[1], edge[2], edge[3]));
+  }
+
+  segmentsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
+    const epsilon = 1e-9;
+    const orientation = (px, py, qx, qy, rx, ry) => {
+      const value = (qy - py) * (rx - qx) - (qx - px) * (ry - qy);
+      if (Math.abs(value) <= epsilon) return 0;
+      return value > 0 ? 1 : 2;
+    };
+    const onSegment = (px, py, qx, qy, rx, ry) => {
+      return qx <= Math.max(px, rx) + epsilon &&
+        qx + epsilon >= Math.min(px, rx) &&
+        qy <= Math.max(py, ry) + epsilon &&
+        qy + epsilon >= Math.min(py, ry);
+    };
+
+    const o1 = orientation(ax, ay, bx, by, cx, cy);
+    const o2 = orientation(ax, ay, bx, by, dx, dy);
+    const o3 = orientation(cx, cy, dx, dy, ax, ay);
+    const o4 = orientation(cx, cy, dx, dy, bx, by);
+
+    if (o1 !== o2 && o3 !== o4) return true;
+    if (o1 === 0 && onSegment(ax, ay, cx, cy, bx, by)) return true;
+    if (o2 === 0 && onSegment(ax, ay, dx, dy, bx, by)) return true;
+    if (o3 === 0 && onSegment(cx, cy, ax, ay, dx, dy)) return true;
+    if (o4 === 0 && onSegment(cx, cy, bx, by, dx, dy)) return true;
+    return false;
+  }
+
+  getSelectedNodes() {
+    if (typeof this.graphState.getSelectedNodes === 'function') return this.graphState.getSelectedNodes();
+    return this.graphState.selectedNode ? [this.graphState.selectedNode] : [];
+  }
+
+  getSelectedLinks() {
+    if (typeof this.graphState.getSelectedLinks === 'function') return this.graphState.getSelectedLinks();
+    return this.graphState.selectedLink ? [this.graphState.selectedLink] : [];
+  }
+
+  getActiveSelectedNode() {
+    if (typeof this.graphState.getPrimarySelectedNode === 'function') return this.graphState.getPrimarySelectedNode();
+    return this.graphState.selectedNode || null;
+  }
+
+  getActiveSelectedLink() {
+    if (typeof this.graphState.getPrimarySelectedLink === 'function') return this.graphState.getPrimarySelectedLink();
+    return this.graphState.selectedLink || null;
+  }
+
+  emitSelectionEvents() {
+    const nodes = this.getSelectedNodes();
+    const links = this.getSelectedLinks();
+    if (!nodes.length && !links.length) {
+      eventBus.emit('selection-cleared');
+      return;
+    }
+    if (nodes.length) {
+      eventBus.emit('node-selected', { node: this.getActiveSelectedNode(), nodes });
+    }
+    if (links.length) {
+      eventBus.emit('link-selected', { link: this.getActiveSelectedLink(), links });
+    }
+  }
+
   /**
    * Initialize keyboard handlers.
    */
@@ -340,15 +629,39 @@ export class InteractionManager {
       // Delete with Delete or Backspace.
       const isEditable = ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target?.tagName) || event.target?.isContentEditable;
       if (!isEditable && event.ctrlKey && ['Delete', 'Backspace'].includes(event.key)) {
+        const selectedNodes = this.getSelectedNodes();
+        const selectedLinks = this.getSelectedLinks();
         let didDelete = false;
-        if (this.graphState.selectedNode) {
+
+        const deletedNodeIds = new Set();
+        selectedNodes.forEach(node => {
+          if (!node?.id) return;
+          this.graphState.deleteNode(node);
+          deletedNodeIds.add(String(node.id));
+          didDelete = true;
+        });
+
+        selectedLinks
+          .filter(link => {
+            const sourceId = String(link?.source?.id ?? '');
+            const targetId = String(link?.target?.id ?? '');
+            return !deletedNodeIds.has(sourceId) && !deletedNodeIds.has(targetId);
+          })
+          .forEach(link => {
+            if (!link?.id) return;
+            this.graphState.deleteLink(link);
+            didDelete = true;
+          });
+
+        if (!didDelete && this.graphState.selectedNode) {
           this.graphState.deleteNode(this.graphState.selectedNode);
           didDelete = true;
         }
-        if (this.graphState.selectedLink) {
+        if (!didDelete && this.graphState.selectedLink) {
           this.graphState.deleteLink(this.graphState.selectedLink);
           didDelete = true;
         }
+
         if (didDelete) {
           // Force deselection and hide forms.
           this.graphState.clearSelection();

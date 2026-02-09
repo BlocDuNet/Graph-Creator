@@ -656,14 +656,25 @@ export class GroupManager {
   }
 
   addSelectionToGroup(group, card) {
-    const selected = group.target === 'link'
-      ? this.graphState.selectedLink
-      : this.graphState.selectedNode;
-    if (!selected?.id) return;
-    const id = String(selected.id);
+    const selectedItems = group.target === 'link'
+      ? (typeof this.graphState.getSelectedLinks === 'function'
+          ? this.graphState.getSelectedLinks()
+          : (this.graphState.selectedLink ? [this.graphState.selectedLink] : []))
+      : (typeof this.graphState.getSelectedNodes === 'function'
+          ? this.graphState.getSelectedNodes()
+          : (this.graphState.selectedNode ? [this.graphState.selectedNode] : []));
+    if (!selectedItems.length) return;
+
     const manual = Array.isArray(group.manualIds) ? group.manualIds.map(v => String(v)) : [];
-    if (!manual.includes(id)) {
+    let changed = false;
+    selectedItems.forEach(item => {
+      if (!item?.id) return;
+      const id = String(item.id);
+      if (manual.includes(id)) return;
       manual.push(id);
+      changed = true;
+    });
+    if (changed) {
       group.manualIds = manual;
       const manualInput = card?.querySelector('[data-field="manualIds"]');
       if (manualInput) manualInput.value = manual.join(', ');

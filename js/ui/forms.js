@@ -65,25 +65,67 @@ export class FormManager {
   setupSelectionObservers() {
     // Observe selection changes in graphState.
     const originalSelectNode = this.graphState.selectNode;
-    this.graphState.selectNode = (node) => {
-      originalSelectNode.call(this.graphState, node);
+    this.graphState.selectNode = (node, options = {}) => {
+      originalSelectNode.call(this.graphState, node, options);
       console.log("Node sélectionné via observer:", node);
-      this.showNodeForm(node);
+      const selectedNodes = this.getSelectedItems('node');
+      if (selectedNodes.length === 1) {
+        this.showNodeForm(selectedNodes[0], { autoFocus: options.autoFocus !== false });
+      } else {
+        this.syncSelectionForms();
+      }
     };
     
     const originalSelectLink = this.graphState.selectLink;
-    this.graphState.selectLink = (link) => {
-      originalSelectLink.call(this.graphState, link);
+    this.graphState.selectLink = (link, options = {}) => {
+      originalSelectLink.call(this.graphState, link, options);
       console.log("Link sélectionné via observer:", link);
-      this.showLinkForm(link);
+      const selectedLinks = this.getSelectedItems('link');
+      if (selectedLinks.length === 1) {
+        this.showLinkForm(selectedLinks[0], { autoFocus: options.autoFocus !== false });
+      } else {
+        this.syncSelectionForms();
+      }
     };
     
     const originalClearSelection = this.graphState.clearSelection;
-    this.graphState.clearSelection = () => {
-      originalClearSelection.call(this.graphState);
+    this.graphState.clearSelection = (options = {}) => {
+      originalClearSelection.call(this.graphState, options);
       console.log("Sélection effacée via observer");
       this.hideAllForms();
     };
+  }
+
+  getSelectedItems(target) {
+    if (target === 'node') {
+      if (typeof this.graphState.getSelectedNodes === 'function') {
+        return this.graphState.getSelectedNodes();
+      }
+      return this.graphState.selectedNode ? [this.graphState.selectedNode] : [];
+    }
+    if (typeof this.graphState.getSelectedLinks === 'function') {
+      return this.graphState.getSelectedLinks();
+    }
+    return this.graphState.selectedLink ? [this.graphState.selectedLink] : [];
+  }
+
+  getPrimarySelection(target) {
+    if (target === 'node') {
+      if (typeof this.graphState.getPrimarySelectedNode === 'function') {
+        return this.graphState.getPrimarySelectedNode();
+      }
+      const selected = this.getSelectedItems('node');
+      return selected[0] || null;
+    }
+    if (typeof this.graphState.getPrimarySelectedLink === 'function') {
+      return this.graphState.getPrimarySelectedLink();
+    }
+    const selected = this.getSelectedItems('link');
+    return selected[0] || null;
+  }
+
+  hasSingleSelection(target) {
+    return this.getSelectedItems(target).length === 1;
   }
   
   /**
@@ -226,8 +268,8 @@ export class FormManager {
       const isNodeTarget = inputObject === this.nodeInputs;
       const ownerId = input.dataset.ownerId;
       const item = isNodeTarget
-        ? (ownerId ? this.graphState.nodes.find(n => n.id === ownerId) : this.graphState.selectedNode)
-        : (ownerId ? this.graphState.links.find(l => l.id === ownerId) : this.graphState.selectedLink);
+        ? (ownerId ? this.graphState.nodes.find(n => n.id === ownerId) : this.getPrimarySelection('node'))
+        : (ownerId ? this.graphState.links.find(l => l.id === ownerId) : this.getPrimarySelection('link'));
       if (!item) return;
 
       if (isNodeTarget) {
@@ -275,7 +317,7 @@ export class FormManager {
     };
 
     const rememberOwner = () => {
-      const current = target === 'node' ? this.graphState.selectedNode : this.graphState.selectedLink;
+      const current = this.getPrimarySelection(target);
       if (current?.id) input.dataset.ownerId = current.id;
     };
 
@@ -293,8 +335,8 @@ export class FormManager {
       const isConditional = newType === 'conditional';
       this.graphState.updateFieldType(target, fieldName, newType);
       this.refreshForms();
-      if (this.graphState.selectedNode) this.showNodeForm(this.graphState.selectedNode);
-      if (this.graphState.selectedLink) this.showLinkForm(this.graphState.selectedLink);
+      if (this.hasSingleSelection('node')) this.showNodeForm(this.getPrimarySelection('node'), { autoFocus: false });
+      if (this.hasSingleSelection('link')) this.showLinkForm(this.getPrimarySelection('link'), { autoFocus: false });
       this.renderer.updateGraph();
       if (isConditional) {
         eventBus.emit('conditional-edit-requested', { target, field: fieldName });
@@ -382,20 +424,28 @@ export class FormManager {
   /**
    * Shows the node edit form.
    */
-  showNodeForm(node) {
-    if (!this.nodeForm || !node) {
+  showNodeForm(node, options = {}) {
+    const selectedNodes = this.getSelectedItems('node');
+    const targetNode = node || this.getPrimarySelection('node');
+    if (!this.nodeForm || !targetNode) {
       console.warn("Impossible d'afficher le formulaire de nœud:", 
                    !this.nodeForm ? "formulaire manquant" : "nœud manquant");
       return;
     }
+    if (selectedNodes.length !== 1) {
+      this.nodeForm.classList.add('hidden');
+      this.nodeForm.style.display = 'none';
+      this.updateEditorsLayout();
+      return;
+    }
     
-    console.log("Affichage du formulaire pour le nœud:", node.id);
+    console.log("Affichage du formulaire pour le nœud:", targetNode.id);
     
     // Update form values with node data.
-    this.updateForm(this.nodeInputs, node);
-    this.updateLocalStyleForm('node', node);
-    this.updateRuleMatches('node', node);
-    this.updateGroupMatches('node', node);
+    this.updateForm(this.nodeInputs, targetNode);
+    this.updateLocalStyleForm('node', targetNode);
+    this.updateRuleMatches('node', targetNode);
+    this.updateGroupMatches('node', targetNode);
     
     // Make the form visible.
     this.nodeForm.classList.remove('hidden');
@@ -411,6 +461,8 @@ export class FormManager {
       console.log("Champ de label explicitement vide, pas de changement d'onglet ni de focus");
       return; // Terminer la fonction ici, ne rien faire de plus
     }
+
+    if (options.autoFocus === false) return;
     
     // DRY: tab switch and focus.
     this.activateValuesTab(this.nodeInputs, fieldToFocus);
@@ -419,20 +471,28 @@ export class FormManager {
   /**
    * Shows the link edit form.
    */
-  showLinkForm(link) {
-    if (!this.linkForm || !link) {
+  showLinkForm(link, options = {}) {
+    const selectedLinks = this.getSelectedItems('link');
+    const targetLink = link || this.getPrimarySelection('link');
+    if (!this.linkForm || !targetLink) {
       console.warn("Impossible d'afficher le formulaire de lien:", 
                    !this.linkForm ? "formulaire manquant" : "lien manquant");
       return;
     }
+    if (selectedLinks.length !== 1) {
+      this.linkForm.classList.add('hidden');
+      this.linkForm.style.display = 'none';
+      this.updateEditorsLayout();
+      return;
+    }
     
-    console.log("Affichage du formulaire pour le lien:", link.id);
+    console.log("Affichage du formulaire pour le lien:", targetLink.id);
     
     // Update form values with link data.
-    this.updateForm(this.linkInputs, link);
-    this.updateLocalStyleForm('link', link);
-    this.updateRuleMatches('link', link);
-    this.updateGroupMatches('link', link);
+    this.updateForm(this.linkInputs, targetLink);
+    this.updateLocalStyleForm('link', targetLink);
+    this.updateRuleMatches('link', targetLink);
+    this.updateGroupMatches('link', targetLink);
     
     // Make the form visible.
     this.linkForm.classList.remove('hidden');
@@ -448,6 +508,8 @@ export class FormManager {
       console.log("Champ de label explicitement vide, pas de changement d'onglet ni de focus");
       return; // Terminer la fonction ici, ne rien faire de plus
     }
+
+    if (options.autoFocus === false) return;
     
     // DRY: tab switch and focus.
     this.activateValuesTab(this.linkInputs, fieldToFocus);
@@ -716,7 +778,8 @@ export class FormManager {
   }
 
   handleGroupAction(target, action) {
-    const item = target === 'node' ? this.graphState.selectedNode : this.graphState.selectedLink;
+    if (!this.hasSingleSelection(target)) return;
+    const item = this.getPrimarySelection(target);
     if (!item?.id) return;
     const groupsKey = target === 'node' ? 'nodes' : 'links';
     graphConfig.groups = graphConfig.groups || { nodes: [], links: [] };
@@ -890,21 +953,13 @@ export class FormManager {
   }
 
   refreshRuleMatches() {
-    if (this.graphState.selectedNode) {
-      this.updateRuleMatches('node', this.graphState.selectedNode);
-    }
-    if (this.graphState.selectedLink) {
-      this.updateRuleMatches('link', this.graphState.selectedLink);
-    }
+    if (this.hasSingleSelection('node')) this.updateRuleMatches('node', this.getPrimarySelection('node'));
+    if (this.hasSingleSelection('link')) this.updateRuleMatches('link', this.getPrimarySelection('link'));
   }
 
   refreshGroupMatches() {
-    if (this.graphState.selectedNode) {
-      this.updateGroupMatches('node', this.graphState.selectedNode);
-    }
-    if (this.graphState.selectedLink) {
-      this.updateGroupMatches('link', this.graphState.selectedLink);
-    }
+    if (this.hasSingleSelection('node')) this.updateGroupMatches('node', this.getPrimarySelection('node'));
+    if (this.hasSingleSelection('link')) this.updateGroupMatches('link', this.getPrimarySelection('link'));
   }
 
   jumpToRule(ruleId, type) {
@@ -1029,7 +1084,8 @@ export class FormManager {
   }
 
   commitLocalStyleEnabled(target, enabled) {
-    const item = target === 'node' ? this.graphState.selectedNode : this.graphState.selectedLink;
+    if (!this.hasSingleSelection(target)) return;
+    const item = this.getPrimarySelection(target);
     if (!item) return;
     const next = !!enabled;
     const current = item.__localStyleEnabled !== false;
@@ -1052,7 +1108,8 @@ export class FormManager {
   }
 
   commitLocalStyle(target, key, value) {
-    const item = target === 'node' ? this.graphState.selectedNode : this.graphState.selectedLink;
+    if (!this.hasSingleSelection(target)) return;
+    const item = this.getPrimarySelection(target);
     if (!item) return;
     const current = item.__localStyle && typeof item.__localStyle === 'object'
       ? { ...item.__localStyle }
@@ -1085,7 +1142,8 @@ export class FormManager {
   }
 
   clearLocalStyle(target) {
-    const item = target === 'node' ? this.graphState.selectedNode : this.graphState.selectedLink;
+    if (!this.hasSingleSelection(target)) return;
+    const item = this.getPrimarySelection(target);
     if (!item) return;
     const current = item.__localStyle && typeof item.__localStyle === 'object'
       ? { ...item.__localStyle }
@@ -1182,8 +1240,8 @@ export class FormManager {
   }
 
   syncSelectionForms() {
-    const node = this.graphState.selectedNode;
-    const link = this.graphState.selectedLink;
+    const node = this.hasSingleSelection('node') ? this.getPrimarySelection('node') : null;
+    const link = this.hasSingleSelection('link') ? this.getPrimarySelection('link') : null;
 
     if (node) {
       this.updateForm(this.nodeInputs, node);

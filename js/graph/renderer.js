@@ -227,7 +227,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
 
     // Merge and update existing nodes.
     const merged = nodeSelection.merge(nodeEnter)
-      .classed('selected', d => d === this.graphState.selectedNode);
+      .classed('selected', d => this.graphState.isNodeSelected(d));
 
     // Compute styles & sizes.
     merged.each(d => {
@@ -273,7 +273,7 @@ console.log("Renderer initialized with graph config:", graphConfig);
     // Update text.
     merged.select('text')
       .attr('dx', d => (d.__renderSize || defaultNodeSize) + 5)
-      .attr('fill', d => d.__style?.labelColor || (d === this.graphState.selectedNode ? '#0077ff' : null))
+      .attr('fill', d => d.__style?.labelColor || (this.graphState.isNodeSelected(d) ? '#0077ff' : null))
       .text(d => {
         if (nodeLabelField) {
           const val = this.graphState.resolveFieldValue('node', d, nodeLabelField);
@@ -332,16 +332,16 @@ console.log("Renderer initialized with graph config:", graphConfig);
         d.__renderWidth = this.resolveStyleNumber(style.linkWidth, baseWidth);
       })
       .attr('stroke-width', d => d.__renderWidth || defaultLinkWidth)
-      .attr('stroke', d => d === this.graphState.selectedLink ? '#f00' : (d.__style?.linkColor || '#000'))
+      .attr('stroke', d => this.graphState.isLinkSelected(d) ? '#f00' : (d.__style?.linkColor || '#000'))
       .attr('stroke-opacity', d => this.resolveStyleNumber(d.__style?.linkOpacity, null))
       .attr('stroke-dasharray', d => d.__style?.linkDash || null)
       .attr('marker-end', d => {
         if (d.isLoop) {
-          return d === this.graphState.selectedLink 
+          return this.graphState.isLinkSelected(d)
                  ? 'url(#arrowhead-loop-selected)' 
                  : 'url(#arrowhead-loop)';
         } else {
-          return d === this.graphState.selectedLink 
+          return this.graphState.isLinkSelected(d)
                  ? 'url(#arrowhead-selected)' 
                  : 'url(#arrowhead)';
         }
@@ -376,8 +376,8 @@ console.log("Renderer initialized with graph config:", graphConfig);
     
     // Merge and update.
     labelEnter.merge(linkLabels)
-      .classed('selected', d => d === this.graphState.selectedLink)
-      .attr('fill', d => d.__style?.labelColor || (d === this.graphState.selectedLink ? '#0077ff' : null))
+      .classed('selected', d => this.graphState.isLinkSelected(d))
+      .attr('fill', d => d.__style?.labelColor || (this.graphState.isLinkSelected(d) ? '#0077ff' : null))
       .text(d => {
         if (linkLabelField === '') return '';
         const val = this.graphState.resolveFieldValue('link', d, linkLabelField);

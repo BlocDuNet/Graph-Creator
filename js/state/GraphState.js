@@ -38,6 +38,8 @@ export class GraphState {
     // Selection state.
     this.selectedNode = null;
     this.selectedLink = null;
+    this.selectedNodes = [];
+    this.selectedLinks = [];
     
     // Global configuration.
     this.globalSettings = {
@@ -665,12 +667,88 @@ export class GraphState {
   }
   
   /**
+   * Normalize and deduplicate selected nodes.
+   */
+  normalizeSelectedNodes(nodes) {
+    const map = new Map((this.nodes || []).map(node => [String(node.id), node]));
+    const selected = [];
+    (nodes || []).forEach(node => {
+      if (!node || node.id == null) return;
+      const normalized = map.get(String(node.id));
+      if (!normalized) return;
+      if (!selected.some(item => String(item.id) === String(normalized.id))) {
+        selected.push(normalized);
+      }
+    });
+    return selected;
+  }
+
+  /**
+   * Normalize and deduplicate selected links.
+   */
+  normalizeSelectedLinks(links) {
+    const map = new Map((this.links || []).map(link => [String(link.id), link]));
+    const selected = [];
+    (links || []).forEach(link => {
+      if (!link || link.id == null) return;
+      const normalized = map.get(String(link.id));
+      if (!normalized) return;
+      if (!selected.some(item => String(item.id) === String(normalized.id))) {
+        selected.push(normalized);
+      }
+    });
+    return selected;
+  }
+
+  /**
+   * Set full selection (nodes + links) in one operation.
+   */
+  setSelection({ nodes = this.selectedNodes, links = this.selectedLinks, activeNode = null, activeLink = null } = {}) {
+    this.selectedNodes = this.normalizeSelectedNodes(nodes);
+    this.selectedLinks = this.normalizeSelectedLinks(links);
+
+    if (activeNode && this.selectedNodes.some(node => String(node.id) === String(activeNode.id))) {
+      this.selectedNode = this.selectedNodes.find(node => String(node.id) === String(activeNode.id)) || this.selectedNodes[0] || null;
+    } else {
+      this.selectedNode = this.selectedNodes[0] || null;
+    }
+
+    if (activeLink && this.selectedLinks.some(link => String(link.id) === String(activeLink.id))) {
+      this.selectedLink = this.selectedLinks.find(link => String(link.id) === String(activeLink.id)) || this.selectedLinks[0] || null;
+    } else {
+      this.selectedLink = this.selectedLinks[0] || null;
+    }
+  }
+
+  /**
    * Select a node.
    */
-  selectNode(node) {
+  selectNode(node, options = {}) {
     if (!node) return;
-    this.selectedNode = node;
-    
+    const { additive = false, toggle = false, clearLinks = false } = options;
+    const current = this.normalizeSelectedNodes(this.selectedNodes);
+    const nodeId = String(node.id);
+    const exists = current.some(item => String(item.id) === nodeId);
+
+    let nextNodes = current;
+    let activeNode = node;
+
+    if (toggle) {
+      if (exists) {
+        nextNodes = current.filter(item => String(item.id) !== nodeId);
+        activeNode = nextNodes[nextNodes.length - 1] || null;
+      } else {
+        nextNodes = current.concat([node]);
+      }
+    } else if (additive) {
+      if (!exists) nextNodes = current.concat([node]);
+    } else {
+      nextNodes = [node];
+    }
+
+    const nextLinks = clearLinks ? [] : this.selectedLinks;
+    this.setSelection({ nodes: nextNodes, links: nextLinks, activeNode, activeLink: this.selectedLink });
+
     console.log(`noeud selectionn: ${node.id}`);
   }
   
@@ -678,25 +756,131 @@ export class GraphState {
    * Select a link.
    * @param {Object} link - Le lien  selectionner
    */
-  selectLink(link) {
+  selectLink(link, options = {}) {
     if (!link || typeof link !== 'object') {
       console.error("Tentative de selection d'un lien invalide:", link);
       return;
     }
-    
-    this.selectedLink = link;
+    const { additive = false, toggle = false, clearNodes = false } = options;
+    const current = this.normalizeSelectedLinks(this.selectedLinks);
+    const linkId = String(link.id);
+    const exists = current.some(item => String(item.id) === linkId);
+
+    let nextLinks = current;
+    let activeLink = link;
+
+    if (toggle) {
+      if (exists) {
+        nextLinks = current.filter(item => String(item.id) !== linkId);
+        activeLink = nextLinks[nextLinks.length - 1] || null;
+      } else {
+        nextLinks = current.concat([link]);
+      }
+    } else if (additive) {
+      if (!exists) nextLinks = current.concat([link]);
+    } else {
+      nextLinks = [link];
+    }
+
+    const nextNodes = clearNodes ? [] : this.selectedNodes;
+    this.setSelection({ nodes: nextNodes, links: nextLinks, activeNode: this.selectedNode, activeLink });
     
     console.log("Lien selectionn:", link);
   }
   
   /**
+   * Toggle node membership in the current selection.
+   */
+  toggleNodeSelection(node) {
+    this.selectNode(node, { toggle: true });
+  }
+
+  /**
+   * Toggle link membership in the current selection.
+   */
+  toggleLinkSelection(link) {
+    this.selectLink(link, { toggle: true });
+  }
+
+  /**
+   * Check if a node is selected.
+   */
+  isNodeSelected(node) {
+    if (!node || node.id == null) return false;
+    return this.selectedNodes.some(item => String(item.id) === String(node.id));
+  }
+
+  /**
+   * Check if a link is selected.
+   */
+  isLinkSelected(link) {
+    if (!link || link.id == null) return false;
+    return this.selectedLinks.some(item => String(item.id) === String(link.id));
+  }
+
+  /**
+   * Return selected nodes.
+   */
+  getSelectedNodes() {
+    return this.normalizeSelectedNodes(this.selectedNodes);
+  }
+
+  /**
+   * Return selected links.
+   */
+  getSelectedLinks() {
+    return this.normalizeSelectedLinks(this.selectedLinks);
+  }
+
+  /**
+   * Return active selected node.
+   */
+  getPrimarySelectedNode() {
+    const selected = this.getSelectedNodes();
+    if (!selected.length) return null;
+    if (this.selectedNode && selected.some(node => String(node.id) === String(this.selectedNode.id))) {
+      return selected.find(node => String(node.id) === String(this.selectedNode.id)) || selected[0];
+    }
+    return selected[0];
+  }
+
+  /**
+   * Return active selected link.
+   */
+  getPrimarySelectedLink() {
+    const selected = this.getSelectedLinks();
+    if (!selected.length) return null;
+    if (this.selectedLink && selected.some(link => String(link.id) === String(this.selectedLink.id))) {
+      return selected.find(link => String(link.id) === String(this.selectedLink.id)) || selected[0];
+    }
+    return selected[0];
+  }
+
+  /**
+   * Cleanup selected items if they no longer exist in graph data.
+   */
+  pruneSelection() {
+    this.setSelection({
+      nodes: this.selectedNodes,
+      links: this.selectedLinks,
+      activeNode: this.selectedNode,
+      activeLink: this.selectedLink
+    });
+  }
+
+  /**
    * Clear all current selections.
    */
-  clearSelection() {
-    if (this.selectedNode || this.selectedLink) {
+  clearSelection(options = {}) {
+    const { nodes = true, links = true } = options;
+    if (this.selectedNode || this.selectedLink || this.selectedNodes.length || this.selectedLinks.length) {
       console.log("Effacement de la selection");
-      this.selectedNode = null;
-      this.selectedLink = null;
+      this.setSelection({
+        nodes: nodes ? [] : this.selectedNodes,
+        links: links ? [] : this.selectedLinks,
+        activeNode: nodes ? null : this.selectedNode,
+        activeLink: links ? null : this.selectedLink
+      });
     }
   }
   

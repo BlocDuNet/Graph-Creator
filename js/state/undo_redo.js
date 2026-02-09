@@ -45,6 +45,8 @@ class HistoryManager extends EventTarget {
       // Reset selection after import to avoid stale focus/state
       this.graphState.selectedNode = null;
       this.graphState.selectedLink = null;
+      this.graphState.selectedNodes = [];
+      this.graphState.selectedLinks = [];
       eventBus.emit('selection-cleared');
     } else if (action.type === "add_field") {
       const { field, target, oldValues, fieldType, defaultValue, oldType } = action.data;
@@ -123,6 +125,9 @@ class HistoryManager extends EventTarget {
         default:
           console.error("Action inconnue :", action.type);
       }
+    }
+    if (typeof this.graphState.pruneSelection === 'function') {
+      this.graphState.pruneSelection();
     }
     if (this.updateCallback) this.updateCallback();
     this.dispatchEvent(new CustomEvent('action-performed', { detail:{action} }));

@@ -77,6 +77,14 @@ svg {
   font-size: 2em;
 }
 
+.selection-marquee {
+  fill: rgba(0, 119, 255, 0.12);
+  stroke: #0077ff;
+  stroke-width: 1.5px;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+
 /* Highlighted styles */
 .highlighted {
   stroke: orange !important;
