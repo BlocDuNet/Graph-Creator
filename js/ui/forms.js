@@ -44,6 +44,7 @@ export class FormManager {
     this.ruleMatchContainers = { node: null, link: null };
     this.groupMatchContainers = { node: null, link: null };
     this.groupQuickControls = { node: null, link: null };
+    this.reducedExpanded = { node: new Set(), link: new Set() };
     this.nodeFormCol = document.getElementById('node-form-col');
     this.linkFormCol = document.getElementById('link-form-col');
     
@@ -129,6 +130,10 @@ export class FormManager {
   hasSingleSelection(target) {
     return this.getSelectedItems(target).length === 1;
   }
+
+  isMultiSelectionActive() {
+    return this.getSelectedItems('node').length + this.getSelectedItems('link').length > 1;
+  }
   
   /**
    * Refreshes forms with current fields.
@@ -175,7 +180,7 @@ export class FormManager {
   /**
    * Creates a form field.
    */
-  createField(fieldName, formElement, inputObject, data, target) {
+  createField(fieldName, formElement, inputObject, data, target, options = {}) {
     const fieldDiv = document.createElement('div');
 
     // Create the label.
@@ -196,6 +201,7 @@ export class FormManager {
     const input = isBoolean ? document.createElement('select') : document.createElement('input');
     input.setAttribute('id', `${formElement.id}-${fieldName}`);
     input.setAttribute('name', fieldName);
+    if (options.ownerId != null) input.dataset.ownerId = String(options.ownerId);
 
     if (isBoolean) {
       input.innerHTML = [
@@ -267,7 +273,7 @@ export class FormManager {
       }
 
       const empty = v => v === null || v === undefined || v === '';
-      const isNodeTarget = inputObject === this.nodeInputs;
+      const isNodeTarget = target === 'node';
       const ownerId = input.dataset.ownerId;
       const item = isNodeTarget
         ? (ownerId ? this.graphState.nodes.find(n => n.id === ownerId) : this.getPrimarySelection('node'))
@@ -319,6 +325,7 @@ export class FormManager {
     };
 
     const rememberOwner = () => {
+      if (options.ownerId != null) return;
       const current = this.getPrimarySelection(target);
       if (current?.id) input.dataset.ownerId = current.id;
     };
@@ -337,8 +344,7 @@ export class FormManager {
       const isConditional = newType === 'conditional';
       this.graphState.updateFieldType(target, fieldName, newType);
       this.refreshForms();
-      if (this.hasSingleSelection('node')) this.showNodeForm(this.getPrimarySelection('node'), { autoFocus: false });
-      if (this.hasSingleSelection('link')) this.showLinkForm(this.getPrimarySelection('link'), { autoFocus: false });
+      this.syncSelectionForms();
       this.renderer.updateGraph();
       if (isConditional) {
         eventBus.emit('conditional-edit-requested', { target, field: fieldName });
@@ -359,14 +365,14 @@ export class FormManager {
         this.showCustomConfirm(
           `Supprimer le champ "${fieldName}" pour tous les elements ?`,
           () => {
-            const isNodeField = inputObject === this.nodeInputs;
-            const target = isNodeField ? "node" : "link";
+            const actionTarget = target === 'node' ? "node" : "link";
 
             performAction({
               type: "remove_field",
-              data: { field: fieldName, target, label: `Remove field ${fieldName} from ${target}s` }
+              data: { field: fieldName, target: actionTarget, label: `Remove field ${fieldName} from ${actionTarget}s` }
             });
             this.refreshForms();
+            this.syncSelectionForms();
             this.renderer.updateGraph();
           }
         );
@@ -427,6 +433,10 @@ export class FormManager {
    * Shows the node edit form.
    */
   showNodeForm(node, options = {}) {
+    if (this.isMultiSelectionActive()) {
+      this.syncSelectionForms();
+      return;
+    }
     const selectedNodes = this.getSelectedItems('node');
     const targetNode = node || this.getPrimarySelection('node');
     if (!this.nodeForm || !targetNode) {
@@ -476,6 +486,10 @@ export class FormManager {
    * Shows the link edit form.
    */
   showLinkForm(link, options = {}) {
+    if (this.isMultiSelectionActive()) {
+      this.syncSelectionForms();
+      return;
+    }
     const selectedLinks = this.getSelectedItems('link');
     const targetLink = link || this.getPrimarySelection('link');
     if (!this.linkForm || !targetLink) {
@@ -524,10 +538,10 @@ export class FormManager {
   /**
    * Updates form values with item data.
    */
-  updateForm(inputObject, dataItem) {
+  updateForm(inputObject, dataItem, targetOverride = null) {
     if (!dataItem) return;
     const idField = this.graphState.globalSettings.nodeIdField;
-    const target = inputObject === this.nodeInputs ? 'node' : 'link';
+    const target = targetOverride || (inputObject === this.nodeInputs ? 'node' : 'link');
 
     Object.keys(inputObject).forEach(key => {
       const entry = inputObject[key];
@@ -1089,9 +1103,10 @@ export class FormManager {
     });
   }
 
-  commitLocalStyleEnabled(target, enabled) {
-    if (!this.hasSingleSelection(target)) return;
-    const item = this.getPrimarySelection(target);
+  commitLocalStyleEnabled(target, enabled, itemOverride = null) {
+    const item = itemOverride || this.getPrimarySelection(target);
+    if (!item) return;
+    if (!itemOverride && !this.hasSingleSelection(target)) return;
     if (!item) return;
     const next = !!enabled;
     const current = item.__localStyleEnabled !== false;
@@ -1113,9 +1128,10 @@ export class FormManager {
     this.renderer.updateGraph();
   }
 
-  commitLocalStyle(target, key, value) {
-    if (!this.hasSingleSelection(target)) return;
-    const item = this.getPrimarySelection(target);
+  commitLocalStyle(target, key, value, itemOverride = null) {
+    const item = itemOverride || this.getPrimarySelection(target);
+    if (!item) return;
+    if (!itemOverride && !this.hasSingleSelection(target)) return;
     if (!item) return;
     const current = item.__localStyle && typeof item.__localStyle === 'object'
       ? { ...item.__localStyle }
@@ -1147,9 +1163,10 @@ export class FormManager {
     this.renderer.updateGraph();
   }
 
-  clearLocalStyle(target) {
-    if (!this.hasSingleSelection(target)) return;
-    const item = this.getPrimarySelection(target);
+  clearLocalStyle(target, itemOverride = null) {
+    const item = itemOverride || this.getPrimarySelection(target);
+    if (!item) return;
+    if (!itemOverride && !this.hasSingleSelection(target)) return;
     if (!item) return;
     const current = item.__localStyle && typeof item.__localStyle === 'object'
       ? { ...item.__localStyle }
@@ -1252,6 +1269,25 @@ export class FormManager {
   syncSelectionForms() {
     const selectedNodes = this.getSelectedItems('node');
     const selectedLinks = this.getSelectedItems('link');
+    const multiActive = selectedNodes.length + selectedLinks.length > 1;
+
+    if (multiActive) {
+      if (this.nodeForm) {
+        this.nodeForm.classList.add('hidden');
+        this.nodeForm.style.display = 'none';
+      }
+      if (this.linkForm) {
+        this.linkForm.classList.add('hidden');
+        this.linkForm.style.display = 'none';
+      }
+      if (selectedNodes.length) this.showReducedSelectionSummary('node', selectedNodes);
+      else this.hideReducedSelectionSummary('node');
+      if (selectedLinks.length) this.showReducedSelectionSummary('link', selectedLinks);
+      else this.hideReducedSelectionSummary('link');
+      this.updateEditorsLayout();
+      return;
+    }
+
     const node = selectedNodes.length === 1 ? selectedNodes[0] : null;
     const link = selectedLinks.length === 1 ? selectedLinks[0] : null;
 
@@ -1263,10 +1299,6 @@ export class FormManager {
       this.nodeForm.classList.remove('hidden');
       this.nodeForm.style.display = 'flex';
       this.hideReducedSelectionSummary('node');
-    } else if (selectedNodes.length > 1) {
-      this.nodeForm.classList.add('hidden');
-      this.nodeForm.style.display = 'none';
-      this.showReducedSelectionSummary('node', selectedNodes);
     } else if (this.nodeForm) {
       this.nodeForm.classList.add('hidden');
       this.nodeForm.style.display = 'none';
@@ -1281,10 +1313,6 @@ export class FormManager {
       this.linkForm.classList.remove('hidden');
       this.linkForm.style.display = 'flex';
       this.hideReducedSelectionSummary('link');
-    } else if (selectedLinks.length > 1) {
-      this.linkForm.classList.add('hidden');
-      this.linkForm.style.display = 'none';
-      this.showReducedSelectionSummary('link', selectedLinks);
     } else if (this.linkForm) {
       this.linkForm.classList.add('hidden');
       this.linkForm.style.display = 'none';
@@ -1298,28 +1326,70 @@ export class FormManager {
     const container = target === 'node' ? this.nodeFormReduced : this.linkFormReduced;
     if (!container) return;
     const count = Array.isArray(items) ? items.length : 0;
-    if (count <= 1) {
+    if (count <= 0) {
       this.hideReducedSelectionSummary(target);
       return;
     }
 
     const noun = target === 'node' ? 'noeuds' : 'liens';
     const title = `Mode reduit: ${count} ${noun} selectionnes`;
-    const subtitle = 'Edition individuelle desactivee. Utilisez le menu contextuel pour les actions de groupe.';
-    const maxItems = 6;
-    const preview = (items || []).slice(0, maxItems).map((item, idx) => {
-      return `<li>${this.escapeHtml(this.getSelectionPreviewLabel(target, item, idx))}</li>`;
+    const subtitle = 'Cliquez sur "Deplier" pour editer completement un element.';
+    const expanded = this.reducedExpanded[target] || new Set();
+    const encodedIds = new Set((items || []).map(item => this.encodeSelectionId(item?.id)));
+
+    Array.from(expanded).forEach(id => {
+      if (!encodedIds.has(id)) expanded.delete(id);
+    });
+
+    const cards = (items || []).map((item, idx) => {
+      const encodedId = this.encodeSelectionId(item?.id);
+      const isExpanded = expanded.has(encodedId);
+      const label = this.escapeHtml(this.getSelectionPreviewLabel(target, item, idx));
+      const badge = target === 'node' ? 'Noeud' : 'Lien';
+      return `
+        <div class="rule-card reduced-item-card" data-reduced-item-id="${encodedId}">
+          <div class="rule-match-item reduced-item-header">
+            <span class="badge badge-light">${badge}</span>
+            <span class="rule-match-name">${label}</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary reduced-item-toggle" data-reduced-toggle="${encodedId}">
+              ${isExpanded ? 'Replier' : 'Deplier'}
+            </button>
+          </div>
+          <div class="reduced-item-details ${isExpanded ? '' : 'hidden'}"></div>
+        </div>
+      `;
     }).join('');
-    const remaining = count - Math.min(count, maxItems);
-    const extra = remaining > 0 ? `<li>... +${remaining}</li>` : '';
 
     container.innerHTML = `
       <div class="reduced-selection-title">${this.escapeHtml(title)}</div>
       <div class="reduced-selection-subtitle">${this.escapeHtml(subtitle)}</div>
-      <ul class="reduced-selection-list">${preview}${extra}</ul>
+      <div class="reduced-selection-cards">${cards}</div>
     `;
     container.classList.remove('hidden');
     container.style.display = 'block';
+
+    container.querySelectorAll('button[data-reduced-toggle]').forEach(btn => {
+      btn.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const encodedId = String(btn.dataset.reducedToggle || '');
+        if (!encodedId) return;
+        if (expanded.has(encodedId)) {
+          expanded.delete(encodedId);
+        } else {
+          expanded.add(encodedId);
+        }
+        this.showReducedSelectionSummary(target, this.getSelectedItems(target));
+      });
+    });
+
+    container.querySelectorAll('.reduced-item-card').forEach(card => {
+      const encodedId = String(card.dataset.reducedItemId || '');
+      if (!encodedId || !expanded.has(encodedId)) return;
+      const details = card.querySelector('.reduced-item-details');
+      if (!details) return;
+      this.mountReducedItemEditor(target, encodedId, details, items);
+    });
   }
 
   hideReducedSelectionSummary(target) {
@@ -1353,6 +1423,193 @@ export class FormManager {
       ?? item.id;
     const name = String(raw ?? '').trim();
     return name ? `${name} (${base})` : base;
+  }
+
+  encodeSelectionId(value) {
+    return encodeURIComponent(String(value ?? ''));
+  }
+
+  decodeSelectionId(encoded) {
+    try {
+      return decodeURIComponent(String(encoded ?? ''));
+    } catch (e) {
+      return String(encoded ?? '');
+    }
+  }
+
+  getItemByTargetAndId(target, rawId) {
+    const list = target === 'node' ? this.graphState.nodes : this.graphState.links;
+    return (list || []).find(item => String(item?.id) === String(rawId)) || null;
+  }
+
+  mountReducedItemEditor(target, encodedId, container, items = []) {
+    if (!container) return;
+    const rawId = this.decodeSelectionId(encodedId);
+    const selectedItem = (items || []).find(item => String(item?.id) === String(rawId));
+    const item = selectedItem || this.getItemByTargetAndId(target, rawId);
+    if (!item) {
+      container.innerHTML = '<div class="small text-muted">Element introuvable.</div>';
+      return;
+    }
+
+    const form = document.createElement('form');
+    form.className = 'reduced-item-form';
+    const safeId = encodedId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    form.id = `reduced-${target}-${safeId}`;
+
+    const inputObject = {};
+    const data = target === 'node' ? this.graphState.nodes : this.graphState.links;
+    this.getFieldOptions(target).forEach(fieldName => {
+      this.createField(fieldName, form, inputObject, data, target, {
+        inline: true,
+        ownerId: item.id
+      });
+    });
+    this.updateForm(inputObject, item, target);
+
+    container.innerHTML = '';
+    container.classList.remove('hidden');
+    container.appendChild(form);
+    container.appendChild(this.createReducedLocalStyleSection(target, item));
+
+    const actions = document.createElement('div');
+    actions.className = 'reduced-item-actions';
+    const openFullBtn = document.createElement('button');
+    openFullBtn.type = 'button';
+    openFullBtn.className = 'btn btn-sm btn-outline-primary';
+    openFullBtn.textContent = target === 'node' ? 'Selectionner ce noeud' : 'Selectionner ce lien';
+    openFullBtn.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (target === 'node') {
+        this.graphState.selectNode(item, { clearLinks: true, autoFocus: true });
+        this.showNodeForm(item, { autoFocus: true });
+      } else {
+        this.graphState.selectLink(item, { clearNodes: true, autoFocus: true });
+        this.showLinkForm(item, { autoFocus: true });
+      }
+      this.renderer.updateGraph();
+    });
+    actions.appendChild(openFullBtn);
+    container.appendChild(actions);
+  }
+
+  createReducedLocalStyleSection(target, item) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'reduced-local-style';
+
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = 'Style local';
+    wrapper.appendChild(title);
+
+    const local = item?.__localStyle && typeof item.__localStyle === 'object'
+      ? item.__localStyle
+      : {};
+    const enabled = item?.__localStyleEnabled !== false;
+
+    const toggleRow = document.createElement('div');
+    toggleRow.className = 'reduced-local-style-row';
+    const toggleLabel = document.createElement('label');
+    const toggle = document.createElement('input');
+    toggle.type = 'checkbox';
+    toggle.checked = enabled;
+    toggle.className = 'mr-1';
+    toggle.addEventListener('change', () => {
+      this.commitLocalStyleEnabled(target, toggle.checked, item);
+      this.showReducedSelectionSummary(target, this.getSelectedItems(target));
+    });
+    toggleLabel.appendChild(toggle);
+    toggleLabel.appendChild(document.createTextNode(' Activer override local'));
+    toggleRow.appendChild(toggleLabel);
+    wrapper.appendChild(toggleRow);
+
+    const rows = document.createElement('div');
+    rows.className = 'reduced-local-style-grid';
+    wrapper.appendChild(rows);
+
+    const styleDefs = target === 'node'
+      ? [
+        { key: 'fill', label: 'Couleur', type: 'color' },
+        { key: 'stroke', label: 'Contour', type: 'color' },
+        { key: 'strokeWidth', label: 'Epaisseur', type: 'number' },
+        { key: 'opacity', label: 'Opacite', type: 'number' },
+        { key: 'size', label: 'Taille', type: 'number' },
+        { key: 'shape', label: 'Forme', type: 'select', options: ['circle', 'rect'] },
+        { key: 'labelColor', label: 'Couleur label', type: 'color' }
+      ]
+      : [
+        { key: 'linkColor', label: 'Couleur lien', type: 'color' },
+        { key: 'linkWidth', label: 'Largeur', type: 'number' },
+        { key: 'linkOpacity', label: 'Opacite', type: 'number' },
+        { key: 'linkDash', label: 'Dasharray', type: 'text' },
+        { key: 'labelColor', label: 'Couleur label', type: 'color' }
+      ];
+
+    styleDefs.forEach(def => {
+      const row = document.createElement('div');
+      row.className = 'reduced-local-style-item';
+      const label = document.createElement('label');
+      label.textContent = `${def.label}:`;
+      row.appendChild(label);
+
+      const currentValue = local[def.key] != null ? String(local[def.key]) : '';
+      let input = null;
+
+      if (def.type === 'select') {
+        input = document.createElement('select');
+        input.className = 'form-control form-control-sm';
+        input.innerHTML = ['<option value=""></option>']
+          .concat((def.options || []).map(opt => `<option value="${opt}">${opt}</option>`))
+          .join('');
+        input.value = currentValue;
+      } else {
+        input = document.createElement('input');
+        input.className = 'form-control form-control-sm';
+        input.type = def.type === 'number' ? 'number' : 'text';
+        if (def.type === 'number') input.step = 'any';
+        input.value = currentValue;
+      }
+
+      input.disabled = !enabled;
+      input.addEventListener(def.type === 'text' ? 'blur' : 'change', () => {
+        this.commitLocalStyle(target, def.key, input.value, item);
+        this.showReducedSelectionSummary(target, this.getSelectedItems(target));
+      });
+      row.appendChild(input);
+
+      if (def.type === 'color') {
+        const picker = document.createElement('input');
+        picker.type = 'color';
+        picker.className = 'form-control form-control-sm color-picker';
+        picker.value = this.normalizeHexColor(currentValue) || '#000000';
+        picker.disabled = !enabled;
+        picker.addEventListener('input', () => {
+          input.value = picker.value;
+          this.commitLocalStyle(target, def.key, picker.value, item);
+          this.showReducedSelectionSummary(target, this.getSelectedItems(target));
+        });
+        row.appendChild(picker);
+      }
+
+      rows.appendChild(row);
+    });
+
+    const clearRow = document.createElement('div');
+    clearRow.className = 'reduced-local-style-actions';
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'btn btn-sm btn-outline-secondary';
+    clearBtn.textContent = 'Effacer overrides';
+    clearBtn.disabled = !enabled;
+    clearBtn.addEventListener('click', () => {
+      this.clearLocalStyle(target, item);
+      this.showReducedSelectionSummary(target, this.getSelectedItems(target));
+    });
+    clearRow.appendChild(clearBtn);
+    wrapper.appendChild(clearRow);
+
+    return wrapper;
   }
 
   /**

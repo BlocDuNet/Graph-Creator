@@ -13,6 +13,7 @@ export class InteractionManager {
     this.groupDrag = null;
     this.modifierState = { ctrl: false, shift: false, meta: false };
     this.lastDrag = { moved: false, nodeId: null, endedAt: 0 };
+    this.debugMultiDrag = true;
     this.marquee = {
       active: false,
       start: null,
@@ -96,6 +97,14 @@ export class InteractionManager {
         this.updateModifierState(event);
         if (!event.active) this.renderer.simulation.alphaTarget(0.3).restart();
         this.lastDrag = { moved: false, nodeId: d?.id ?? null, endedAt: 0 };
+        this.logMultiDragDebug('drag-start', {
+          nodeId: d?.id ?? null,
+          ctrl: this.modifierState.ctrl,
+          shift: this.modifierState.shift,
+          meta: this.modifierState.meta,
+          selectedNodes: this.getSelectedNodes().length,
+          selectedLinks: this.getSelectedLinks().length
+        });
         this.tryStartGroupNodeDrag(event, d);
         if (!d.initialPosition) {
           d.initialPosition = { x: d.x, y: d.y };
@@ -121,6 +130,14 @@ export class InteractionManager {
       .on('end', (event, d) => {
         if (!event.active) this.renderer.simulation.alphaTarget(0);
         this.lastDrag.endedAt = Date.now();
+        this.logMultiDragDebug('drag-end', {
+          nodeId: d?.id ?? null,
+          moved: !!this.lastDrag?.moved,
+          groupActive: !!this.groupDrag?.active,
+          ctrl: this.modifierState.ctrl,
+          shift: this.modifierState.shift,
+          meta: this.modifierState.meta
+        });
         if (this.isGroupDragAnchor(d)) {
           this.commitGroupNodeDrag();
           this.clearGroupDrag();
@@ -138,12 +155,24 @@ export class InteractionManager {
   tryStartGroupNodeDrag(event, anchorNode) {
     const hasModifier = this.hasGroupDragModifier(event);
     if (!hasModifier) {
+      this.logMultiDragDebug('group-start-skip', {
+        reason: 'no-modifier',
+        nodeId: anchorNode?.id ?? null,
+        ctrl: this.modifierState.ctrl,
+        shift: this.modifierState.shift,
+        meta: this.modifierState.meta
+      });
       this.clearGroupDrag();
       return;
     }
 
     const selectedNodes = this.getSelectedNodes().filter(node => node?.id != null);
     if (selectedNodes.length < 2) {
+      this.logMultiDragDebug('group-start-skip', {
+        reason: 'not-enough-selected-nodes',
+        selectedNodes: selectedNodes.length,
+        nodeId: anchorNode?.id ?? null
+      });
       this.clearGroupDrag();
       return;
     }
@@ -151,6 +180,11 @@ export class InteractionManager {
     const anchorId = String(anchorNode?.id ?? '');
     const isAnchorSelected = selectedNodes.some(node => String(node.id) === anchorId);
     if (!anchorId || !isAnchorSelected) {
+      this.logMultiDragDebug('group-start-skip', {
+        reason: 'anchor-not-in-selection',
+        nodeId: anchorNode?.id ?? null,
+        selectedNodes: selectedNodes.length
+      });
       this.clearGroupDrag();
       return;
     }
@@ -166,6 +200,10 @@ export class InteractionManager {
 
     const anchorInitial = initialPositions.get(anchorId);
     if (!anchorInitial) {
+      this.logMultiDragDebug('group-start-skip', {
+        reason: 'anchor-position-missing',
+        nodeId: anchorNode?.id ?? null
+      });
       this.clearGroupDrag();
       return;
     }
@@ -177,6 +215,10 @@ export class InteractionManager {
       nodes: selectedNodes,
       initialPositions
     };
+    this.logMultiDragDebug('group-start-ok', {
+      anchorId,
+      selectedNodes: selectedNodes.map(node => node.id)
+    });
   }
 
   isGroupDragAnchor(node) {
@@ -279,6 +321,15 @@ export class InteractionManager {
 
   hasSingleNodeSelectionContext() {
     return this.getSelectedNodes().length <= 1 && this.getSelectedLinks().length === 0;
+  }
+
+  logMultiDragDebug(step, payload = {}) {
+    if (!this.debugMultiDrag) return;
+    try {
+      console.log('[multi-drag-debug]', step, payload);
+    } catch (e) {
+      // Ignore logging failures.
+    }
   }
 
   commitNodePositionChanges(node, oldX, oldY, newX, newY, labelPrefix = 'Move node') {

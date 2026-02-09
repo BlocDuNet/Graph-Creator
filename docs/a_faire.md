@@ -27,6 +27,7 @@
 2. [ ] Dans les builders, mettre une autre fonction IA pour que cette denrière propose (comme pour les noeuds et les liens) des règles qui sont suceptibles d'être pertinentes selon le schéma et/ou les données du graph).
 2. [ ] Pour le builder, si le nombre d'item de logique/compraison sont trop nombreux, essayer de n'afficher par defaut que les items pouvant être associé (un champ "texte" ne peut pas soutraire un champ nombre par exemple.
 2. [ ] builder, mieux organiser et gérer les champs, exemple "between" doit proposer entre 2 éléments.
+2. [ ] pouvoir config quoi afficher en mode réduit
 2. [ ] refaire entièrement le tableur.
 
 # A faire plus tard (ou pas)
