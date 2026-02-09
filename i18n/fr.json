@@ -44,6 +44,11 @@
         "action": "<b>Désélectionner</b> (noeud/lien)",
         "instruction": "Appuyez sur <b>Escape</b> ou <b>Cliquez à nouveau sur le même</b> noeud/lien"
       },
+      "multi_select": {
+        "icon_title": "S\u00e9lection multiple",
+        "action": "<b>S\u00e9lection multiple</b> (noeuds/liens)",
+        "instruction": "<b>Maj+clic</b> pour ajouter/retirer, ou <b>clic gauche + glisser</b> dans le vide pour la s\u00e9lection par rectangle (<b>Maj</b> pour ajouter)"
+      },
       "change_name": {
         "icon_title": "Changer le nom",
         "action": "<b>Changer le nom</b> (noeud/lien)",
@@ -59,10 +64,20 @@
         "action": "<b>Déplacer un noeud</b>",
         "instruction": "<b>Clic gauche + glisser</b>"
       },
+      "move_multi_nodes": {
+        "icon_title": "D\u00e9placer les noeuds s\u00e9lectionn\u00e9s",
+        "action": "<b>D\u00e9placer les noeuds s\u00e9lectionn\u00e9s</b>",
+        "instruction": "<b>Ctrl+clic + glisser</b> ou <b>Maj+clic + glisser</b> sur un noeud d\u00e9j\u00e0 s\u00e9lectionn\u00e9"
+      },
       "move_graph": {
         "icon_title": "Déplacer le graphe",
         "action": "<b>Déplacer le graphe</b>",
         "instruction": "<b>Clic droit + glisser</b>"
+      },
+      "context_menu": {
+        "icon_title": "Menu contextuel",
+        "action": "<b>Menu contextuel</b>",
+        "instruction": "<b>Clic droit</b> sur le graphe, un noeud, un lien ou une s\u00e9lection"
       },
       "undo_redo": {
         "icon_title": "Annuler/Refaire",

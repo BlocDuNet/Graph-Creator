@@ -1,0 +1,15 @@
+<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="11" width="30" height="22" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="3 2">
+    <animate attributeName="stroke-dashoffset" values="0;-10" dur="2.4s" repeatCount="indefinite"/>
+  </rect>
+
+  <circle cx="14" cy="18" r="4.5" fill="#4285f4" stroke="#333" stroke-width="1.2">
+    <animate attributeName="stroke-width" values="1.2;2;1.2" dur="2.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="24" cy="24" r="4.5" fill="#34a853" stroke="#333" stroke-width="1.2">
+    <animate attributeName="stroke-width" values="1.2;2;1.2" dur="2.2s" begin="0.4s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="36" cy="30" r="4.5" fill="#fbbc05"/>
+
+  <text x="25" y="45" text-anchor="middle" font-size="6" fill="#333">SHIFT</text>
+</svg>

@@ -10,6 +10,7 @@ export class InteractionManager {
     this.renderer = renderer;
     this.svg = svgSelection;
     this.lastPointer = null;
+    this.groupDrag = null;
     this.marquee = {
       active: false,
       start: null,
@@ -91,52 +92,155 @@ export class InteractionManager {
       .clickDistance(3)
       .on('start', (event, d) => {
         if (!event.active) this.renderer.simulation.alphaTarget(0.3).restart();
-        d.initialPosition = { x: d.x, y: d.y };
+        this.tryStartGroupNodeDrag(event, d);
+        if (!d.initialPosition) {
+          d.initialPosition = { x: d.x, y: d.y };
+        }
       })
       .on('drag', (event, d) => {
+        if (this.isGroupDragAnchor(d)) {
+          this.applyGroupNodeDrag(event);
+          return;
+        }
         d.x = event.x;
         d.y = event.y;
       })
       .on('end', (event, d) => {
         if (!event.active) this.renderer.simulation.alphaTarget(0);
+        if (this.isGroupDragAnchor(d)) {
+          this.commitGroupNodeDrag();
+          this.clearGroupDrag();
+          delete d.initialPosition;
+          return;
+        }
         const pos0 = d.initialPosition;
         if (pos0 && (d.x !== pos0.x || d.y !== pos0.y)) {
-          const { xField, yField } = this.graphState.globalSettings;
-          // Update custom X field.
-          if (xField) {
-            const oldX = pos0.x;
-            const newX = d.x;
-            performAction({
-              type: "update_node",
-              data: {
-                nodeId: d.id,
-                field: xField,
-                from: oldX,
-                to: newX,
-                label: `Move node ${xField} (${oldX} ? ${newX})`
-              }
-            });
-            d[xField] = newX;
-          }
-          // Update custom Y field.
-          if (yField) {
-            const oldY = pos0.y;
-            const newY = d.y;
-            performAction({
-              type: "update_node",
-              data: {
-                nodeId: d.id,
-                field: yField,
-                from: oldY,
-                to: newY,
-                label: `Move node ${yField} (${oldY} ? ${newY})`
-              }
-            });
-            d[yField] = newY;
-          }
+          this.commitNodePositionChanges(d, pos0.x, pos0.y, d.x, d.y, 'Move node');
         }
         delete d.initialPosition;
       });
+  }
+
+  tryStartGroupNodeDrag(event, anchorNode) {
+    const sourceEvent = event?.sourceEvent || event;
+    const hasModifier = !!(sourceEvent?.ctrlKey || sourceEvent?.shiftKey);
+    if (!hasModifier) {
+      this.clearGroupDrag();
+      return;
+    }
+
+    const selectedNodes = this.getSelectedNodes().filter(node => node?.id != null);
+    if (selectedNodes.length < 2) {
+      this.clearGroupDrag();
+      return;
+    }
+
+    const anchorId = String(anchorNode?.id ?? '');
+    const isAnchorSelected = selectedNodes.some(node => String(node.id) === anchorId);
+    if (!anchorId || !isAnchorSelected) {
+      this.clearGroupDrag();
+      return;
+    }
+
+    const initialPositions = new Map();
+    selectedNodes.forEach(node => {
+      const x = Number(node.x);
+      const y = Number(node.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+      initialPositions.set(String(node.id), { x, y });
+      node.initialPosition = { x, y };
+    });
+
+    const anchorInitial = initialPositions.get(anchorId);
+    if (!anchorInitial) {
+      this.clearGroupDrag();
+      return;
+    }
+
+    this.groupDrag = {
+      active: true,
+      anchorId,
+      anchorInitial,
+      nodes: selectedNodes,
+      initialPositions
+    };
+  }
+
+  isGroupDragAnchor(node) {
+    if (!this.groupDrag?.active || !node?.id) return false;
+    return String(this.groupDrag.anchorId) === String(node.id);
+  }
+
+  applyGroupNodeDrag(event) {
+    if (!this.groupDrag?.active) return;
+    const dx = Number(event.x) - this.groupDrag.anchorInitial.x;
+    const dy = Number(event.y) - this.groupDrag.anchorInitial.y;
+    if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
+
+    this.groupDrag.nodes.forEach(node => {
+      const start = this.groupDrag.initialPositions.get(String(node.id));
+      if (!start) return;
+      node.x = start.x + dx;
+      node.y = start.y + dy;
+    });
+  }
+
+  commitGroupNodeDrag() {
+    if (!this.groupDrag?.active) return;
+    this.groupDrag.nodes.forEach(node => {
+      const start = this.groupDrag.initialPositions.get(String(node.id));
+      if (!start) return;
+      this.commitNodePositionChanges(node, start.x, start.y, node.x, node.y, 'Move selected nodes');
+    });
+  }
+
+  clearGroupDrag() {
+    if (!this.groupDrag) return;
+    if (Array.isArray(this.groupDrag.nodes)) {
+      this.groupDrag.nodes.forEach(node => {
+        if (node && Object.prototype.hasOwnProperty.call(node, 'initialPosition')) {
+          delete node.initialPosition;
+        }
+      });
+    }
+    this.groupDrag = null;
+  }
+
+  commitNodePositionChanges(node, oldX, oldY, newX, newY, labelPrefix = 'Move node') {
+    if (!node?.id) return;
+    const { xField, yField } = this.graphState.globalSettings;
+    const fromX = Number(oldX);
+    const fromY = Number(oldY);
+    const toX = Number(newX);
+    const toY = Number(newY);
+
+    if (xField && Number.isFinite(fromX) && Number.isFinite(toX) && fromX !== toX) {
+      performAction({
+        type: "update_node",
+        data: {
+          nodeId: node.id,
+          field: xField,
+          from: fromX,
+          to: toX,
+          label: `${labelPrefix} ${xField} (${fromX} -> ${toX})`
+        }
+      });
+      node[xField] = toX;
+    }
+
+    if (yField && Number.isFinite(fromY) && Number.isFinite(toY) && fromY !== toY) {
+      performAction({
+        type: "update_node",
+        data: {
+          nodeId: node.id,
+          field: yField,
+          from: fromY,
+          to: toY,
+          label: `${labelPrefix} ${yField} (${fromY} -> ${toY})`
+        }
+      });
+      node[yField] = toY;
+    }
   }
   
   /**

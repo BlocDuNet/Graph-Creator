@@ -44,6 +44,11 @@
         "action": "<b>Unselect</b> (node/edge)",
         "instruction": "Press <b>Escape</b> or <b>Click again on the same</b> node/edge"
       },
+      "multi_select": {
+        "icon_title": "Multi selection",
+        "action": "<b>Multi selection</b> (nodes/edges)",
+        "instruction": "<b>Shift+Click</b> to add/remove, or <b>Left click + drag</b> in empty space for box selection (<b>Shift</b> to add)"
+      },
       "change_name": {
         "icon_title": "Change name",
         "action": "<b>Change name</b> (node/edge)",
@@ -59,10 +64,20 @@
         "action": "<b>Move node</b>",
         "instruction": "<b>Left click + drag</b>"
       },
+      "move_multi_nodes": {
+        "icon_title": "Move selected nodes",
+        "action": "<b>Move selected nodes</b>",
+        "instruction": "<b>Ctrl+Click + drag</b> or <b>Shift+Click + drag</b> on one selected node"
+      },
       "move_graph": {
         "icon_title": "Move graph",
         "action": "<b>Move graph</b>",
         "instruction": "<b>Right click + drag</b>"
+      },
+      "context_menu": {
+        "icon_title": "Context menu",
+        "action": "<b>Context menu</b>",
+        "instruction": "<b>Right click</b> on graph, node, link or selection"
       },
       "undo_redo": {
         "icon_title": "Undo/Redo",
