@@ -979,7 +979,7 @@ export class FormManager {
       ordered.some(container => {
         card = findByContainer(container, true);
         return !!card;
-      };
+      });
       if (!card) {
         ordered.some(container => {
           card = findByContainer(container, false);
