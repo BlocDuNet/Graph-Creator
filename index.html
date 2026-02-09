@@ -1018,6 +1018,22 @@
               <div class="card mt-3">
                 <div class="card-header section-header">
                   <button class="btn btn-link" type="button">
+                    <span>Menu contextuel (clic droit)</span>
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div class="small text-muted mb-2">
+                    Activez/desactivez les actions par contexte et choisissez l'ordre d'affichage.
+                  </div>
+                  <div id="context-menu-config-list"></div>
+                  <div class="mt-2 d-flex flex-wrap">
+                    <button id="context-menu-config-reset" class="btn btn-sm btn-outline-secondary m-1">Restaurer menu par defaut</button>
+                  </div>
+                </div>
+              </div>
+              <div class="card mt-3">
+                <div class="card-header section-header">
+                  <button class="btn btn-link" type="button">
                     <span data-i18n="app_config.io.title">Configuration logiciel Import/Export</span>
                   </button>
                 </div>
@@ -1039,6 +1055,10 @@
                       <div class="custom-control custom-checkbox mt-1">
                         <input type="checkbox" class="custom-control-input" id="app-config-include-groups" checked>
                         <label class="custom-control-label" for="app-config-include-groups" data-i18n="app_config.io.include_groups">Groupes</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mt-1">
+                        <input type="checkbox" class="custom-control-input" id="app-config-include-context-menu" checked>
+                        <label class="custom-control-label" for="app-config-include-context-menu">Menu contextuel</label>
                       </div>
                     </div>
                   </div>

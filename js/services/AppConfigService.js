@@ -1,6 +1,7 @@
 ﻿import eventBus from './EventBus.js';
 import { graphConfig } from '../config/index.js';
 import { getProviderId, getModel, setProvider, setModel } from '../ai/AIService.js';
+import { sanitizeContextMenuConfig } from './ContextMenuConfigService.js';
 
 const CONFIG_TYPE = 'graph-creator-config';
 const CONFIG_VERSION = 1;
@@ -51,6 +52,7 @@ export function buildAppConfig(options = {}) {
   const includeStyle = options.includeStyle !== false;
   const includePie = options.includePie !== false;
   const includeGroups = options.includeGroups !== false;
+  const includeContextMenu = options.includeContextMenu !== false;
 
   const sections = {};
   if (includeAi) {
@@ -67,6 +69,9 @@ export function buildAppConfig(options = {}) {
   }
   if (includeGroups) {
     sections.groups = sanitizeGroups(graphConfig.groups);
+  }
+  if (includeContextMenu) {
+    sections.contextMenu = sanitizeContextMenuConfig(graphConfig.contextMenu);
   }
 
   return {
@@ -98,5 +103,10 @@ export function applyAppConfig(config = {}) {
   if (sections.groups) {
     graphConfig.groups = normalizeGroups(sections.groups);
     eventBus.emit('group-rules-updated', { rules: graphConfig.groups });
+  }
+
+  if (sections.contextMenu) {
+    graphConfig.contextMenu = sanitizeContextMenuConfig(sections.contextMenu);
+    eventBus.emit('context-menu-config-updated', { config: graphConfig.contextMenu });
   }
 }

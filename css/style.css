@@ -85,6 +85,84 @@ svg {
   vector-effect: non-scaling-stroke;
 }
 
+.graph-context-menu {
+  position: fixed;
+  z-index: 2200;
+  min-width: 220px;
+}
+
+.graph-context-menu-panel {
+  background: #ffffff;
+  border: 1px solid #d9dee5;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 220px;
+  max-width: 360px;
+  max-height: 70vh;
+  overflow: auto;
+  padding: 4px;
+}
+
+.graph-context-menu-title {
+  font-size: 0.75rem;
+  color: #6c757d;
+  padding: 4px 8px;
+  border-bottom: 1px solid #edf1f5;
+  margin-bottom: 4px;
+}
+
+.context-menu-entry {
+  position: relative;
+}
+
+.context-menu-button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  margin: 0;
+  border-radius: 4px;
+}
+
+.context-menu-button:hover:not(:disabled) {
+  background: #eef5ff;
+}
+
+.context-menu-button:disabled {
+  color: #adb5bd;
+  cursor: default;
+}
+
+.context-menu-arrow {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-left: 8px;
+}
+
+.context-submenu {
+  display: none;
+  position: absolute;
+  left: calc(100% - 2px);
+  top: 0;
+  background: #fff;
+  border: 1px solid #d9dee5;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 220px;
+  max-width: 360px;
+  padding: 4px;
+  z-index: 2201;
+}
+
+.context-menu-entry.has-children:hover > .context-submenu,
+.context-menu-entry.has-children:focus-within > .context-submenu {
+  display: block;
+}
+
 /* Highlighted styles */
 .highlighted {
   stroke: orange !important;
@@ -695,6 +773,47 @@ input[type="checkbox"] {
 
 .rule-row {
   margin-bottom: 6px;
+}
+
+.context-menu-config-context {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.context-menu-config-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.context-menu-config-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 80px 70px 100px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.context-menu-config-header {
+  font-size: 0.78rem;
+  color: #6c757d;
+  border-bottom: 1px solid #edf1f5;
+  padding-bottom: 4px;
+}
+
+.context-menu-config-col-label {
+  overflow-wrap: anywhere;
+}
+
+.context-menu-config-order {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.context-menu-config-default {
+  grid-template-columns: minmax(180px, 1fr) minmax(140px, 1fr);
 }
 
 .group-ref-list {

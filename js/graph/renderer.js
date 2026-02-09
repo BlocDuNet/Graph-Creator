@@ -590,19 +590,28 @@ console.log("Renderer initialized with graph config:", graphConfig);
    * Enable zoom on the graph.
    */
   enableZoom() {
-    this.svg.call(
-      d3.zoom()
-        .extent([[0, 0], [this.width, this.height]])
-        .scaleExtent([0.5, 3])
-        .filter(event => event.button === 2 || event.type === "wheel")
-        .on('zoom', event => {
-          // Always apply translate + scale to keep a consistent transform.
-          this.g.attr('transform', event.transform);
-        })
-    );
+    this.zoomBehavior = d3.zoom()
+      .extent([[0, 0], [this.width, this.height]])
+      .scaleExtent([0.5, 3])
+      // Right-click is reserved for the contextual menu.
+      .filter(event => event.type === "wheel" || event.button === 1)
+      .on('zoom', event => {
+        // Always apply translate + scale to keep a consistent transform.
+        this.g.attr('transform', event.transform);
+      });
+
+    this.svg.call(this.zoomBehavior);
     
     this.svg.on('dblclick.zoom', null);
     this.svg.on('contextmenu', event => event.preventDefault());
+  }
+
+  resetZoom(duration = 180) {
+    if (!this.zoomBehavior) return;
+    this.svg
+      .transition()
+      .duration(duration)
+      .call(this.zoomBehavior.transform, d3.zoomIdentity);
   }
 
   resolveStyleNumber(value, fallback = null) {

@@ -10,6 +10,7 @@ import { AIManager } from './ai/AIManager.js';
 import { ConditionalFieldManager } from './expr/ConditionalFieldManager.js';
 import { StyleRuleManager } from './style/StyleRuleManager.js';
 import { GroupManager } from './groups/GroupManager.js';
+import { ContextMenuManager } from './ui/ContextMenuManager.js';
 import { registerGraphState, registerUpdateCallback } from './state/undo_redo.js';
 import { initLayoutManager } from './services/layoutManager.js';
 import { initIOServices } from './services/io.js';
@@ -50,6 +51,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 9b. Node/link groups manager.
   const groupManager = new GroupManager(graphState, renderer);
+
+  // 9c. Contextual menu manager (right click + configuration).
+  const contextMenuManager = new ContextMenuManager(graphState, renderer, interactionManager, uiManager);
   
   // 10. Initialize the AI manager.
   const aiManager = new AIManager(graphState, renderer);
@@ -77,7 +81,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       aiManager,
       conditionalFieldManager,
       styleRuleManager,
-      groupManager
+      groupManager,
+      contextMenuManager
     };
   }
   

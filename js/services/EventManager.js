@@ -109,7 +109,8 @@ export class EventManager {
         curvatureStep: graphConfig.linkStyle.curvatureStep,
         styleRules: graphConfig.styleRules,
         pieRules: graphConfig.pieRules,
-        groups: graphConfig.groups
+        groups: graphConfig.groups,
+        contextMenu: graphConfig.contextMenu
       };
       const blob = new Blob([JSON.stringify(cfg, null,2)], { type:'application/json' });
       const url = URL.createObjectURL(blob);
@@ -145,7 +146,8 @@ export class EventManager {
       const includeStyle = document.getElementById('app-config-include-style')?.checked ?? true;
       const includePie = document.getElementById('app-config-include-pie')?.checked ?? true;
       const includeGroups = document.getElementById('app-config-include-groups')?.checked ?? true;
-      const cfg = buildAppConfig({ includeAi, includeStyle, includePie, includeGroups });
+      const includeContextMenu = document.getElementById('app-config-include-context-menu')?.checked ?? true;
+      const cfg = buildAppConfig({ includeAi, includeStyle, includePie, includeGroups, includeContextMenu });
       const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

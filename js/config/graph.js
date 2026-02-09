@@ -4,6 +4,7 @@
 
 import { listJsonFiles } from '../services/fileService.js';
 import eventBus from '../services/EventBus.js';
+import { createDefaultContextMenuConfig, sanitizeContextMenuConfig } from '../services/ContextMenuConfigService.js';
 
 export const graphConfig = {
   // Configuration file path settings.
@@ -53,7 +54,10 @@ export const graphConfig = {
   groups: {
     nodes: [],
     links: []
-  }
+  },
+
+  // Contextual menu configuration.
+  contextMenu: createDefaultContextMenuConfig()
 };
 
 function normalizeStyleRules(data) {
@@ -223,6 +227,11 @@ export function updateGraphConfig(configData, renderer) {
   if (configData.groups !== undefined) {
     graphConfig.groups = normalizeGroups(configData.groups);
     eventBus.emit('group-rules-updated', { rules: graphConfig.groups });
+  }
+
+  if (configData.contextMenu !== undefined) {
+    graphConfig.contextMenu = sanitizeContextMenuConfig(configData.contextMenu);
+    eventBus.emit('context-menu-config-updated', { config: graphConfig.contextMenu });
   }
   
   // Update force simulation if renderer is provided.
