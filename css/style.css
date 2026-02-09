@@ -398,6 +398,35 @@ input[type="checkbox"] {
   overflow-y: auto;
 }
 
+.form-reduced:not(.hidden) {
+  display: block;
+  margin-top: 0;
+  padding: 0.75rem 1rem;
+  border: 1px dashed #c8d0da;
+  border-radius: 4px;
+  background-color: #f7f9fc;
+}
+
+.reduced-selection-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2f3a4b;
+  margin-bottom: 0.35rem;
+}
+
+.reduced-selection-subtitle {
+  font-size: 0.8rem;
+  color: #556274;
+  margin-bottom: 0.45rem;
+}
+
+.reduced-selection-list {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.82rem;
+  color: #334055;
+}
+
 #node-form:not(.hidden),
 #link-form:not(.hidden) {
   display: flex;

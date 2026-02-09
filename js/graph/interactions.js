@@ -11,6 +11,8 @@ export class InteractionManager {
     this.svg = svgSelection;
     this.lastPointer = null;
     this.groupDrag = null;
+    this.modifierState = { ctrl: false, shift: false, meta: false };
+    this.lastDrag = { moved: false, nodeId: null, endedAt: 0 };
     this.marquee = {
       active: false,
       start: null,
@@ -91,22 +93,34 @@ export class InteractionManager {
     return d3.drag()
       .clickDistance(3)
       .on('start', (event, d) => {
+        this.updateModifierState(event);
         if (!event.active) this.renderer.simulation.alphaTarget(0.3).restart();
+        this.lastDrag = { moved: false, nodeId: d?.id ?? null, endedAt: 0 };
         this.tryStartGroupNodeDrag(event, d);
         if (!d.initialPosition) {
           d.initialPosition = { x: d.x, y: d.y };
         }
       })
       .on('drag', (event, d) => {
+        this.updateModifierState(event);
+        // Fallback: on some browsers Ctrl/Meta may not be reliable on drag start.
+        if (!this.groupDrag?.active && this.hasGroupDragModifier(event)) {
+          this.tryStartGroupNodeDrag(event, d);
+        }
         if (this.isGroupDragAnchor(d)) {
           this.applyGroupNodeDrag(event);
+          this.lastDrag.moved = true;
           return;
         }
         d.x = event.x;
         d.y = event.y;
+        if (d.initialPosition && (d.x !== d.initialPosition.x || d.y !== d.initialPosition.y)) {
+          this.lastDrag.moved = true;
+        }
       })
       .on('end', (event, d) => {
         if (!event.active) this.renderer.simulation.alphaTarget(0);
+        this.lastDrag.endedAt = Date.now();
         if (this.isGroupDragAnchor(d)) {
           this.commitGroupNodeDrag();
           this.clearGroupDrag();
@@ -122,8 +136,7 @@ export class InteractionManager {
   }
 
   tryStartGroupNodeDrag(event, anchorNode) {
-    const sourceEvent = event?.sourceEvent || event;
-    const hasModifier = !!(sourceEvent?.ctrlKey || sourceEvent?.shiftKey);
+    const hasModifier = this.hasGroupDragModifier(event);
     if (!hasModifier) {
       this.clearGroupDrag();
       return;
@@ -206,6 +219,68 @@ export class InteractionManager {
     this.groupDrag = null;
   }
 
+  updateModifierState(event) {
+    const type = String(event?.type || event?.sourceEvent?.type || '').toLowerCase();
+    const isKeyboardEvent = type.startsWith('key');
+    const ctrl = this.readModifierFlag(event, 'ctrlKey', 'Control');
+    const shift = this.readModifierFlag(event, 'shiftKey', 'Shift');
+    const meta = this.readModifierFlag(event, 'metaKey', 'Meta');
+
+    if (ctrl === true) this.modifierState.ctrl = true;
+    else if (ctrl === false && isKeyboardEvent) this.modifierState.ctrl = false;
+
+    if (shift === true) this.modifierState.shift = true;
+    else if (shift === false && isKeyboardEvent) this.modifierState.shift = false;
+
+    if (meta === true) this.modifierState.meta = true;
+    else if (meta === false && isKeyboardEvent) this.modifierState.meta = false;
+  }
+
+  hasGroupDragModifier(event) {
+    const ctrl = this.readModifierFlag(event, 'ctrlKey', 'Control');
+    const shift = this.readModifierFlag(event, 'shiftKey', 'Shift');
+    const meta = this.readModifierFlag(event, 'metaKey', 'Meta');
+
+    const ctrlLike = !!(
+      ctrl === true ||
+      meta === true ||
+      this.modifierState.ctrl ||
+      this.modifierState.meta
+    );
+    const shiftLike = !!(shift === true || this.modifierState.shift);
+    return ctrlLike || shiftLike;
+  }
+
+  readModifierFlag(event, keyName, stateName) {
+    const candidates = [event, event?.sourceEvent];
+    for (const candidate of candidates) {
+      if (!candidate) continue;
+      if (typeof candidate.getModifierState === 'function') {
+        try {
+          const value = candidate.getModifierState(stateName);
+          if (typeof value === 'boolean') return value;
+        } catch (e) {
+          // Ignore and fallback to direct key flags.
+        }
+      }
+      if (typeof candidate[keyName] === 'boolean') {
+        return candidate[keyName];
+      }
+    }
+    return null;
+  }
+
+  hasRecentDragOnNode(node) {
+    if (!node?.id) return false;
+    if (!this.lastDrag?.moved) return false;
+    if (String(this.lastDrag.nodeId ?? '') !== String(node.id)) return false;
+    return Date.now() - (this.lastDrag.endedAt || 0) < 250;
+  }
+
+  hasSingleNodeSelectionContext() {
+    return this.getSelectedNodes().length <= 1 && this.getSelectedLinks().length === 0;
+  }
+
   commitNodePositionChanges(node, oldX, oldY, newX, newY, labelPrefix = 'Move node') {
     if (!node?.id) return;
     const { xField, yField } = this.graphState.globalSettings;
@@ -258,6 +333,10 @@ export class InteractionManager {
       console.error("Erreur: noeud sans identifiant:", d);
       return;
     }
+    if (event.defaultPrevented || this.hasRecentDragOnNode(d)) {
+      return;
+    }
+
     const activeSelectedNode = this.getActiveSelectedNode();
     
     // Allow creating a self-link with Alt+Click.
@@ -273,7 +352,7 @@ export class InteractionManager {
     }
     
     // CTRL+Click on a node to create a link.
-    if (event.ctrlKey && activeSelectedNode) {
+    if (event.ctrlKey && activeSelectedNode && this.hasSingleNodeSelectionContext()) {
       // Create a link between the selected node and the clicked node.
       this.graphState.createLink(activeSelectedNode, d);
       this.renderer.updateGraph();
@@ -382,7 +461,7 @@ export class InteractionManager {
     const interactiveTarget = !!event.target?.closest?.('.node, .link, .link-label');
     const activeSelectedNode = this.getActiveSelectedNode();
 
-    if (event.ctrlKey && activeSelectedNode && !interactiveTarget) {
+    if (event.ctrlKey && activeSelectedNode && !interactiveTarget && this.hasSingleNodeSelectionContext()) {
       this.updateLastPointer(event);
       const adjustedPoint = this.getGraphPoint(event);
       if (!adjustedPoint) return;
@@ -730,6 +809,7 @@ export class InteractionManager {
    */
   initKeyboardHandlers() {
     window.addEventListener('keyup', event => {
+      this.updateModifierState(event);
       // Delete with Delete or Backspace.
       const isEditable = ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target?.tagName) || event.target?.isContentEditable;
       if (!isEditable && event.ctrlKey && ['Delete', 'Backspace'].includes(event.key)) {
@@ -786,6 +866,7 @@ export class InteractionManager {
     
     // Shortcuts Ctrl+Z / Ctrl+Y.
     window.addEventListener('keydown', event => {
+      this.updateModifierState(event);
       // Undo
       if (event.ctrlKey && !event.shiftKey && (event.key === 'z' || event.key === 'Z')) {
         eventBus.emit('undo-requested');
@@ -797,6 +878,10 @@ export class InteractionManager {
         eventBus.emit('redo-requested');
         event.preventDefault();
       }
+    });
+
+    window.addEventListener('blur', () => {
+      this.modifierState = { ctrl: false, shift: false, meta: false };
     });
   }
 

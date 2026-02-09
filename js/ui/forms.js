@@ -34,6 +34,8 @@ export class FormManager {
     // Select the forms.
     this.nodeForm = document.getElementById('node-form');
     this.linkForm = document.getElementById('link-form');
+    this.nodeFormReduced = document.getElementById('node-form-reduced');
+    this.linkFormReduced = document.getElementById('link-form-reduced');
     
     // Input storage.
     this.nodeInputs = {};
@@ -433,11 +435,13 @@ export class FormManager {
       return;
     }
     if (selectedNodes.length !== 1) {
+      this.showReducedSelectionSummary('node', selectedNodes);
       this.nodeForm.classList.add('hidden');
       this.nodeForm.style.display = 'none';
       this.updateEditorsLayout();
       return;
     }
+    this.hideReducedSelectionSummary('node');
     
     console.log("Affichage du formulaire pour le nœud:", targetNode.id);
     
@@ -480,11 +484,13 @@ export class FormManager {
       return;
     }
     if (selectedLinks.length !== 1) {
+      this.showReducedSelectionSummary('link', selectedLinks);
       this.linkForm.classList.add('hidden');
       this.linkForm.style.display = 'none';
       this.updateEditorsLayout();
       return;
     }
+    this.hideReducedSelectionSummary('link');
     
     console.log("Affichage du formulaire pour le lien:", targetLink.id);
     
@@ -1222,8 +1228,12 @@ export class FormManager {
   }
 
   updateEditorsLayout() {
-    const nodeVisible = !!(this.nodeForm && !this.nodeForm.classList.contains('hidden'));
-    const linkVisible = !!(this.linkForm && !this.linkForm.classList.contains('hidden'));
+    const nodeFormVisible = !!(this.nodeForm && !this.nodeForm.classList.contains('hidden'));
+    const nodeReducedVisible = !!(this.nodeFormReduced && !this.nodeFormReduced.classList.contains('hidden'));
+    const linkFormVisible = !!(this.linkForm && !this.linkForm.classList.contains('hidden'));
+    const linkReducedVisible = !!(this.linkFormReduced && !this.linkFormReduced.classList.contains('hidden'));
+    const nodeVisible = nodeFormVisible || nodeReducedVisible;
+    const linkVisible = linkFormVisible || linkReducedVisible;
 
     const setColState = (col, visible, half) => {
       if (!col) return;
@@ -1240,8 +1250,10 @@ export class FormManager {
   }
 
   syncSelectionForms() {
-    const node = this.hasSingleSelection('node') ? this.getPrimarySelection('node') : null;
-    const link = this.hasSingleSelection('link') ? this.getPrimarySelection('link') : null;
+    const selectedNodes = this.getSelectedItems('node');
+    const selectedLinks = this.getSelectedItems('link');
+    const node = selectedNodes.length === 1 ? selectedNodes[0] : null;
+    const link = selectedLinks.length === 1 ? selectedLinks[0] : null;
 
     if (node) {
       this.updateForm(this.nodeInputs, node);
@@ -1250,9 +1262,15 @@ export class FormManager {
       this.updateGroupMatches('node', node);
       this.nodeForm.classList.remove('hidden');
       this.nodeForm.style.display = 'flex';
+      this.hideReducedSelectionSummary('node');
+    } else if (selectedNodes.length > 1) {
+      this.nodeForm.classList.add('hidden');
+      this.nodeForm.style.display = 'none';
+      this.showReducedSelectionSummary('node', selectedNodes);
     } else if (this.nodeForm) {
       this.nodeForm.classList.add('hidden');
       this.nodeForm.style.display = 'none';
+      this.hideReducedSelectionSummary('node');
     }
 
     if (link) {
@@ -1262,12 +1280,79 @@ export class FormManager {
       this.updateGroupMatches('link', link);
       this.linkForm.classList.remove('hidden');
       this.linkForm.style.display = 'flex';
+      this.hideReducedSelectionSummary('link');
+    } else if (selectedLinks.length > 1) {
+      this.linkForm.classList.add('hidden');
+      this.linkForm.style.display = 'none';
+      this.showReducedSelectionSummary('link', selectedLinks);
     } else if (this.linkForm) {
       this.linkForm.classList.add('hidden');
       this.linkForm.style.display = 'none';
+      this.hideReducedSelectionSummary('link');
     }
 
     this.updateEditorsLayout();
+  }
+
+  showReducedSelectionSummary(target, items = []) {
+    const container = target === 'node' ? this.nodeFormReduced : this.linkFormReduced;
+    if (!container) return;
+    const count = Array.isArray(items) ? items.length : 0;
+    if (count <= 1) {
+      this.hideReducedSelectionSummary(target);
+      return;
+    }
+
+    const noun = target === 'node' ? 'noeuds' : 'liens';
+    const title = `Mode reduit: ${count} ${noun} selectionnes`;
+    const subtitle = 'Edition individuelle desactivee. Utilisez le menu contextuel pour les actions de groupe.';
+    const maxItems = 6;
+    const preview = (items || []).slice(0, maxItems).map((item, idx) => {
+      return `<li>${this.escapeHtml(this.getSelectionPreviewLabel(target, item, idx))}</li>`;
+    }).join('');
+    const remaining = count - Math.min(count, maxItems);
+    const extra = remaining > 0 ? `<li>... +${remaining}</li>` : '';
+
+    container.innerHTML = `
+      <div class="reduced-selection-title">${this.escapeHtml(title)}</div>
+      <div class="reduced-selection-subtitle">${this.escapeHtml(subtitle)}</div>
+      <ul class="reduced-selection-list">${preview}${extra}</ul>
+    `;
+    container.classList.remove('hidden');
+    container.style.display = 'block';
+  }
+
+  hideReducedSelectionSummary(target) {
+    const container = target === 'node' ? this.nodeFormReduced : this.linkFormReduced;
+    if (!container) return;
+    container.classList.add('hidden');
+    container.style.display = 'none';
+    container.innerHTML = '';
+  }
+
+  getSelectionPreviewLabel(target, item, index) {
+    if (!item) return `${target} ${index + 1}`;
+    if (target === 'node') {
+      const labelField = this.graphState.globalSettings.nodeLabelField || 'name';
+      const raw = this.graphState.resolveFieldValue?.('node', item, labelField)
+        ?? item[labelField]
+        ?? item.name
+        ?? item.id;
+      return String(raw ?? `noeud ${index + 1}`);
+    }
+
+    const labelField = this.graphState.globalSettings.linkLabelField || 'name';
+    const idField = this.graphState.globalSettings.nodeIdField || 'id';
+    const sourceId = item?.source?.[idField] ?? item?.source?.id ?? '?';
+    const targetId = item?.target?.[idField] ?? item?.target?.id ?? '?';
+    const base = `${sourceId} -> ${targetId}`;
+    const raw = (labelField
+      ? this.graphState.resolveFieldValue?.('link', item, labelField) ?? item[labelField]
+      : null)
+      ?? item.name
+      ?? item.id;
+    const name = String(raw ?? '').trim();
+    return name ? `${name} (${base})` : base;
   }
 
   /**
@@ -1283,6 +1368,8 @@ export class FormManager {
       this.linkForm.classList.add('hidden');
       this.linkForm.style.display = 'none'; // Force hide.
     }
+    this.hideReducedSelectionSummary('node');
+    this.hideReducedSelectionSummary('link');
     this.updateEditorsLayout();
     
     console.log("Tous les formulaires sont maintenant cachés");
