@@ -382,7 +382,9 @@ function toBoolean(value) {
 }
 
 function isEmpty(value) {
-  return value === null || value === undefined || value === '';
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'string') return value.trim() === '';
+  return false;
 }
 
 function toDate(value) {
@@ -410,6 +412,113 @@ function dateDiff(a, b, unit = 'days') {
   if (['minutes', 'minute', 'm'].includes(key)) return diffMs / 60000;
   if (['seconds', 'second', 's'].includes(key)) return diffMs / 1000;
   return diffMs / 86400000;
+}
+
+function parseListValues(value, separator = ',') {
+  const raw = String(value ?? '');
+  const sep = String(separator || ',');
+  return raw
+    .split(sep)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function valueInList(value, listText, separator = ',', ignoreCase = false) {
+  const list = parseListValues(listText, separator);
+  if (!list.length) return false;
+  const needle = String(value ?? '').trim();
+  if (ignoreCase) {
+    const n = needle.toLowerCase();
+    return list.some(item => item.toLowerCase() === n);
+  }
+  return list.includes(needle);
+}
+
+function numberBetween(value, min, max) {
+  const v = toNumber(value);
+  const a = toNumber(min);
+  const b = toNumber(max);
+  const lo = Math.min(a, b);
+  const hi = Math.max(a, b);
+  return v >= lo && v <= hi;
+}
+
+function parseComparableDate(value, mode = 'auto') {
+  const kind = String(mode || 'auto').trim().toLowerCase();
+  if (kind === 'time') {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return (((value.getHours() * 60) + value.getMinutes()) * 60 + value.getSeconds()) * 1000 + value.getMilliseconds();
+    }
+    const match = String(value ?? '').trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (!match) return null;
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    const seconds = Number(match[3] || '0');
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) return null;
+    return (((hours * 60) + minutes) * 60 + seconds) * 1000;
+  }
+
+  const text = String(value ?? '').trim();
+  if (kind === 'date') {
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]) - 1;
+    const day = Number(match[3]);
+    const t = Date.UTC(year, month, day);
+    return Number.isNaN(t) ? null : t;
+  }
+
+  if (kind === 'datetime') {
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]) - 1;
+    const day = Number(match[3]);
+    const hour = Number(match[4]);
+    const minute = Number(match[5]);
+    const second = Number(match[6] || '0');
+    const t = Date.UTC(year, month, day, hour, minute, second);
+    return Number.isNaN(t) ? null : t;
+  }
+
+  const d = toDate(value);
+  return d ? d.getTime() : null;
+}
+
+function isDateBefore(a, b, mode = 'auto') {
+  const va = parseComparableDate(a, mode);
+  const vb = parseComparableDate(b, mode);
+  if (va == null || vb == null) return false;
+  return va < vb;
+}
+
+function isDateAfter(a, b, mode = 'auto') {
+  const va = parseComparableDate(a, mode);
+  const vb = parseComparableDate(b, mode);
+  if (va == null || vb == null) return false;
+  return va > vb;
+}
+
+function valueMatchesAny(value, patterns, ignoreCase = false) {
+  const text = String(value ?? '');
+  const source = String(patterns ?? '').trim();
+  if (!source) return false;
+  const parts = source.split('|').map(s => s.trim()).filter(Boolean);
+  if (!parts.length) return false;
+  const flags = ignoreCase ? 'i' : '';
+  for (const part of parts) {
+    try {
+      if (new RegExp(part, flags).test(text)) return true;
+    } catch (e) {
+      if (ignoreCase) {
+        if (text.toLowerCase().includes(part.toLowerCase())) return true;
+      } else if (text.includes(part)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
   function formatNumber(value, decimals = 0, decimalSep = '.') {
@@ -626,12 +735,21 @@ function dateDiff(a, b, unit = 'days') {
   toNumber: a => toNumber(a),
   toText: a => (a == null ? '' : String(a)),
   toBool: a => toBoolean(a),
+  isEmpty: a => isEmpty(a),
+  isNotEmpty: a => !isEmpty(a),
   contains: (a, b) => String(a ?? '').includes(String(b ?? '')),
   containsCi: (a, b) => String(a ?? '').toLowerCase().includes(String(b ?? '').toLowerCase()),
   startsWith: (a, b) => String(a ?? '').startsWith(String(b ?? '')),
   startsWithCi: (a, b) => String(a ?? '').toLowerCase().startsWith(String(b ?? '').toLowerCase()),
   endsWith: (a, b) => String(a ?? '').endsWith(String(b ?? '')),
   endsWithCi: (a, b) => String(a ?? '').toLowerCase().endsWith(String(b ?? '').toLowerCase()),
+  inList: (a, b, c) => valueInList(a, b, c || ',', false),
+  inListCi: (a, b, c) => valueInList(a, b, c || ',', true),
+  matchesAny: (a, b) => valueMatchesAny(a, b, false),
+  matchesAnyCi: (a, b) => valueMatchesAny(a, b, true),
+  between: (a, b, c) => numberBetween(a, b, c),
+  dateBefore: (a, b, c) => isDateBefore(a, b, c || 'auto'),
+  dateAfter: (a, b, c) => isDateAfter(a, b, c || 'auto'),
   replace: (a, b, c) => String(a ?? '').split(String(b ?? '')).join(String(c ?? '')),
   regex: (a, b, c) => {
     try {
@@ -731,7 +849,16 @@ export function inferExpressionType(ast, getFieldType) {
         return t1 === t2 ? t1 : 'text';
       }
       if (['add', 'sub', 'mul', 'div', 'len', 'round', 'min', 'max', 'toNumber', 'degree', 'linkCount', 'neighborCount', 'sumNeighbors', 'sumLinks', 'groupCount'].includes(name)) return 'number';
-      if (['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'eqCi', 'neqCi', 'and', 'or', 'not', 'toBool', 'contains', 'containsCi', 'startsWith', 'startsWithCi', 'endsWith', 'endsWithCi', 'regex', 'regexCi', 'hasNeighbor', 'inGroup', 'inNodeGroup', 'inLinkGroup'].includes(name)) return 'boolean';
+      if ([
+        'gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'eqCi', 'neqCi',
+        'and', 'or', 'not', 'toBool',
+        'contains', 'containsCi', 'startsWith', 'startsWithCi', 'endsWith', 'endsWithCi',
+        'regex', 'regexCi', 'isEmpty', 'isNotEmpty',
+        'inList', 'inListCi', 'between',
+        'dateBefore', 'dateAfter',
+        'matchesAny', 'matchesAnyCi',
+        'hasNeighbor', 'inGroup', 'inNodeGroup', 'inLinkGroup'
+      ].includes(name)) return 'boolean';
       if (['concat', 'upper', 'lower', 'trim', 'toText', 'coalesce', 'replace', 'substring', 'formatNumber', 'groupNames'].includes(name)) return 'text';
       if (['dateDiff'].includes(name)) return 'number';
       if (name === 'field') return 'text';

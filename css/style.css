@@ -454,17 +454,49 @@ input[type="checkbox"] {
   margin-left: 6px;
   border-left: 2px solid #d9e1ef;
   padding-left: 8px;
+  overflow-x: auto;
 }
 
 .condition-row {
   display: grid;
-  grid-template-columns: 90px 1fr 1fr 1fr 110px 70px 90px 1fr 1fr 1fr 110px auto;
+  grid-template-columns:
+    minmax(120px, 1fr)
+    minmax(120px, 1.1fr)
+    minmax(120px, 1.1fr)
+    minmax(130px, 1.15fr)
+    minmax(110px, 0.9fr)
+    minmax(110px, 0.9fr)
+    84px
+    minmax(120px, 1fr)
+    minmax(120px, 1.1fr)
+    minmax(120px, 1.1fr)
+    minmax(130px, 1.15fr)
+    minmax(110px, 0.9fr)
+    minmax(95px, 0.85fr)
+    minmax(150px, 1.2fr)
+    auto;
   gap: 6px;
   align-items: center;
+  min-width: 1500px;
 }
 
 .condition-row .cond-value {
   margin-top: 0;
+}
+
+.condition-row .form-control {
+  min-width: 0;
+}
+
+.cond-case-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.cond-case-toggle input {
+  margin: 0;
 }
 
 .condition-row .cond-remove {
@@ -505,30 +537,70 @@ input[type="checkbox"] {
 }
 
 #tab7.rules-compact .rule-card .rule-compact-preview {
-  display: flex;
+  display: none;
 }
 
 #tab7.rules-compact .rule-card .rule-details {
-  display: none;
-}
-
-#tab7.rules-compact .rule-card.rule-expanded .rule-details {
   display: block;
 }
 
-#tab7.rules-compact .rule-card .rule-header .badge,
-#tab7.rules-compact .rule-card .rule-header .rule-priority,
-#tab7.rules-compact .rule-card .rule-header button[data-action="remove"] {
-  display: none;
+#tab7.rules-compact .rule-card {
+  padding: 6px;
 }
 
 #tab7.rules-compact .rule-card .rule-header {
-  gap: 6px;
+  display: grid;
+  grid-template-columns: 90px 65px minmax(180px, 1fr) 72px 28px 28px;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 4px;
 }
 
-#tab7.rules-compact .rule-card .rule-name {
-  flex: 1 1 auto;
-  min-width: 160px;
+#tab7.rules-compact .rule-card .rule-name,
+#tab7.rules-compact .rule-card .rule-priority {
+  max-width: none;
+  width: 100%;
+}
+
+#tab7.rules-compact .rule-card .rule-row {
+  margin-bottom: 4px;
+}
+
+#tab7.rules-compact .rule-card .rule-when {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: 4px;
+}
+
+#tab7.rules-compact .rule-card .rule-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+#tab7.rules-compact .rule-card .btn {
+  font-size: 0.72rem;
+  height: 24px;
+  padding: 0 6px;
+}
+
+#tab7.rules-compact .rule-card .form-control,
+#tab7.rules-compact .rule-card textarea.form-control {
+  font-size: 0.76rem;
+  min-height: 24px;
+  padding: 2px 6px;
+}
+
+#tab7.rules-compact .rule-card textarea.form-control {
+  min-height: 44px;
+}
+
+#tab7.rules-compact .rule-card .color-input .color-picker {
+  width: 28px;
+  height: 24px;
+}
+
+#tab7.rules-compact .rule-card .group-ref-list {
+  max-height: 96px;
 }
 
 .rule-card-highlight {

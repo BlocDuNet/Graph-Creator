@@ -150,7 +150,7 @@ export class ConditionalFieldManager {
     if (this.el.conditionRoot) {
       this.el.conditionRoot.addEventListener('change', e => {
         const target = e.target;
-        if (target && (target.classList.contains('cond-source') || target.classList.contains('cond-group-target'))) {
+        if (target && (target.classList.contains('cond-source') || target.classList.contains('cond-group-target') || target.classList.contains('cond-operator'))) {
           const row = target.closest('.condition-row');
           if (row) this.toggleConditionRow(row);
         }
@@ -159,6 +159,7 @@ export class ConditionalFieldManager {
       this.el.conditionRoot.addEventListener('click', e => {
         const btn = e.target.closest('button[data-action]');
         if (!btn) return;
+        if (btn.dataset.boundDirect === '1') return;
         e.preventDefault();
         e.stopPropagation();
         const action = btn.dataset.action;
@@ -490,7 +491,10 @@ export class ConditionalFieldManager {
           value: visualConfig.condRightValue || '',
           group: visualConfig.condRightGroup || '',
           groupTarget: visualConfig.condRightGroupTarget || 'same'
-        }
+        },
+        caseSensitive: visualConfig.condCaseSensitive !== false,
+        extraValue: visualConfig.condExtraValue || '',
+        dateMode: visualConfig.condDateMode || 'auto'
       };
       const items = [cond1];
       if (visualConfig.condExtraEnabled) {
@@ -510,7 +514,10 @@ export class ConditionalFieldManager {
             value: visualConfig.cond2RightValue || '',
             group: visualConfig.cond2RightGroup || '',
             groupTarget: visualConfig.cond2RightGroupTarget || 'same'
-          }
+          },
+          caseSensitive: visualConfig.cond2CaseSensitive !== false,
+          extraValue: visualConfig.cond2ExtraValue || '',
+          dateMode: visualConfig.cond2DateMode || 'auto'
         });
       }
       return { type: 'group', join: visualConfig.condJoin || 'and', items };
@@ -523,7 +530,10 @@ export class ConditionalFieldManager {
           type: 'condition',
           left: { source: 'field', field: '', value: '', group: '', groupTarget: 'same' },
           op: 'eq',
-          right: { source: 'value', field: '', value: '', group: '', groupTarget: 'same' }
+          right: { source: 'value', field: '', value: '', group: '', groupTarget: 'same' },
+          caseSensitive: true,
+          extraValue: '',
+          dateMode: 'auto'
         }
       ]
     };
@@ -555,13 +565,27 @@ export class ConditionalFieldManager {
     addCond.type = 'button';
     addCond.className = 'btn btn-sm btn-outline-secondary';
     addCond.dataset.action = 'add-condition';
+    addCond.dataset.boundDirect = '1';
     addCond.textContent = '+ Condition';
+    addCond.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.addConditionRow(group);
+      this.updateCanonicalFromVisual();
+    });
 
     const addGroup = document.createElement('button');
     addGroup.type = 'button';
     addGroup.className = 'btn btn-sm btn-outline-secondary';
     addGroup.dataset.action = 'add-group';
+    addGroup.dataset.boundDirect = '1';
     addGroup.textContent = '+ Groupe';
+    addGroup.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.addGroup(group);
+      this.updateCanonicalFromVisual();
+    });
 
     header.appendChild(joinLabel);
     header.appendChild(joinSelect);
@@ -573,7 +597,14 @@ export class ConditionalFieldManager {
       removeGroup.type = 'button';
       removeGroup.className = 'btn btn-sm btn-outline-danger';
       removeGroup.dataset.action = 'remove-group';
+      removeGroup.dataset.boundDirect = '1';
       removeGroup.textContent = 'x';
+      removeGroup.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        group.remove();
+        this.updateCanonicalFromVisual();
+      });
       header.appendChild(removeGroup);
     }
 
@@ -587,7 +618,10 @@ export class ConditionalFieldManager {
             type: 'condition',
             left: { source: 'field', field: '', value: '', group: '', groupTarget: 'same' },
             op: 'eq',
-            right: { source: 'value', field: '', value: '', group: '', groupTarget: 'same' }
+            right: { source: 'value', field: '', value: '', group: '', groupTarget: 'same' },
+            caseSensitive: true,
+            extraValue: '',
+            dateMode: 'auto'
           }
         ];
 
@@ -660,19 +694,30 @@ export class ConditionalFieldManager {
       <option value="lte">&lt;=</option>
       <option value="eq">==</option>
       <option value="neq">!=</option>
-      <option value="eqCi">== (ignore casse)</option>
-      <option value="neqCi">!= (ignore casse)</option>
       <option value="contains">contient</option>
       <option value="notContains">ne contient pas</option>
-      <option value="containsCi">contient (ignore casse)</option>
-      <option value="notContainsCi">ne contient pas (ignore casse)</option>
       <option value="startsWith">commence</option>
-      <option value="startsWithCi">commence (ignore casse)</option>
       <option value="endsWith">termine</option>
-      <option value="endsWithCi">termine (ignore casse)</option>
       <option value="regex">regex</option>
-      <option value="regexCi">regex (ignore casse)</option>
+      <option value="inList">dans liste</option>
+      <option value="matchesAny">correspond a un motif</option>
+      <option value="between">entre</option>
+      <option value="dateBefore">date avant</option>
+      <option value="dateAfter">date apres</option>
+      <option value="isEmpty">est vide</option>
+      <option value="isNotEmpty">non vide</option>
     `;
+
+    const caseWrap = document.createElement('label');
+    caseWrap.className = 'cond-case-toggle small mb-0';
+    caseWrap.dataset.role = 'case-wrap';
+    const caseSensitive = document.createElement('input');
+    caseSensitive.type = 'checkbox';
+    caseSensitive.className = 'mr-1';
+    caseSensitive.dataset.role = 'case-sensitive';
+    caseSensitive.checked = config.caseSensitive !== false;
+    caseWrap.appendChild(caseSensitive);
+    caseWrap.appendChild(document.createTextNode('Casse'));
 
     const rightSource = document.createElement('select');
     rightSource.className = 'form-control form-control-sm cond-source';
@@ -700,6 +745,11 @@ export class ConditionalFieldManager {
     rightValue.dataset.role = 'right-value';
     rightValue.placeholder = 'Valeur';
 
+    const rightValue2 = document.createElement('input');
+    rightValue2.className = 'form-control form-control-sm cond-value-2';
+    rightValue2.dataset.role = 'right-value-2';
+    rightValue2.placeholder = 'Max';
+
     const rightGroup = document.createElement('select');
     rightGroup.className = 'form-control form-control-sm cond-group';
     rightGroup.dataset.role = 'right-group';
@@ -714,11 +764,28 @@ export class ConditionalFieldManager {
       <option value="link">Liens</option>
     `;
 
+    const dateMode = document.createElement('select');
+    dateMode.className = 'form-control form-control-sm cond-date-mode';
+    dateMode.dataset.role = 'date-mode';
+    dateMode.innerHTML = `
+      <option value="auto">Date auto</option>
+      <option value="date">Date (YYYY-MM-DD)</option>
+      <option value="datetime">Date+heure</option>
+      <option value="time">Heure (HH:mm[:ss])</option>
+    `;
+
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'btn btn-sm btn-outline-danger cond-remove';
     removeBtn.dataset.action = 'remove-condition';
+    removeBtn.dataset.boundDirect = '1';
     removeBtn.textContent = 'x';
+    removeBtn.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      row.remove();
+      this.updateCanonicalFromVisual();
+    });
 
     row.appendChild(leftSource);
     row.appendChild(leftField);
@@ -726,11 +793,14 @@ export class ConditionalFieldManager {
     row.appendChild(leftGroup);
     row.appendChild(leftGroupTarget);
     row.appendChild(operator);
+    row.appendChild(caseWrap);
     row.appendChild(rightSource);
     row.appendChild(rightField);
     row.appendChild(rightValue);
     row.appendChild(rightGroup);
     row.appendChild(rightGroupTarget);
+    row.appendChild(rightValue2);
+    row.appendChild(dateMode);
     row.appendChild(removeBtn);
 
     if (config.left) {
@@ -751,7 +821,24 @@ export class ConditionalFieldManager {
       rightGroup.value = groupValue;
       rightGroupTarget.value = config.right.groupTarget || 'same';
     }
-    operator.value = config.op || 'eq';
+    const legacyCiMap = {
+      eqCi: 'eq',
+      neqCi: 'neq',
+      containsCi: 'contains',
+      notContainsCi: 'notContains',
+      startsWithCi: 'startsWith',
+      endsWithCi: 'endsWith',
+      regexCi: 'regex',
+      inListCi: 'inList',
+      matchesAnyCi: 'matchesAny'
+    };
+    const rawOp = config.op || 'eq';
+    operator.value = legacyCiMap[rawOp] || rawOp;
+    if (legacyCiMap[rawOp] && config.caseSensitive === undefined) {
+      caseSensitive.checked = false;
+    }
+    rightValue2.value = config.extraValue || '';
+    dateMode.value = config.dateMode || 'auto';
 
     this.toggleConditionRow(row);
     return row;
@@ -780,10 +867,18 @@ export class ConditionalFieldManager {
     const rightSource = row.querySelector('[data-role="right-source"]');
     const rightField = row.querySelector('[data-role="right-field"]');
     const rightValue = row.querySelector('[data-role="right-value"]');
+    const rightValue2 = row.querySelector('[data-role="right-value-2"]');
     const rightGroup = row.querySelector('[data-role="right-group"]');
     const rightGroupTarget = row.querySelector('[data-role="right-group-target"]');
+    const dateMode = row.querySelector('[data-role="date-mode"]');
+    const caseWrap = row.querySelector('[data-role="case-wrap"]');
+    const caseSensitive = row.querySelector('[data-role="case-sensitive"]');
     const isMembershipGroupMode = mode => ['group', 'source_group', 'target_group'].includes(mode);
     const isGroupCountMode = mode => mode === 'group_count';
+    const unaryOps = new Set(['isEmpty', 'isNotEmpty']);
+    const caseAwareOps = new Set(['eq', 'neq', 'contains', 'notContains', 'startsWith', 'endsWith', 'regex', 'inList', 'matchesAny']);
+    const op = operator?.value || 'eq';
+    const unaryMode = unaryOps.has(op);
     const leftMode = leftSource?.value || 'field';
     this.syncConditionGroupOptions(row, 'left', leftMode);
     if (leftField) leftField.style.display = leftMode === 'field' ? '' : 'none';
@@ -793,36 +888,18 @@ export class ConditionalFieldManager {
 
     const rightMode = rightSource?.value || 'field';
     this.syncConditionGroupOptions(row, 'right', rightMode);
-    if (rightField) rightField.style.display = rightMode === 'field' ? '' : 'none';
-    if (rightValue) rightValue.style.display = rightMode === 'value' ? '' : 'none';
-    if (rightGroup) rightGroup.style.display = (isMembershipGroupMode(rightMode) || isGroupCountMode(rightMode)) ? '' : 'none';
-    if (rightGroupTarget) rightGroupTarget.style.display = isGroupCountMode(rightMode) ? '' : 'none';
+    if (leftSource) leftSource.style.display = '';
+    if (rightSource) rightSource.style.display = unaryMode ? 'none' : '';
+    if (rightField) rightField.style.display = unaryMode ? 'none' : (rightMode === 'field' ? '' : 'none');
+    if (rightValue) rightValue.style.display = unaryMode ? 'none' : (rightMode === 'value' ? '' : 'none');
+    if (rightGroup) rightGroup.style.display = unaryMode ? 'none' : ((isMembershipGroupMode(rightMode) || isGroupCountMode(rightMode)) ? '' : 'none');
+    if (rightGroupTarget) rightGroupTarget.style.display = unaryMode ? 'none' : (isGroupCountMode(rightMode) ? '' : 'none');
+    if (rightValue2) rightValue2.style.display = !unaryMode && op === 'between' ? '' : 'none';
+    if (dateMode) dateMode.style.display = !unaryMode && (op === 'dateBefore' || op === 'dateAfter') ? '' : 'none';
+    if (caseWrap) caseWrap.style.display = caseAwareOps.has(op) ? '' : 'none';
+    if (caseSensitive && !caseAwareOps.has(op)) caseSensitive.checked = true;
 
-    const leftIsGroup = isMembershipGroupMode(leftMode);
-    const rightIsGroup = isMembershipGroupMode(rightMode);
-    const unaryGroup = (leftIsGroup && !rightIsGroup) || (!leftIsGroup && rightIsGroup);
-
-    if (unaryGroup) {
-      if (operator && !['eq', 'neq', 'eqCi', 'neqCi'].includes(operator.value)) operator.value = 'eq';
-      if (leftIsGroup) {
-        this.clearConditionOperand(row, 'right');
-        if (rightSource) rightSource.style.display = 'none';
-        if (rightField) rightField.style.display = 'none';
-        if (rightValue) rightValue.style.display = 'none';
-        if (rightGroup) rightGroup.style.display = 'none';
-        if (rightGroupTarget) rightGroupTarget.style.display = 'none';
-      } else {
-        this.clearConditionOperand(row, 'left');
-        if (leftSource) leftSource.style.display = 'none';
-        if (leftField) leftField.style.display = 'none';
-        if (leftValue) leftValue.style.display = 'none';
-        if (leftGroup) leftGroup.style.display = 'none';
-        if (leftGroupTarget) leftGroupTarget.style.display = 'none';
-      }
-    } else {
-      if (leftSource) leftSource.style.display = '';
-      if (rightSource) rightSource.style.display = '';
-    }
+    if (unaryMode) this.clearConditionOperand(row, 'right');
   }
 
   syncConditionGroupOptions(row, side, sourceMode = null) {
@@ -872,7 +949,10 @@ export class ConditionalFieldManager {
         value: row.querySelector('[data-role="right-value"]')?.value || '',
         group: getVal('right-group') || '',
         groupTarget: getVal('right-group-target') || 'same'
-      }
+      },
+      caseSensitive: row.querySelector('[data-role="case-sensitive"]')?.checked !== false,
+      extraValue: row.querySelector('[data-role="right-value-2"]')?.value || '',
+      dateMode: getVal('date-mode') || 'auto'
     };
   }
 
@@ -906,24 +986,65 @@ export class ConditionalFieldManager {
     return parts.reduce((acc, cur) => acc ? { type: 'binary', op: join, left: acc, right: cur } : cur, null);
   }
 
+  normalizeCaseAwareOp(op, caseSensitive = true) {
+    const raw = String(op || 'eq');
+    if (caseSensitive) return raw;
+    const map = {
+      eq: 'eqCi',
+      neq: 'neqCi',
+      contains: 'containsCi',
+      notContains: 'notContainsCi',
+      startsWith: 'startsWithCi',
+      endsWith: 'endsWithCi',
+      regex: 'regexCi',
+      inList: 'inListCi',
+      matchesAny: 'matchesAnyCi'
+    };
+    return map[raw] || raw;
+  }
+
   buildConditionAstFromCondition(cond) {
-    const op = cond?.op || 'eq';
+    const rawOp = cond?.op || 'eq';
+    const caseSensitive = cond?.caseSensitive !== false;
+    const op = this.normalizeCaseAwareOp(rawOp, caseSensitive);
     const isGroupSource = source => ['group', 'source_group', 'target_group'].includes(source);
+    const unaryOps = new Set(['isEmpty', 'isNotEmpty']);
     const negativeContainsOps = {
       notContains: 'contains',
       notContainsCi: 'containsCi'
     };
-    const callOps = [
+    const callOps = new Set([
       'contains', 'containsCi',
       'startsWith', 'startsWithCi',
       'endsWith', 'endsWithCi',
       'regex', 'regexCi',
-      'eqCi', 'neqCi'
-    ];
+      'eqCi', 'neqCi',
+      'inList', 'inListCi',
+      'matchesAny', 'matchesAnyCi',
+      'dateBefore', 'dateAfter'
+    ]);
     const leftIsGroup = isGroupSource(cond?.left?.source);
     const rightIsGroup = isGroupSource(cond?.right?.source);
     const left = this.buildConditionOperand(cond?.left);
     const right = this.buildConditionOperand(cond?.right);
+    const betweenMax = this.parseLiteral(cond?.extraValue || '');
+    const dateMode = String(cond?.dateMode || 'auto').trim().toLowerCase();
+
+    if (unaryOps.has(rawOp)) {
+      return { type: 'call', name: rawOp, args: [left] };
+    }
+
+    if (rawOp === 'between') {
+      return { type: 'call', name: 'between', args: [left, right, betweenMax] };
+    }
+
+    if (rawOp === 'dateBefore' || rawOp === 'dateAfter') {
+      const args = [left, right];
+      if (dateMode && dateMode !== 'auto') {
+        args.push({ type: 'literal', value: dateMode, valueType: 'text' });
+      }
+      return { type: 'call', name: rawOp, args };
+    }
 
     // Coherent shortcut for membership checks:
     // - if one side is a group and the other side is empty => `inGroup(...)` or `not(inGroup(...))`.
@@ -944,7 +1065,7 @@ export class ConditionalFieldManager {
           : { type: 'call', name: innerName, args: [otherAst, groupAst] };
         return { type: 'call', name: 'not', args: [inner] };
       }
-      if (callOps.includes(op)) {
+      if (callOps.has(op)) {
         return leftIsGroup
           ? { type: 'call', name: op, args: [groupAst, otherAst] }
           : { type: 'call', name: op, args: [otherAst, groupAst] };
@@ -961,7 +1082,7 @@ export class ConditionalFieldManager {
         args: [{ type: 'call', name: negativeContainsOps[op], args: [left, right] }]
       };
     }
-    if (callOps.includes(op)) {
+    if (callOps.has(op)) {
       return { type: 'call', name: op, args: [left, right] };
     }
     return { type: 'binary', op, left, right };
@@ -1011,65 +1132,138 @@ export class ConditionalFieldManager {
 
   astToConditionItem(ast) {
     if (!ast || typeof ast !== 'object') return null;
+    const baseRight = { source: 'value', field: '', value: '', group: '', groupTarget: 'same' };
+    const makeCond = ({
+      left,
+      op,
+      right = baseRight,
+      caseSensitive = true,
+      extraValue = '',
+      dateMode = 'auto'
+    }) => ({
+      type: 'condition',
+      left,
+      op,
+      right: { ...baseRight, ...(right || {}) },
+      caseSensitive,
+      extraValue,
+      dateMode
+    });
+
     if (ast.type === 'call' && ['inGroup', 'inNodeGroup', 'inLinkGroup'].includes(ast.name)) {
       const left = this.astToOperand(ast);
       if (!left) return null;
-      return {
-        type: 'condition',
+      return makeCond({
         left,
         op: 'eq',
         right: { source: 'value', field: '', value: 'true', group: '' }
-      };
+      });
     }
     if (ast.type === 'unary' && ast.op === 'not' && ast.expr?.type === 'call' && ['inGroup', 'inNodeGroup', 'inLinkGroup'].includes(ast.expr?.name)) {
       const left = this.astToOperand(ast.expr);
       if (!left) return null;
-      return {
-        type: 'condition',
+      return makeCond({
         left,
         op: 'neq',
         right: { source: 'value', field: '', value: 'true', group: '' }
-      };
+      });
     }
     if (ast.type === 'call' && ast.name === 'not' && ast.args?.[0]?.type === 'call' && ['inGroup', 'inNodeGroup', 'inLinkGroup'].includes(ast.args?.[0]?.name)) {
       const left = this.astToOperand(ast.args?.[0]);
       if (!left) return null;
-      return {
-        type: 'condition',
+      return makeCond({
         left,
         op: 'neq',
         right: { source: 'value', field: '', value: 'true', group: '' }
-      };
+      });
     }
     if (ast.type === 'unary' && ast.op === 'not' && ast.expr?.type === 'call' && ['contains', 'containsCi'].includes(ast.expr?.name)) {
       const left = this.astToOperand(ast.expr.args?.[0]);
       const right = this.astToOperand(ast.expr.args?.[1]);
       if (!left || !right) return null;
-      return { type: 'condition', left, op: ast.expr?.name === 'containsCi' ? 'notContainsCi' : 'notContains', right };
+      return makeCond({
+        left,
+        right,
+        op: 'notContains',
+        caseSensitive: ast.expr?.name !== 'containsCi'
+      });
     }
     if (ast.type === 'call' && ast.name === 'not' && ast.args?.[0]?.type === 'call' && ['contains', 'containsCi'].includes(ast.args?.[0]?.name)) {
       const left = this.astToOperand(ast.args?.[0]?.args?.[0]);
       const right = this.astToOperand(ast.args?.[0]?.args?.[1]);
       if (!left || !right) return null;
-      return { type: 'condition', left, op: ast.args?.[0]?.name === 'containsCi' ? 'notContainsCi' : 'notContains', right };
+      return makeCond({
+        left,
+        right,
+        op: 'notContains',
+        caseSensitive: ast.args?.[0]?.name !== 'containsCi'
+      });
+    }
+    if (ast.type === 'call' && ['isEmpty', 'isNotEmpty'].includes(ast.name)) {
+      const left = this.astToOperand(ast.args?.[0]);
+      if (!left) return null;
+      return makeCond({ left, op: ast.name });
+    }
+    if (ast.type === 'call' && ast.name === 'between') {
+      const left = this.astToOperand(ast.args?.[0]);
+      const right = this.astToOperand(ast.args?.[1]);
+      if (!left || !right) return null;
+      const maxArg = ast.args?.[2];
+      const extraValue = maxArg?.type === 'literal'
+        ? this.literalToString(maxArg)
+        : '';
+      return makeCond({ left, right, op: 'between', extraValue });
     }
     if (ast.type === 'binary' && ['gt', 'gte', 'lt', 'lte', 'eq', 'neq'].includes(ast.op)) {
       const left = this.astToOperand(ast.left);
       const right = this.astToOperand(ast.right);
       if (!left || !right) return null;
-      return { type: 'condition', left, op: ast.op, right };
+      return makeCond({ left, right, op: ast.op });
     }
-    if (ast.type === 'call' && ['contains', 'containsCi', 'startsWith', 'startsWithCi', 'endsWith', 'endsWithCi', 'regex', 'regexCi'].includes(ast.name)) {
+    const callMap = {
+      gt: { op: 'gt', caseSensitive: true },
+      gte: { op: 'gte', caseSensitive: true },
+      lt: { op: 'lt', caseSensitive: true },
+      lte: { op: 'lte', caseSensitive: true },
+      eq: { op: 'eq', caseSensitive: true },
+      neq: { op: 'neq', caseSensitive: true },
+      eqCi: { op: 'eq', caseSensitive: false },
+      neqCi: { op: 'neq', caseSensitive: false },
+      contains: { op: 'contains', caseSensitive: true },
+      containsCi: { op: 'contains', caseSensitive: false },
+      startsWith: { op: 'startsWith', caseSensitive: true },
+      startsWithCi: { op: 'startsWith', caseSensitive: false },
+      endsWith: { op: 'endsWith', caseSensitive: true },
+      endsWithCi: { op: 'endsWith', caseSensitive: false },
+      regex: { op: 'regex', caseSensitive: true },
+      regexCi: { op: 'regex', caseSensitive: false },
+      inList: { op: 'inList', caseSensitive: true },
+      inListCi: { op: 'inList', caseSensitive: false },
+      matchesAny: { op: 'matchesAny', caseSensitive: true },
+      matchesAnyCi: { op: 'matchesAny', caseSensitive: false },
+      dateBefore: { op: 'dateBefore', caseSensitive: true },
+      dateAfter: { op: 'dateAfter', caseSensitive: true }
+    };
+    const mapEntry = ast.type === 'call' ? callMap[ast.name] : null;
+    if (mapEntry) {
       const left = this.astToOperand(ast.args?.[0]);
       const right = this.astToOperand(ast.args?.[1]);
       if (!left || !right) return null;
-      return { type: 'condition', left, op: ast.name, right };
-    }
-    if (ast.type === 'call' && ['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'eqCi', 'neqCi'].includes(ast.name)) {
-      const left = this.astToOperand(ast.args?.[0]);
-      const right = this.astToOperand(ast.args?.[1]);
-      if (!left || !right) return null;
-      return { type: 'condition', left, op: ast.name, right };
+      let dateMode = 'auto';
+      if (mapEntry.op === 'dateBefore' || mapEntry.op === 'dateAfter') {
+        const raw = ast.args?.[2];
+        if (raw?.type === 'literal') {
+          const mode = String(raw.value || '').trim().toLowerCase();
+          if (mode) dateMode = mode;
+        }
+      }
+      return makeCond({
+        left,
+        right,
+        op: mapEntry.op,
+        caseSensitive: mapEntry.caseSensitive,
+        dateMode
+      });
     }
     return null;
   }

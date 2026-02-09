@@ -200,6 +200,7 @@ export class GroupManager {
             data-ref-rule-id="${esc(ref.ruleId || '')}"
             data-ref-rule-type="${esc(ref.ruleType || '')}"
             data-ref-group-id="${esc(ref.groupId || '')}"
+            data-ref-group-name="${esc(ref.groupName || '')}"
             data-ref-group-target="${esc(ref.groupTarget || '')}"
             data-ref-target="${esc(ref.target || '')}"
             data-ref-field="${esc(ref.field || '')}"
@@ -261,6 +262,7 @@ export class GroupManager {
         ruleType: meta.ruleType || '',
         ruleId: meta.ruleId || '',
         groupId: meta.groupId || '',
+        groupName: meta.groupName || '',
         groupTarget: meta.groupTarget || '',
         target: meta.target || '',
         field: meta.field || ''
@@ -316,6 +318,7 @@ export class GroupManager {
       pushRef('Groupe noeud', other?.name || other?.id, other?.when, 'node', {
         kind: 'group',
         groupId: other?.id || '',
+        groupName: other?.name || '',
         groupTarget: 'node'
       });
     });
@@ -324,13 +327,14 @@ export class GroupManager {
       pushRef('Groupe lien', other?.name || other?.id, other?.when, 'link', {
         kind: 'group',
         groupId: other?.id || '',
+        groupName: other?.name || '',
         groupTarget: 'link'
       });
     });
 
     const seen = new Set();
     return out.filter(ref => {
-      const key = `${ref.kind}|${ref.ruleType}|${ref.ruleId}|${ref.groupId}|${ref.target}|${ref.field}|${ref.label}`;
+      const key = `${ref.kind}|${ref.ruleType}|${ref.ruleId}|${ref.groupId}|${ref.groupName}|${ref.target}|${ref.field}|${ref.label}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -493,8 +497,9 @@ export class GroupManager {
     }
     if (kind === 'group') {
       const groupId = String(dataset?.refGroupId || '');
+      const groupName = String(dataset?.refGroupName || '');
       const groupTarget = String(dataset?.refGroupTarget || '');
-      this.jumpToGroup(groupId, groupTarget);
+      this.jumpToGroup(groupId, groupTarget, groupName);
       return;
     }
     if (kind === 'conditional') {
@@ -519,13 +524,20 @@ export class GroupManager {
     const highlight = () => {
       const primaryId = type === 'pie' ? 'pie-rules-list' : 'style-rules-list';
       const fallbackId = type === 'pie' ? 'pie-rules-list-all' : 'style-rules-list-all';
-      const pick = (containerId) => {
-        const container = document.getElementById(containerId);
-        if (!container) return null;
-        return Array.from(container.querySelectorAll('[data-rule-id]'))
+      const containers = [document.getElementById(primaryId), document.getElementById(fallbackId)].filter(Boolean);
+      const visible = containers.find(container => {
+        const pane = container.closest('.tab-pane');
+        return pane?.classList.contains('active') || container.offsetParent !== null;
+      });
+      const ordered = visible
+        ? [visible].concat(containers.filter(c => c !== visible))
+        : containers;
+      let match = null;
+      ordered.some(container => {
+        match = Array.from(container.querySelectorAll('[data-rule-id]'))
           .find(card => String(card.dataset.ruleId) === String(ruleId)) || null;
-      };
-      const match = pick(primaryId) || pick(fallbackId);
+        return !!match;
+      });
       if (!match) return false;
       match.classList.add('rule-expanded');
       match.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -540,8 +552,8 @@ export class GroupManager {
     }
   }
 
-  jumpToGroup(groupId, target) {
-    if (!groupId) return;
+  jumpToGroup(groupId, target, groupName = '') {
+    if (!groupId && !groupName) return;
 
     const topTab = document.querySelector('.nav-link[href="#tab7"]');
     topTab?.click();
@@ -550,16 +562,58 @@ export class GroupManager {
     subTab?.click();
 
     const highlight = () => {
-      const pick = (containerId) => {
-        const container = document.getElementById(containerId);
-        if (!container) return null;
+      const idRef = String(groupId || '').trim();
+      const nameRef = String(groupName || '').trim().toLowerCase();
+      const containers = [
+        document.getElementById('element-groups-list'),
+        document.getElementById('element-groups-list-all')
+      ].filter(Boolean);
+      const visible = containers.find(container => {
+        const pane = container.closest('.tab-pane');
+        return pane?.classList.contains('active') || container.offsetParent !== null;
+      });
+      const ordered = visible
+        ? [visible].concat(containers.filter(c => c !== visible))
+        : containers;
+
+      const findInContainer = (container, strictTarget = true, byName = false) => {
         return Array.from(container.querySelectorAll('[data-group-id]')).find(card => {
-          if (String(card.dataset.groupId) !== String(groupId)) return false;
-          if (!target) return true;
-          return String(card.dataset.target || '') === String(target);
+          const cardTarget = String(card.dataset.target || '');
+          if (strictTarget && target && cardTarget !== String(target)) return false;
+          if (byName) {
+            const inputName = String(card.querySelector('[data-field="name"]')?.value || '')
+              .trim()
+              .toLowerCase();
+            return !!nameRef && inputName === nameRef;
+          }
+          if (!idRef) return false;
+          return String(card.dataset.groupId) === idRef;
         }) || null;
       };
-      const match = pick('element-groups-list') || pick('element-groups-list-all');
+
+      let match = null;
+      ordered.some(container => {
+        match = findInContainer(container, true, false);
+        return !!match;
+      });
+      if (!match) {
+        ordered.some(container => {
+          match = findInContainer(container, false, false);
+          return !!match;
+        });
+      }
+      if (!match && nameRef) {
+        ordered.some(container => {
+          match = findInContainer(container, true, true);
+          return !!match;
+        });
+      }
+      if (!match && nameRef) {
+        ordered.some(container => {
+          match = findInContainer(container, false, true);
+          return !!match;
+        });
+      }
       if (!match) return false;
       match.classList.add('rule-expanded');
       match.scrollIntoView({ behavior: 'smooth', block: 'center' });

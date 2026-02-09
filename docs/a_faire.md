@@ -23,6 +23,8 @@
 1. [ ] Au lancement du logiciel la première fois, créer les préférence de l'utilisateur (langue, mode simple, avancée etc, disposition de l'interace, raccourcis...)
 1. [ ] Ajouter groupe de noeuds, groupe de lien, utilisable dans les formules, pour facilement associé des éléments à des noeuds/liens de manière durable. Ces groupes de noeuds/liens peuvent être définit par des règles logiques (exempl tout les noeuds ayant le champs type_personne = "personne physique" et ou manuellement, en ajoutant des noeuds/liens manuellement.
 2. [ ] pour pie chart, règle de style, groupe etc...faire en sorte de povuoir définir dynamiquement quels léments sont modifiés (actuellement il y a une liste : Couleur, Contou, Epaisseur, Opacite  etc... le but étant d'afficher par défaut les champ définir dans le panneau de config, puis de pouvoir ajouter manuellement les champs que l'on veut (la plus complète possible).
+2. [ ] Dans les builders, mettre une autre fonction IA pour que cette denrière propose (comme pour les noeuds et les liens) des règles qui sont suceptibles d'être pertinentes selon le schéma et/ou les données du graph).
+2. [ ] Pour le builder, si le nombre d'item de logique/compraison sont trop nombreux, essayer de n'afficher par defaut que les items pouvant être associé (un champ "texte" ne peut pas soutraire un champ nombre par exemple.
 2. [ ] refaire entièrement le tableur.
 
 

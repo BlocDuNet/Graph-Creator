@@ -358,7 +358,7 @@
     "placeholder_separator": "Separateur",
     "expression_label": "Expression",
     "expression_placeholder": "if(gt(age,18), concat(prenom,\" \",nom), \"Mineur\")",
-    "functions_help": "Fonctions: if, concat, add, sub, mul, div, eqCi, neqCi, contains, containsCi, startsWith, startsWithCi, endsWith, endsWithCi, replace, regex, regexCi, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks, inGroup, inNodeGroup, inLinkGroup, groupCount, groupNames",
+    "functions_help": "Fonctions: if, concat, add, sub, mul, div, eqCi, neqCi, contains, containsCi, startsWith, startsWithCi, endsWith, endsWithCi, isEmpty, isNotEmpty, inList, between, dateBefore, dateAfter, matchesAny, replace, regex, regexCi, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks, inGroup, inNodeGroup, inLinkGroup, groupCount, groupNames",
     "ai_help_label": "Assistance IA (beta)",
     "ai_suggestion_placeholder": "Suggestion rapide...",
     "ai_suggestion_full_name": "Nom complet (prenom + nom)",

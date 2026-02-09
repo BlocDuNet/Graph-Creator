@@ -686,7 +686,7 @@ export class FormManager {
     addBtn.type = 'button';
     addBtn.className = 'btn btn-sm btn-outline-secondary mr-1 mb-1';
     addBtn.dataset.groupAction = 'add-selected-manual';
-    addBtn.textContent = 'Ajouter manuel';
+    addBtn.textContent = 'Ajouter manuellement';
     quickRow.appendChild(addBtn);
 
     const createBtn = document.createElement('button');
@@ -814,31 +814,15 @@ export class FormManager {
       const groupId = this.escapeHtml(group.id || '');
       const groupName = this.escapeHtml(group.name || group.id || '(sans nom)');
       const sourceLabel = manual ? 'Manuel' : 'Regle';
-      const toggleLabel = manual ? 'Retirer manuel' : 'Ajouter manuel';
       return `
         <div class="rule-match-item">
           <span class="badge badge-light">Groupe</span>
           <span class="rule-match-name">${groupName}</span>
           <span class="rule-match-priority">${sourceLabel}</span>
-          <button type="button" class="btn btn-sm btn-outline-secondary" data-group-toggle="${groupId}">${toggleLabel}</button>
           <button type="button" class="btn btn-sm btn-outline-secondary" data-group-jump="${groupId}" data-group-target="${target}">Modifier</button>
         </div>
       `;
     }).join('');
-
-    list.querySelectorAll('button[data-group-toggle]').forEach(btn => {
-      btn.addEventListener('click', event => {
-        event.preventDefault();
-        event.stopPropagation();
-        const groupId = String(btn.dataset.groupToggle || '');
-        const group = (groups || []).find(g => String(g?.id || '') === groupId);
-        if (!group) return;
-        const manual = Array.isArray(group.manualIds)
-          && group.manualIds.map(v => String(v)).includes(String(item.id));
-        if (manual) this.removeItemFromGroupManual(target, item, group);
-        else this.addItemToGroupManual(target, item, group);
-      });
-    });
 
     list.querySelectorAll('button[data-group-jump]').forEach(btn => {
       btn.addEventListener('click', event => {
@@ -937,13 +921,20 @@ export class FormManager {
     const highlight = () => {
       const primaryId = type === 'pie' ? 'pie-rules-list' : 'style-rules-list';
       const fallbackId = type === 'pie' ? 'pie-rules-list-all' : 'style-rules-list-all';
-      const pick = (containerId) => {
-        const container = document.getElementById(containerId);
-        if (!container) return null;
-        return Array.from(container.querySelectorAll('[data-rule-id]'))
+      const containers = [document.getElementById(primaryId), document.getElementById(fallbackId)].filter(Boolean);
+      const visible = containers.find(container => {
+        const pane = container.closest('.tab-pane');
+        return pane?.classList.contains('active') || container.offsetParent !== null;
+      });
+      const ordered = visible
+        ? [visible].concat(containers.filter(c => c !== visible))
+        : containers;
+      let card = null;
+      ordered.some(container => {
+        card = Array.from(container.querySelectorAll('[data-rule-id]'))
           .find(el => String(el.dataset.ruleId) === ruleIdStr) || null;
-      };
-      const card = pick(primaryId) || pick(fallbackId);
+        return !!card;
+      });
       if (!card) return false;
       card.classList.add('rule-expanded');
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -968,16 +959,33 @@ export class FormManager {
     subTab?.click();
 
     const highlight = () => {
-      const pick = (containerId) => {
-        const container = document.getElementById(containerId);
-        if (!container) return null;
-        return Array.from(container.querySelectorAll('[data-group-id]')).find(card => {
-          if (String(card.dataset.groupId) !== groupIdStr) return false;
-          if (!target) return true;
-          return String(card.dataset.target || '') === String(target);
-        }) || null;
+      const containers = [
+        document.getElementById('element-groups-list'),
+        document.getElementById('element-groups-list-all')
+      ].filter(Boolean);
+      const visible = containers.find(container => {
+        const pane = container.closest('.tab-pane');
+        return pane?.classList.contains('active') || container.offsetParent !== null;
+      });
+      const ordered = visible
+        ? [visible].concat(containers.filter(c => c !== visible))
+        : containers;
+      const findByContainer = (container, strictTarget = true) => Array.from(container.querySelectorAll('[data-group-id]')).find(card => {
+        if (String(card.dataset.groupId) !== groupIdStr) return false;
+        if (!strictTarget || !target) return true;
+        return String(card.dataset.target || '') === String(target);
+      }) || null;
+      let card = null;
+      ordered.some(container => {
+        card = findByContainer(container, true);
+        return !!card;
       };
-      const card = pick('element-groups-list') || pick('element-groups-list-all');
+      if (!card) {
+        ordered.some(container => {
+          card = findByContainer(container, false);
+          return !!card;
+        });
+      }
       if (!card) return false;
       card.classList.add('rule-expanded');
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
