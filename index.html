@@ -40,6 +40,9 @@
                 <a class="nav-link" href="#tab3" data-toggle="tab" data-i18n="tabs.graph_config">Config graph</a>
               </li>
               <li class="nav-item">
+                <a class="nav-link" href="#tab7" data-toggle="tab" data-i18n="tabs.rules">Regles</a>
+              </li>
+              <li class="nav-item">
                 <a class="nav-link" href="#tab4" data-toggle="tab" data-i18n="tabs.ai_request">AI Request</a>
               </li>
               <li class="nav-item">
@@ -397,7 +400,7 @@
                     <div class="card-body">
                       <div class="row">
                         <!-- Node form -->
-                        <div class="col-md-6">
+                        <div id="node-form-col" class="col-12 col-lg-6">
                           <div class="form-container">
                             <h5 class="edit-title" data-i18n="values.edit.node_title">Édition Noeud</h5>
                             <form id="node-form" class="hidden"></form>
@@ -405,7 +408,7 @@
                         </div>
                         
                         <!-- Link form -->
-                        <div class="col-md-6">
+                        <div id="link-form-col" class="col-12 col-lg-6">
                           <div class="form-container">
                             <h5 class="edit-title" data-i18n="values.edit.link_title">Édition Lien</h5>
                             <form id="link-form" class="hidden"></form>
@@ -562,14 +565,43 @@
                     </div>
                   </div>
                   
-                  <div class="col-12 mb-3">
-                    <div class="card h-100">
-                      <div class="card-header section-header" id="headingStyleRules">
-                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseStyleRules" aria-expanded="true" aria-controls="collapseStyleRules">
-                          <span data-i18n="graph_config.style_rules.title">Regles de style (noeuds / liens)</span>
-                        </button>
-                      </div>
-                      <div id="collapseStyleRules" class="collapse show" aria-labelledby="headingStyleRules">
+                </div>
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="tab7">
+              <div class="card">
+                <div class="card-header section-header">
+                  <ul class="nav nav-tabs card-header-tabs">
+                    <li class="nav-item">
+                      <a class="nav-link active" href="#tab7-rules-style" data-toggle="tab">Style</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="#tab7-rules-pie" data-toggle="tab">Pie chart</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="#tab7-rules-groups" data-toggle="tab">Groupes</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="#tab7-rules-all" data-toggle="tab">Ensemble</a>
+                    </li>
+                  </ul>
+                </div>
+                <div class="card-body">
+                  <div class="d-flex justify-content-end align-items-center mb-2">
+                    <label class="small mb-0">
+                      <input type="checkbox" id="rules-compact-toggle" class="mr-1">
+                      Mode compact
+                    </label>
+                  </div>
+                  <div class="tab-content">
+                    <div class="tab-pane fade show active" id="tab7-rules-style">
+                      <div class="card h-100">
+                        <div class="card-header section-header">
+                          <button class="btn btn-link" type="button">
+                            <span data-i18n="graph_config.style_rules.title">Regles de style (noeuds / liens)</span>
+                          </button>
+                        </div>
                         <div class="card-body">
                           <div class="d-flex flex-wrap mb-2">
                             <button id="style-rule-add-node" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.style_rules.add_node">+ Regle noeud</button>
@@ -579,16 +611,14 @@
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div class="col-12 mb-3">
-                    <div class="card h-100">
-                      <div class="card-header section-header" id="headingPieRules">
-                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapsePieRules" aria-expanded="true" aria-controls="collapsePieRules">
-                          <span data-i18n="graph_config.pie_rules.title">Pie chart (groupes de noeuds)</span>
-                        </button>
-                      </div>
-                      <div id="collapsePieRules" class="collapse show" aria-labelledby="headingPieRules">
+                    <div class="tab-pane fade" id="tab7-rules-pie">
+                      <div class="card h-100">
+                        <div class="card-header section-header">
+                          <button class="btn btn-link" type="button">
+                            <span data-i18n="graph_config.pie_rules.title">Pie chart (groupes de noeuds)</span>
+                          </button>
+                        </div>
                         <div class="card-body">
                           <div class="d-flex flex-wrap mb-2">
                             <button id="pie-rule-add" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.pie_rules.add">+ Regle pie chart</button>
@@ -597,28 +627,80 @@
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div class="col-12 mb-3">
-                    <div class="card h-100">
-                      <div class="card-header section-header" id="headingGroups">
-                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseGroups" aria-expanded="true" aria-controls="collapseGroups">
-                          <span>Groupes (noeuds / liens)</span>
-                        </button>
-                      </div>
-                      <div id="collapseGroups" class="collapse show" aria-labelledby="headingGroups">
+                    <div class="tab-pane fade" id="tab7-rules-groups">
+                      <div class="card h-100">
+                        <div class="card-header section-header">
+                          <button class="btn btn-link" type="button">
+                            <span data-i18n="graph_config.groups.title">Groupes (noeuds / liens)</span>
+                          </button>
+                        </div>
                         <div class="card-body">
                           <div class="d-flex flex-wrap mb-2">
-                            <button id="group-add-node" class="btn btn-sm btn-outline-secondary m-1">+ Groupe noeud</button>
-                            <button id="group-add-link" class="btn btn-sm btn-outline-secondary m-1">+ Groupe lien</button>
+                            <button id="group-add-node" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.groups.add_node">+ Groupe noeud</button>
+                            <button id="group-add-link" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.groups.add_link">+ Groupe lien</button>
                           </div>
-                          <div class="small text-muted mb-2">Un groupe peut etre defini par regle logique et/ou par IDs manuels.</div>
+                          <div class="small text-muted mb-2" data-i18n="graph_config.groups.subtitle">Un groupe peut etre defini par regle logique et/ou par IDs manuels.</div>
                           <div id="element-groups-list"></div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
+                    <div class="tab-pane fade" id="tab7-rules-all">
+                      <div class="row">
+                        <div class="col-12 mb-3">
+                          <div class="card h-100">
+                            <div class="card-header section-header">
+                              <button class="btn btn-link" type="button">
+                                <span data-i18n="graph_config.style_rules.title">Regles de style (noeuds / liens)</span>
+                              </button>
+                            </div>
+                            <div class="card-body">
+                              <div class="d-flex flex-wrap mb-2">
+                                <button id="style-rule-add-node-all" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.style_rules.add_node">+ Regle noeud</button>
+                                <button id="style-rule-add-link-all" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.style_rules.add_link">+ Regle lien</button>
+                              </div>
+                              <div id="style-rules-list-all"></div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                          <div class="card h-100">
+                            <div class="card-header section-header">
+                              <button class="btn btn-link" type="button">
+                                <span data-i18n="graph_config.pie_rules.title">Pie chart (groupes de noeuds)</span>
+                              </button>
+                            </div>
+                            <div class="card-body">
+                              <div class="d-flex flex-wrap mb-2">
+                                <button id="pie-rule-add-all" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.pie_rules.add">+ Regle pie chart</button>
+                              </div>
+                              <div id="pie-rules-list-all"></div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                          <div class="card h-100">
+                            <div class="card-header section-header">
+                              <button class="btn btn-link" type="button">
+                                <span data-i18n="graph_config.groups.title">Groupes (noeuds / liens)</span>
+                              </button>
+                            </div>
+                            <div class="card-body">
+                              <div class="d-flex flex-wrap mb-2">
+                                <button id="group-add-node-all" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.groups.add_node">+ Groupe noeud</button>
+                                <button id="group-add-link-all" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.groups.add_link">+ Groupe lien</button>
+                              </div>
+                              <div class="small text-muted mb-2" data-i18n="graph_config.groups.subtitle">Un groupe peut etre defini par regle logique et/ou par IDs manuels.</div>
+                              <div id="element-groups-list-all"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -993,6 +1075,14 @@
             </select>
           </div>
         </div>
+        <div id="conditional-visual-incompat" class="alert alert-warning py-1 px-2 mt-2 hidden">
+          <div id="conditional-visual-incompat-text" class="small mb-1">
+            L'expression canonique actuelle ne peut pas etre chargee dans le builder visuel.
+          </div>
+          <button id="conditional-clear-canonical" class="btn btn-sm btn-outline-danger">
+            Effacer la canonique et ouvrir le builder
+          </button>
+        </div>
 
           <div id="conditional-visual" class="mt-2">
             <div class="row">
@@ -1107,7 +1197,7 @@
             <textarea id="conditional-expression-text" class="form-control form-control-sm" rows="4" placeholder='if(gt(age,18), concat(prenom," ",nom), "Mineur")' data-i18n-placeholder="conditional.expression_placeholder"></textarea>
             <div id="conditional-expression-error" class="type-warning mt-1"></div>
             <div class="small text-muted mt-1">
-              <span data-i18n="conditional.functions_help">Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks, inGroup, inNodeGroup, inLinkGroup, groupCount, groupNames</span>
+              <span data-i18n="conditional.functions_help">Fonctions: if, concat, add, sub, mul, div, eqCi, neqCi, contains, containsCi, startsWith, startsWithCi, endsWith, endsWithCi, replace, regex, regexCi, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks, inGroup, inNodeGroup, inLinkGroup, groupCount, groupNames</span>
             </div>
           </div>
 

@@ -38,10 +38,10 @@ export class WindowEventManager {
     add('action-performed', actionHandler);
 
     // selection-cleared, node-selected, link-selected, node-created
-    add('selection-cleared', () => uiManager.formManager.hideAllForms());
-    add('node-selected', e => uiManager.formManager.showNodeForm(e.detail.node));
-    add('link-selected', e => uiManager.formManager.showLinkForm(e.detail.link));
-    add('node-created', e => uiManager.formManager.showNodeForm(e.detail.node));
+    add('selection-cleared', () => uiManager.formManager.syncSelectionForms());
+    add('node-selected', () => uiManager.formManager.syncSelectionForms());
+    add('link-selected', () => uiManager.formManager.syncSelectionForms());
+    add('node-created', () => uiManager.formManager.syncSelectionForms());
 
     // forward undo/redo requests
     add('undo-requested', () => uiManager.el.undoBtn?.click());

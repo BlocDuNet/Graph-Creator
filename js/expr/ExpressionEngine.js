@@ -92,7 +92,14 @@ export function tokenize(input) {
       if (word === 'true' || word === 'false') {
         tokens.push({ type: 'boolean', value: word === 'true' });
       } else if (word === 'and' || word === 'or' || word === 'not') {
-        tokens.push({ type: 'operator', value: word });
+        // Support both infix operators (`a and b`) and functional form (`and(a,b)`).
+        let j = i;
+        while (j < input.length && isWhitespace(input[j])) j += 1;
+        if (input[j] === '(') {
+          tokens.push({ type: 'identifier', value: word });
+        } else {
+          tokens.push({ type: 'operator', value: word });
+        }
       } else {
         tokens.push({ type: 'identifier', value: word });
       }
@@ -603,6 +610,8 @@ function dateDiff(a, b, unit = 'days') {
   lte: (a, b) => toNumber(a) <= toNumber(b),
   eq: (a, b) => a === b,
   neq: (a, b) => a !== b,
+  eqCi: (a, b) => String(a ?? '').toLowerCase() === String(b ?? '').toLowerCase(),
+  neqCi: (a, b) => String(a ?? '').toLowerCase() !== String(b ?? '').toLowerCase(),
   and: (a, b) => toBoolean(a) && toBoolean(b),
   or: (a, b) => toBoolean(a) || toBoolean(b),
   not: a => !toBoolean(a),
@@ -618,8 +627,11 @@ function dateDiff(a, b, unit = 'days') {
   toText: a => (a == null ? '' : String(a)),
   toBool: a => toBoolean(a),
   contains: (a, b) => String(a ?? '').includes(String(b ?? '')),
+  containsCi: (a, b) => String(a ?? '').toLowerCase().includes(String(b ?? '').toLowerCase()),
   startsWith: (a, b) => String(a ?? '').startsWith(String(b ?? '')),
+  startsWithCi: (a, b) => String(a ?? '').toLowerCase().startsWith(String(b ?? '').toLowerCase()),
   endsWith: (a, b) => String(a ?? '').endsWith(String(b ?? '')),
+  endsWithCi: (a, b) => String(a ?? '').toLowerCase().endsWith(String(b ?? '').toLowerCase()),
   replace: (a, b, c) => String(a ?? '').split(String(b ?? '')).join(String(c ?? '')),
   regex: (a, b, c) => {
     try {
@@ -627,6 +639,16 @@ function dateDiff(a, b, unit = 'days') {
       const flags = String(c ?? '');
       if (!pattern) return false;
       const re = new RegExp(pattern, flags);
+      return re.test(String(a ?? ''));
+    } catch (e) {
+      return false;
+    }
+  },
+  regexCi: (a, b) => {
+    try {
+      const pattern = String(b ?? '');
+      if (!pattern) return false;
+      const re = new RegExp(pattern, 'i');
       return re.test(String(a ?? ''));
     } catch (e) {
       return false;
@@ -709,7 +731,7 @@ export function inferExpressionType(ast, getFieldType) {
         return t1 === t2 ? t1 : 'text';
       }
       if (['add', 'sub', 'mul', 'div', 'len', 'round', 'min', 'max', 'toNumber', 'degree', 'linkCount', 'neighborCount', 'sumNeighbors', 'sumLinks', 'groupCount'].includes(name)) return 'number';
-      if (['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'and', 'or', 'not', 'toBool', 'contains', 'startsWith', 'endsWith', 'regex', 'hasNeighbor', 'inGroup', 'inNodeGroup', 'inLinkGroup'].includes(name)) return 'boolean';
+      if (['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'eqCi', 'neqCi', 'and', 'or', 'not', 'toBool', 'contains', 'containsCi', 'startsWith', 'startsWithCi', 'endsWith', 'endsWithCi', 'regex', 'regexCi', 'hasNeighbor', 'inGroup', 'inNodeGroup', 'inLinkGroup'].includes(name)) return 'boolean';
       if (['concat', 'upper', 'lower', 'trim', 'toText', 'coalesce', 'replace', 'substring', 'formatNumber', 'groupNames'].includes(name)) return 'text';
       if (['dateDiff'].includes(name)) return 'number';
       if (name === 'field') return 'text';

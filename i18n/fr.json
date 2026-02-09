@@ -6,6 +6,7 @@
     "actions": "Actions",
     "values": "Valeurs",
     "graph_config": "Config graph",
+    "rules": "Regles",
     "ai_request": "Requête IA",
     "spreadsheet": "Tableur",
     "app_config": "Config logiciel"
@@ -212,6 +213,12 @@
     "pie_rules": {
       "title": "Pie chart (groupes de noeuds)",
       "add": "+ Règle pie chart"
+    },
+    "groups": {
+      "title": "Groupes (noeuds / liens)",
+      "add_node": "+ Groupe noeud",
+      "add_link": "+ Groupe lien",
+      "subtitle": "Un groupe peut etre defini par regle logique et/ou par IDs manuels."
     }
   },
   "ai": {
@@ -351,7 +358,7 @@
     "placeholder_separator": "Separateur",
     "expression_label": "Expression",
     "expression_placeholder": "if(gt(age,18), concat(prenom,\" \",nom), \"Mineur\")",
-    "functions_help": "Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks, inGroup, inNodeGroup, inLinkGroup, groupCount, groupNames",
+    "functions_help": "Fonctions: if, concat, add, sub, mul, div, eqCi, neqCi, contains, containsCi, startsWith, startsWithCi, endsWith, endsWithCi, replace, regex, regexCi, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks, inGroup, inNodeGroup, inLinkGroup, groupCount, groupNames",
     "ai_help_label": "Assistance IA (beta)",
     "ai_suggestion_placeholder": "Suggestion rapide...",
     "ai_suggestion_full_name": "Nom complet (prenom + nom)",

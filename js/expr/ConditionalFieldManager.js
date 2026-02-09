@@ -8,6 +8,7 @@ import {
 import { normalizeType } from '../services/FieldTypeService.js';
 import { getModel, registerSettingsControls, sendAiRequest } from '../ai/AIService.js';
 import { getExpressionAssistantPrompt } from '../config/templates/expressions.js';
+import { graphConfig } from '../config/index.js';
 
 export class ConditionalFieldManager {
   constructor(graphState, renderer) {
@@ -23,6 +24,8 @@ export class ConditionalFieldManager {
     this.conditionOnly = false;
     this.conditionRequestId = null;
     this.aiContextLabel = '';
+    this.availableGroupsByTarget = { node: [], link: [] };
+    this.visualFromSchema = false;
     this.bindElements();
     this.bindEvents();
     this.initAiControls();
@@ -91,7 +94,10 @@ export class ConditionalFieldManager {
       aiStop: document.getElementById('conditional-ai-stop'),
       aiStatus: document.getElementById('conditional-ai-status'),
       validateBtn: document.getElementById('conditional-validate'),
-      validateOutput: document.getElementById('conditional-validate-output')
+      validateOutput: document.getElementById('conditional-validate-output'),
+      visualIncompat: document.getElementById('conditional-visual-incompat'),
+      visualIncompatText: document.getElementById('conditional-visual-incompat-text'),
+      clearCanonical: document.getElementById('conditional-clear-canonical')
     };
     this.el.title = this.el.overlay?.querySelector('h6') || null;
     this.el.description = this.el.overlay?.querySelector('p') || null;
@@ -111,7 +117,12 @@ export class ConditionalFieldManager {
 
     this.el.cancel?.addEventListener('click', () => this.cancelConditionEditor());
     this.el.apply?.addEventListener('click', () => this.apply());
-    this.el.mode?.addEventListener('change', () => this.toggleMode());
+    this.el.mode?.addEventListener('change', () => {
+      if ((this.el.mode?.value || '') === 'visual' && this.isVisualIncompatActive()) {
+        this.el.mode.value = 'expression';
+      }
+      this.toggleMode();
+    });
     this.el.visualKind?.addEventListener('change', () => this.toggleVisualKind());
     this.el.thenMode?.addEventListener('change', () => this.toggleThenElse());
     this.el.elseMode?.addEventListener('change', () => this.toggleThenElse());
@@ -134,11 +145,12 @@ export class ConditionalFieldManager {
       }
     });
     this.el.validateBtn?.addEventListener('click', () => this.validateExpression());
+    this.el.clearCanonical?.addEventListener('click', () => this.clearCanonicalAndEnableVisual());
 
     if (this.el.conditionRoot) {
       this.el.conditionRoot.addEventListener('change', e => {
         const target = e.target;
-        if (target && target.classList.contains('cond-source')) {
+        if (target && (target.classList.contains('cond-source') || target.classList.contains('cond-group-target'))) {
           const row = target.closest('.condition-row');
           if (row) this.toggleConditionRow(row);
         }
@@ -147,6 +159,8 @@ export class ConditionalFieldManager {
       this.el.conditionRoot.addEventListener('click', e => {
         const btn = e.target.closest('button[data-action]');
         if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
         const action = btn.dataset.action;
         if (action === 'add-condition') {
           const group = btn.closest('.condition-group');
@@ -185,6 +199,11 @@ export class ConditionalFieldManager {
     if (!this.el.overlay) return;
     const fields = this.graphState.getFieldsByType(target).filter(f => f !== field);
     this.availableFields = fields;
+    this.availableGroupsByTarget = {
+      node: this.getAvailableGroups('node'),
+      link: this.getAvailableGroups('link')
+    };
+    this.availableGroups = this.getAvailableGroups(target);
     this.fillSelect(this.el.thenField, fields);
     this.fillSelect(this.el.elseField, fields);
     this.fillSelect(this.el.thenConcatA, fields);
@@ -197,11 +216,13 @@ export class ConditionalFieldManager {
     this.fillSelect(this.el.elseCalcRightField, fields);
 
     const entry = this.graphState.getFieldSchema(target, field) || {};
+    this.visualFromSchema = !!entry.visual;
     this.el.fieldName.textContent = `${target}.${field}`;
     this.el.resultType.value = entry.resultType || 'auto';
+    let exprAst = null;
     if (entry.expr) {
       this.el.exprText.value = entry.expr;
-      this.updateCanonicalFromExpression();
+      exprAst = this.updateCanonicalFromExpression();
     } else {
       this.el.exprText.value = '';
       this.el.exprCanonical.value = '';
@@ -218,6 +239,17 @@ export class ConditionalFieldManager {
     }
     if (!entry.visual?.visualKind && detectedKind && this.el.visualKind) {
       this.el.visualKind.value = detectedKind;
+    }
+    if (entry.expr && !entry.visual) {
+      this.showVisualIncompat(
+        "La formule actuelle n'a pas de configuration visuelle retrocompatible. Efface la canonique pour reconstruire le builder."
+      );
+      if (this.el.mode) this.el.mode.value = 'expression';
+    } else {
+      this.hideVisualIncompat();
+    }
+    if (entry.visual && exprAst) {
+      this.hideVisualIncompat();
     }
 
     this.toggleMode();
@@ -237,6 +269,7 @@ export class ConditionalFieldManager {
     this.setConditionOnlyMode(false);
     this.aiContextLabel = '';
     this.conditionRequestId = null;
+    this.hideVisualIncompat();
   }
 
   cancelConditionEditor() {
@@ -272,12 +305,18 @@ export class ConditionalFieldManager {
     this.setConditionOnlyMode(true);
     this.aiContextLabel = 'Regle';
     this.conditionRequestId = requestId;
+    this.visualFromSchema = false;
     this.current = { target, field: '__condition__' };
     this.canonicalDirty = false;
     if (!this.el.overlay) return;
 
     const fields = this.graphState.getFieldsByType(target);
     this.availableFields = fields;
+    this.availableGroupsByTarget = {
+      node: this.getAvailableGroups('node'),
+      link: this.getAvailableGroups('link')
+    };
+    this.availableGroups = this.getAvailableGroups(target);
     this.fillSelect(this.el.thenField, fields);
     this.fillSelect(this.el.elseField, fields);
     this.fillSelect(this.el.thenConcatA, fields);
@@ -307,11 +346,16 @@ export class ConditionalFieldManager {
       if (group) {
         this.renderConditionGroup({ conditionGroup: group });
         if (this.el.mode) this.el.mode.value = 'visual';
+        this.hideVisualIncompat();
       } else {
         if (this.el.mode) this.el.mode.value = 'expression';
+        this.showVisualIncompat(
+          "Cette formule de condition n'est pas convertible en builder visuel. Efface la canonique pour reconstruire la condition."
+        );
       }
     } else {
       this.renderConditionGroup({});
+      this.hideVisualIncompat();
     }
 
     this.toggleMode();
@@ -339,6 +383,39 @@ export class ConditionalFieldManager {
     const mode = this.el.mode?.value || 'visual';
     if (this.el.visual) this.el.visual.classList.toggle('hidden', mode !== 'visual');
     if (this.el.expression) this.el.expression.classList.toggle('hidden', mode !== 'expression');
+  }
+
+  isVisualIncompatActive() {
+    return !!(this.el.visualIncompat && !this.el.visualIncompat.classList.contains('hidden'));
+  }
+
+  showVisualIncompat(message) {
+    if (this.el.visualIncompatText) {
+      this.el.visualIncompatText.textContent = String(message || '').trim()
+        || "La formule canonique n'est pas compatible avec le builder visuel.";
+    }
+    this.el.visualIncompat?.classList.remove('hidden');
+  }
+
+  hideVisualIncompat() {
+    this.el.visualIncompat?.classList.add('hidden');
+    if (this.el.visualIncompatText) this.el.visualIncompatText.textContent = '';
+  }
+
+  clearCanonicalAndEnableVisual() {
+    if (this.el.exprCanonical) this.el.exprCanonical.value = '';
+    if (this.el.exprText) this.el.exprText.value = '';
+    if (this.el.exprError) this.el.exprError.textContent = '';
+    this.canonicalDirty = false;
+    this.visualFromSchema = false;
+    this.hideVisualIncompat();
+    this.setDefaultVisual();
+    if (this.el.mode) this.el.mode.value = 'visual';
+    this.toggleMode();
+    this.toggleVisualKind();
+    this.toggleThenElse();
+    this.toggleSources();
+    this.updateCanonicalFromVisual();
   }
 
   toggleVisualKind() {
@@ -402,13 +479,17 @@ export class ConditionalFieldManager {
         left: {
           source: visualConfig.condLeftSource || 'field',
           field: visualConfig.condLeftField || '',
-          value: visualConfig.condLeftValue || ''
+          value: visualConfig.condLeftValue || '',
+          group: visualConfig.condLeftGroup || '',
+          groupTarget: visualConfig.condLeftGroupTarget || 'same'
         },
         op: visualConfig.condOperator || 'eq',
         right: {
           source: visualConfig.condRightSource || 'field',
           field: visualConfig.condRightField || '',
-          value: visualConfig.condRightValue || ''
+          value: visualConfig.condRightValue || '',
+          group: visualConfig.condRightGroup || '',
+          groupTarget: visualConfig.condRightGroupTarget || 'same'
         }
       };
       const items = [cond1];
@@ -418,13 +499,17 @@ export class ConditionalFieldManager {
           left: {
             source: visualConfig.cond2LeftSource || 'field',
             field: visualConfig.cond2LeftField || '',
-            value: visualConfig.cond2LeftValue || ''
+            value: visualConfig.cond2LeftValue || '',
+            group: visualConfig.cond2LeftGroup || '',
+            groupTarget: visualConfig.cond2LeftGroupTarget || 'same'
           },
           op: visualConfig.cond2Operator || 'eq',
           right: {
             source: visualConfig.cond2RightSource || 'field',
             field: visualConfig.cond2RightField || '',
-            value: visualConfig.cond2RightValue || ''
+            value: visualConfig.cond2RightValue || '',
+            group: visualConfig.cond2RightGroup || '',
+            groupTarget: visualConfig.cond2RightGroupTarget || 'same'
           }
         });
       }
@@ -436,9 +521,9 @@ export class ConditionalFieldManager {
       items: [
         {
           type: 'condition',
-          left: { source: 'field', field: '', value: '' },
+          left: { source: 'field', field: '', value: '', group: '', groupTarget: 'same' },
           op: 'eq',
-          right: { source: 'value', field: '', value: '' }
+          right: { source: 'value', field: '', value: '', group: '', groupTarget: 'same' }
         }
       ]
     };
@@ -500,9 +585,9 @@ export class ConditionalFieldManager {
       : [
           {
             type: 'condition',
-            left: { source: 'field', field: '', value: '' },
+            left: { source: 'field', field: '', value: '', group: '', groupTarget: 'same' },
             op: 'eq',
-            right: { source: 'value', field: '', value: '' }
+            right: { source: 'value', field: '', value: '', group: '', groupTarget: 'same' }
           }
         ];
 
@@ -531,7 +616,15 @@ export class ConditionalFieldManager {
     leftSource.innerHTML = `
       <option value="field">Champ</option>
       <option value="value">Valeur</option>
+      <option value="group">Groupe</option>
+      <option value="group_count">Taille groupe</option>
     `;
+    if (this.current?.target === 'link') {
+      leftSource.innerHTML += `
+      <option value="source_group">Noeud source dans groupe</option>
+      <option value="target_group">Noeud cible dans groupe</option>
+    `;
+    }
 
     const leftField = document.createElement('select');
     leftField.className = 'form-control form-control-sm cond-field';
@@ -543,6 +636,20 @@ export class ConditionalFieldManager {
     leftValue.dataset.role = 'left-value';
     leftValue.placeholder = 'Valeur';
 
+    const leftGroup = document.createElement('select');
+    leftGroup.className = 'form-control form-control-sm cond-group';
+    leftGroup.dataset.role = 'left-group';
+    leftGroup.innerHTML = this.buildGroupOptionsHtml();
+
+    const leftGroupTarget = document.createElement('select');
+    leftGroupTarget.className = 'form-control form-control-sm cond-group-target';
+    leftGroupTarget.dataset.role = 'left-group-target';
+    leftGroupTarget.innerHTML = `
+      <option value="same">Meme type</option>
+      <option value="node">Noeuds</option>
+      <option value="link">Liens</option>
+    `;
+
     const operator = document.createElement('select');
     operator.className = 'form-control form-control-sm cond-operator';
     operator.dataset.role = 'operator';
@@ -553,10 +660,18 @@ export class ConditionalFieldManager {
       <option value="lte">&lt;=</option>
       <option value="eq">==</option>
       <option value="neq">!=</option>
+      <option value="eqCi">== (ignore casse)</option>
+      <option value="neqCi">!= (ignore casse)</option>
       <option value="contains">contient</option>
+      <option value="notContains">ne contient pas</option>
+      <option value="containsCi">contient (ignore casse)</option>
+      <option value="notContainsCi">ne contient pas (ignore casse)</option>
       <option value="startsWith">commence</option>
+      <option value="startsWithCi">commence (ignore casse)</option>
       <option value="endsWith">termine</option>
+      <option value="endsWithCi">termine (ignore casse)</option>
       <option value="regex">regex</option>
+      <option value="regexCi">regex (ignore casse)</option>
     `;
 
     const rightSource = document.createElement('select');
@@ -565,7 +680,15 @@ export class ConditionalFieldManager {
     rightSource.innerHTML = `
       <option value="field">Champ</option>
       <option value="value">Valeur</option>
+      <option value="group">Groupe</option>
+      <option value="group_count">Taille groupe</option>
     `;
+    if (this.current?.target === 'link') {
+      rightSource.innerHTML += `
+      <option value="source_group">Noeud source dans groupe</option>
+      <option value="target_group">Noeud cible dans groupe</option>
+    `;
+    }
 
     const rightField = document.createElement('select');
     rightField.className = 'form-control form-control-sm cond-field';
@@ -577,6 +700,20 @@ export class ConditionalFieldManager {
     rightValue.dataset.role = 'right-value';
     rightValue.placeholder = 'Valeur';
 
+    const rightGroup = document.createElement('select');
+    rightGroup.className = 'form-control form-control-sm cond-group';
+    rightGroup.dataset.role = 'right-group';
+    rightGroup.innerHTML = this.buildGroupOptionsHtml();
+
+    const rightGroupTarget = document.createElement('select');
+    rightGroupTarget.className = 'form-control form-control-sm cond-group-target';
+    rightGroupTarget.dataset.role = 'right-group-target';
+    rightGroupTarget.innerHTML = `
+      <option value="same">Meme type</option>
+      <option value="node">Noeuds</option>
+      <option value="link">Liens</option>
+    `;
+
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'btn btn-sm btn-outline-danger cond-remove';
@@ -586,21 +723,33 @@ export class ConditionalFieldManager {
     row.appendChild(leftSource);
     row.appendChild(leftField);
     row.appendChild(leftValue);
+    row.appendChild(leftGroup);
+    row.appendChild(leftGroupTarget);
     row.appendChild(operator);
     row.appendChild(rightSource);
     row.appendChild(rightField);
     row.appendChild(rightValue);
+    row.appendChild(rightGroup);
+    row.appendChild(rightGroupTarget);
     row.appendChild(removeBtn);
 
     if (config.left) {
       leftSource.value = config.left.source || 'field';
       leftField.value = config.left.field || '';
       leftValue.value = config.left.value || '';
+      const groupValue = config.left.group || '';
+      this.ensureSelectHasOption(leftGroup, groupValue);
+      leftGroup.value = groupValue;
+      leftGroupTarget.value = config.left.groupTarget || 'same';
     }
     if (config.right) {
       rightSource.value = config.right.source || 'field';
       rightField.value = config.right.field || '';
       rightValue.value = config.right.value || '';
+      const groupValue = config.right.group || '';
+      this.ensureSelectHasOption(rightGroup, groupValue);
+      rightGroup.value = groupValue;
+      rightGroupTarget.value = config.right.groupTarget || 'same';
     }
     operator.value = config.op || 'eq';
 
@@ -625,17 +774,84 @@ export class ConditionalFieldManager {
     const leftSource = row.querySelector('[data-role="left-source"]');
     const leftField = row.querySelector('[data-role="left-field"]');
     const leftValue = row.querySelector('[data-role="left-value"]');
+    const leftGroup = row.querySelector('[data-role="left-group"]');
+    const leftGroupTarget = row.querySelector('[data-role="left-group-target"]');
+    const operator = row.querySelector('[data-role="operator"]');
     const rightSource = row.querySelector('[data-role="right-source"]');
     const rightField = row.querySelector('[data-role="right-field"]');
     const rightValue = row.querySelector('[data-role="right-value"]');
+    const rightGroup = row.querySelector('[data-role="right-group"]');
+    const rightGroupTarget = row.querySelector('[data-role="right-group-target"]');
+    const isMembershipGroupMode = mode => ['group', 'source_group', 'target_group'].includes(mode);
+    const isGroupCountMode = mode => mode === 'group_count';
+    const leftMode = leftSource?.value || 'field';
+    this.syncConditionGroupOptions(row, 'left', leftMode);
+    if (leftField) leftField.style.display = leftMode === 'field' ? '' : 'none';
+    if (leftValue) leftValue.style.display = leftMode === 'value' ? '' : 'none';
+    if (leftGroup) leftGroup.style.display = (isMembershipGroupMode(leftMode) || isGroupCountMode(leftMode)) ? '' : 'none';
+    if (leftGroupTarget) leftGroupTarget.style.display = isGroupCountMode(leftMode) ? '' : 'none';
 
-    const leftIsField = leftSource?.value === 'field';
-    if (leftField) leftField.style.display = leftIsField ? '' : 'none';
-    if (leftValue) leftValue.style.display = leftIsField ? 'none' : '';
+    const rightMode = rightSource?.value || 'field';
+    this.syncConditionGroupOptions(row, 'right', rightMode);
+    if (rightField) rightField.style.display = rightMode === 'field' ? '' : 'none';
+    if (rightValue) rightValue.style.display = rightMode === 'value' ? '' : 'none';
+    if (rightGroup) rightGroup.style.display = (isMembershipGroupMode(rightMode) || isGroupCountMode(rightMode)) ? '' : 'none';
+    if (rightGroupTarget) rightGroupTarget.style.display = isGroupCountMode(rightMode) ? '' : 'none';
 
-    const rightIsField = rightSource?.value === 'field';
-    if (rightField) rightField.style.display = rightIsField ? '' : 'none';
-    if (rightValue) rightValue.style.display = rightIsField ? 'none' : '';
+    const leftIsGroup = isMembershipGroupMode(leftMode);
+    const rightIsGroup = isMembershipGroupMode(rightMode);
+    const unaryGroup = (leftIsGroup && !rightIsGroup) || (!leftIsGroup && rightIsGroup);
+
+    if (unaryGroup) {
+      if (operator && !['eq', 'neq', 'eqCi', 'neqCi'].includes(operator.value)) operator.value = 'eq';
+      if (leftIsGroup) {
+        this.clearConditionOperand(row, 'right');
+        if (rightSource) rightSource.style.display = 'none';
+        if (rightField) rightField.style.display = 'none';
+        if (rightValue) rightValue.style.display = 'none';
+        if (rightGroup) rightGroup.style.display = 'none';
+        if (rightGroupTarget) rightGroupTarget.style.display = 'none';
+      } else {
+        this.clearConditionOperand(row, 'left');
+        if (leftSource) leftSource.style.display = 'none';
+        if (leftField) leftField.style.display = 'none';
+        if (leftValue) leftValue.style.display = 'none';
+        if (leftGroup) leftGroup.style.display = 'none';
+        if (leftGroupTarget) leftGroupTarget.style.display = 'none';
+      }
+    } else {
+      if (leftSource) leftSource.style.display = '';
+      if (rightSource) rightSource.style.display = '';
+    }
+  }
+
+  syncConditionGroupOptions(row, side, sourceMode = null) {
+    if (!row || !side) return;
+    const groupSelect = row.querySelector(`[data-role="${side}-group"]`);
+    if (!groupSelect) return;
+    const sourceSelect = row.querySelector(`[data-role="${side}-source"]`);
+    const groupTargetSelect = row.querySelector(`[data-role="${side}-group-target"]`);
+    const source = sourceMode || sourceSelect?.value || 'field';
+    const groupTarget = groupTargetSelect?.value || 'same';
+    const options = this.getGroupOptionsForSource(source, groupTarget);
+    const current = String(groupSelect.value || '').trim();
+    groupSelect.innerHTML = this.buildGroupOptionsHtml(options);
+    this.ensureSelectHasOption(groupSelect, current);
+    if (current) groupSelect.value = current;
+  }
+
+  clearConditionOperand(row, side) {
+    if (!row || !side) return;
+    const sourceSelect = row.querySelector(`[data-role="${side}-source"]`);
+    const fieldSelect = row.querySelector(`[data-role="${side}-field"]`);
+    const valueInput = row.querySelector(`[data-role="${side}-value"]`);
+    const groupSelect = row.querySelector(`[data-role="${side}-group"]`);
+    const groupTargetSelect = row.querySelector(`[data-role="${side}-group-target"]`);
+    if (sourceSelect) sourceSelect.value = 'value';
+    if (fieldSelect) fieldSelect.value = '';
+    if (valueInput) valueInput.value = '';
+    if (groupSelect) groupSelect.value = '';
+    if (groupTargetSelect) groupTargetSelect.value = 'same';
   }
 
   serializeConditionRow(row) {
@@ -645,13 +861,17 @@ export class ConditionalFieldManager {
       left: {
         source: getVal('left-source') || 'field',
         field: getVal('left-field') || '',
-        value: row.querySelector('[data-role="left-value"]')?.value || ''
+        value: row.querySelector('[data-role="left-value"]')?.value || '',
+        group: getVal('left-group') || '',
+        groupTarget: getVal('left-group-target') || 'same'
       },
       op: getVal('operator') || 'eq',
       right: {
         source: getVal('right-source') || 'field',
         field: getVal('right-field') || '',
-        value: row.querySelector('[data-role="right-value"]')?.value || ''
+        value: row.querySelector('[data-role="right-value"]')?.value || '',
+        group: getVal('right-group') || '',
+        groupTarget: getVal('right-group-target') || 'same'
       }
     };
   }
@@ -687,14 +907,61 @@ export class ConditionalFieldManager {
   }
 
   buildConditionAstFromCondition(cond) {
-    const left = cond?.left?.source === 'field'
-      ? { type: 'field', name: cond.left.field || '' }
-      : this.parseLiteral(cond?.left?.value || '');
-    const right = cond?.right?.source === 'field'
-      ? { type: 'field', name: cond.right.field || '' }
-      : this.parseLiteral(cond?.right?.value || '');
     const op = cond?.op || 'eq';
-    if (['contains', 'startsWith', 'endsWith', 'regex'].includes(op)) {
+    const isGroupSource = source => ['group', 'source_group', 'target_group'].includes(source);
+    const negativeContainsOps = {
+      notContains: 'contains',
+      notContainsCi: 'containsCi'
+    };
+    const callOps = [
+      'contains', 'containsCi',
+      'startsWith', 'startsWithCi',
+      'endsWith', 'endsWithCi',
+      'regex', 'regexCi',
+      'eqCi', 'neqCi'
+    ];
+    const leftIsGroup = isGroupSource(cond?.left?.source);
+    const rightIsGroup = isGroupSource(cond?.right?.source);
+    const left = this.buildConditionOperand(cond?.left);
+    const right = this.buildConditionOperand(cond?.right);
+
+    // Coherent shortcut for membership checks:
+    // - if one side is a group and the other side is empty => `inGroup(...)` or `not(inGroup(...))`.
+    if (leftIsGroup !== rightIsGroup) {
+      const groupAst = leftIsGroup ? left : right;
+      const otherOperand = leftIsGroup ? cond?.right : cond?.left;
+      const otherAst = leftIsGroup ? right : left;
+      const otherEmpty = this.isConditionOperandEmpty(otherOperand);
+      if (otherEmpty) {
+        return ['neq', 'neqCi'].includes(op)
+          ? { type: 'unary', op: 'not', expr: groupAst }
+          : groupAst;
+      }
+      if (negativeContainsOps[op]) {
+        const innerName = negativeContainsOps[op];
+        const inner = leftIsGroup
+          ? { type: 'call', name: innerName, args: [groupAst, otherAst] }
+          : { type: 'call', name: innerName, args: [otherAst, groupAst] };
+        return { type: 'call', name: 'not', args: [inner] };
+      }
+      if (callOps.includes(op)) {
+        return leftIsGroup
+          ? { type: 'call', name: op, args: [groupAst, otherAst] }
+          : { type: 'call', name: op, args: [otherAst, groupAst] };
+      }
+      return leftIsGroup
+        ? { type: 'binary', op, left: groupAst, right: otherAst }
+        : { type: 'binary', op, left: otherAst, right: groupAst };
+    }
+
+    if (negativeContainsOps[op]) {
+      return {
+        type: 'call',
+        name: 'not',
+        args: [{ type: 'call', name: negativeContainsOps[op], args: [left, right] }]
+      };
+    }
+    if (callOps.includes(op)) {
       return { type: 'call', name: op, args: [left, right] };
     }
     return { type: 'binary', op, left, right };
@@ -744,19 +1011,61 @@ export class ConditionalFieldManager {
 
   astToConditionItem(ast) {
     if (!ast || typeof ast !== 'object') return null;
+    if (ast.type === 'call' && ['inGroup', 'inNodeGroup', 'inLinkGroup'].includes(ast.name)) {
+      const left = this.astToOperand(ast);
+      if (!left) return null;
+      return {
+        type: 'condition',
+        left,
+        op: 'eq',
+        right: { source: 'value', field: '', value: 'true', group: '' }
+      };
+    }
+    if (ast.type === 'unary' && ast.op === 'not' && ast.expr?.type === 'call' && ['inGroup', 'inNodeGroup', 'inLinkGroup'].includes(ast.expr?.name)) {
+      const left = this.astToOperand(ast.expr);
+      if (!left) return null;
+      return {
+        type: 'condition',
+        left,
+        op: 'neq',
+        right: { source: 'value', field: '', value: 'true', group: '' }
+      };
+    }
+    if (ast.type === 'call' && ast.name === 'not' && ast.args?.[0]?.type === 'call' && ['inGroup', 'inNodeGroup', 'inLinkGroup'].includes(ast.args?.[0]?.name)) {
+      const left = this.astToOperand(ast.args?.[0]);
+      if (!left) return null;
+      return {
+        type: 'condition',
+        left,
+        op: 'neq',
+        right: { source: 'value', field: '', value: 'true', group: '' }
+      };
+    }
+    if (ast.type === 'unary' && ast.op === 'not' && ast.expr?.type === 'call' && ['contains', 'containsCi'].includes(ast.expr?.name)) {
+      const left = this.astToOperand(ast.expr.args?.[0]);
+      const right = this.astToOperand(ast.expr.args?.[1]);
+      if (!left || !right) return null;
+      return { type: 'condition', left, op: ast.expr?.name === 'containsCi' ? 'notContainsCi' : 'notContains', right };
+    }
+    if (ast.type === 'call' && ast.name === 'not' && ast.args?.[0]?.type === 'call' && ['contains', 'containsCi'].includes(ast.args?.[0]?.name)) {
+      const left = this.astToOperand(ast.args?.[0]?.args?.[0]);
+      const right = this.astToOperand(ast.args?.[0]?.args?.[1]);
+      if (!left || !right) return null;
+      return { type: 'condition', left, op: ast.args?.[0]?.name === 'containsCi' ? 'notContainsCi' : 'notContains', right };
+    }
     if (ast.type === 'binary' && ['gt', 'gte', 'lt', 'lte', 'eq', 'neq'].includes(ast.op)) {
       const left = this.astToOperand(ast.left);
       const right = this.astToOperand(ast.right);
       if (!left || !right) return null;
       return { type: 'condition', left, op: ast.op, right };
     }
-    if (ast.type === 'call' && ['contains', 'startsWith', 'endsWith', 'regex'].includes(ast.name)) {
+    if (ast.type === 'call' && ['contains', 'containsCi', 'startsWith', 'startsWithCi', 'endsWith', 'endsWithCi', 'regex', 'regexCi'].includes(ast.name)) {
       const left = this.astToOperand(ast.args?.[0]);
       const right = this.astToOperand(ast.args?.[1]);
       if (!left || !right) return null;
       return { type: 'condition', left, op: ast.name, right };
     }
-    if (ast.type === 'call' && ['gt', 'gte', 'lt', 'lte', 'eq', 'neq'].includes(ast.name)) {
+    if (ast.type === 'call' && ['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'eqCi', 'neqCi'].includes(ast.name)) {
       const left = this.astToOperand(ast.args?.[0]);
       const right = this.astToOperand(ast.args?.[1]);
       if (!left || !right) return null;
@@ -773,7 +1082,143 @@ export class ConditionalFieldManager {
     if (ast.type === 'literal') {
       return { source: 'value', field: '', value: this.literalToString(ast) };
     }
+    if (ast.type === 'call' && ast.name === 'inGroup' && ast.args?.[0]?.type === 'literal') {
+      return { source: 'group', field: '', value: '', group: String(ast.args[0].value || '') };
+    }
+    if (ast.type === 'call' && ast.name === 'inNodeGroup' && ast.args?.[0]?.type === 'literal') {
+      const which = String(ast.args?.[1]?.value || 'source').toLowerCase();
+      const source = which === 'target' ? 'target_group' : 'source_group';
+      return { source, field: '', value: '', group: String(ast.args[0].value || '') };
+    }
+    if (ast.type === 'call' && ast.name === 'inLinkGroup' && ast.args?.[0]?.type === 'literal') {
+      return { source: 'group', field: '', value: '', group: String(ast.args[0].value || '') };
+    }
+    if (ast.type === 'call' && ast.name === 'groupCount' && ast.args?.[0]?.type === 'literal') {
+      const rawTarget = String(ast.args?.[1]?.value || 'same').toLowerCase();
+      const groupTarget = rawTarget.startsWith('n')
+        ? 'node'
+        : (rawTarget.startsWith('l') ? 'link' : 'same');
+      return {
+        source: 'group_count',
+        field: '',
+        value: '',
+        group: String(ast.args[0].value || ''),
+        groupTarget
+      };
+    }
     return null;
+  }
+
+  buildConditionOperand(operand) {
+    if (operand?.source === 'field') {
+      return { type: 'field', name: operand.field || '' };
+    }
+    if (operand?.source === 'group') {
+      return {
+        type: 'call',
+        name: 'inGroup',
+        args: [{ type: 'literal', value: operand.group || '', valueType: 'text' }]
+      };
+    }
+    if (operand?.source === 'source_group') {
+      return {
+        type: 'call',
+        name: 'inNodeGroup',
+        args: [
+          { type: 'literal', value: operand.group || '', valueType: 'text' },
+          { type: 'literal', value: 'source', valueType: 'text' }
+        ]
+      };
+    }
+    if (operand?.source === 'target_group') {
+      return {
+        type: 'call',
+        name: 'inNodeGroup',
+        args: [
+          { type: 'literal', value: operand.group || '', valueType: 'text' },
+          { type: 'literal', value: 'target', valueType: 'text' }
+        ]
+      };
+    }
+    if (operand?.source === 'group_count') {
+      const args = [{ type: 'literal', value: operand.group || '', valueType: 'text' }];
+      const target = String(operand.groupTarget || 'same').toLowerCase();
+      if (target === 'node' || target === 'link') {
+        args.push({ type: 'literal', value: target, valueType: 'text' });
+      }
+      return { type: 'call', name: 'groupCount', args };
+    }
+    return this.parseLiteral(operand?.value || '');
+  }
+
+  getAvailableGroups(target) {
+    const groups = graphConfig?.groups || { nodes: [], links: [] };
+    const list = target === 'link' ? (groups.links || []) : (groups.nodes || []);
+    return (list || [])
+      .filter(group => group && group.enabled !== false)
+      .map(group => {
+        const id = String(group.id || '').trim();
+        const name = String(group.name || '').trim();
+        const value = id || name;
+        if (!value) return null;
+        const label = name && id && name.toLowerCase() !== id.toLowerCase()
+          ? `${name} (${id})`
+          : (name || id);
+        return { value, label };
+      })
+      .filter(Boolean);
+  }
+
+  resolveGroupCountTarget(groupTarget) {
+    const raw = String(groupTarget || 'same').toLowerCase();
+    if (raw === 'node' || raw === 'link') return raw;
+    return this.current?.target === 'link' ? 'link' : 'node';
+  }
+
+  getGroupOptionsForSource(source, groupTarget = 'same') {
+    if (source === 'source_group' || source === 'target_group') {
+      return this.availableGroupsByTarget?.node || [];
+    }
+    if (source === 'group') {
+      const target = this.current?.target === 'link' ? 'link' : 'node';
+      return this.availableGroupsByTarget?.[target] || [];
+    }
+    if (source === 'group_count') {
+      const target = this.resolveGroupCountTarget(groupTarget);
+      return this.availableGroupsByTarget?.[target] || [];
+    }
+    return [];
+  }
+
+  buildGroupOptionsHtml(groups = null) {
+    const list = Array.isArray(groups)
+      ? groups
+      : this.getGroupOptionsForSource('group');
+    const options = ['<option value=""></option>'];
+    list.forEach(group => {
+      options.push(`<option value="${group.value}">${group.label}</option>`);
+    });
+    return options.join('');
+  }
+
+  ensureSelectHasOption(select, value) {
+    const val = String(value || '').trim();
+    if (!select || !val) return;
+    const has = Array.from(select.options || []).some(opt => String(opt.value) === val);
+    if (has) return;
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = val;
+    select.appendChild(opt);
+  }
+
+  isConditionOperandEmpty(operand) {
+    if (!operand || typeof operand !== 'object') return true;
+    const source = operand.source || 'value';
+    if (source === 'field') return !String(operand.field || '').trim();
+    if (['group', 'source_group', 'target_group'].includes(source)) return !String(operand.group || '').trim();
+    if (source === 'group_count') return !String(operand.group || '').trim();
+    return !String(operand.value || '').trim();
   }
 
   literalToString(ast) {
@@ -904,11 +1349,25 @@ export class ConditionalFieldManager {
       const canonical = serializeToFunctional(ast);
       this.el.exprCanonical.value = canonical;
       this.el.exprError.textContent = '';
+      if (this.conditionOnly) {
+        const group = this.astToConditionGroup(ast);
+        if (group) this.hideVisualIncompat();
+        else this.showVisualIncompat(
+          "Cette formule de condition n'est pas convertible en builder visuel. Efface la canonique pour reconstruire la condition."
+        );
+      } else if (!this.visualFromSchema && canonical) {
+        this.showVisualIncompat(
+          "La formule actuelle n'a pas de configuration visuelle retrocompatible. Efface la canonique pour reconstruire le builder."
+        );
+      } else if (!canonical) {
+        this.hideVisualIncompat();
+      }
       this.isSyncing = false;
       return ast;
     } catch (e) {
       this.el.exprError.textContent = e.message || 'Expression invalide';
       this.el.exprCanonical.value = '';
+      if (!this.el.exprText?.value?.trim()) this.hideVisualIncompat();
       this.isSyncing = false;
       return null;
     }
@@ -929,10 +1388,22 @@ export class ConditionalFieldManager {
       const ast = parseExpression(canonical);
       this.el.exprText.value = canonical;
       this.el.exprError.textContent = '';
+      if (this.conditionOnly) {
+        const group = this.astToConditionGroup(ast);
+        if (group) this.hideVisualIncompat();
+        else this.showVisualIncompat(
+          "Cette formule de condition n'est pas convertible en builder visuel. Efface la canonique pour reconstruire la condition."
+        );
+      } else if (!this.visualFromSchema) {
+        this.showVisualIncompat(
+          "La formule actuelle n'a pas de configuration visuelle retrocompatible. Efface la canonique pour reconstruire le builder."
+        );
+      }
       this.isSyncing = false;
       return ast;
     } catch (e) {
       this.el.exprError.textContent = e.message || 'Expression invalide';
+      if (!canonical) this.hideVisualIncompat();
       this.isSyncing = false;
       return null;
     }

@@ -13,6 +13,19 @@ import {
 import eventBus from '../services/EventBus.js';
 import { graphConfig } from '../config/index.js';
 
+function nextOrdinalName(prefix, items) {
+  const re = new RegExp(`^${prefix}\\s+(\\d+)$`, 'i');
+  let max = 0;
+  (items || []).forEach(item => {
+    const name = String(item?.name || '').trim();
+    const match = name.match(re);
+    if (!match) return;
+    const n = Number(match[1]);
+    if (Number.isFinite(n) && n > max) max = n;
+  });
+  return `${prefix} ${max + 1}`;
+}
+
 export class FormManager {
   constructor(graphState, renderer) {
     this.graphState = graphState;
@@ -27,9 +40,14 @@ export class FormManager {
     this.linkInputs = {};
     this.localStyleInputs = { node: {}, link: {} };
     this.ruleMatchContainers = { node: null, link: null };
+    this.groupMatchContainers = { node: null, link: null };
+    this.groupQuickControls = { node: null, link: null };
+    this.nodeFormCol = document.getElementById('node-form-col');
+    this.linkFormCol = document.getElementById('link-form-col');
     
     // Initialize forms.
     this.refreshForms();
+    this.updateEditorsLayout();
     
     // Configure selection observers.
     this.setupSelectionObservers();
@@ -38,6 +56,7 @@ export class FormManager {
     eventBus.on('style-rules-updated', () => this.refreshRuleMatches());
     eventBus.on('pie-rules-updated', () => this.refreshRuleMatches());
     eventBus.on('group-rules-updated', () => this.refreshRuleMatches());
+    eventBus.on('group-rules-updated', () => this.refreshGroupMatches());
   }
   
   /**
@@ -97,6 +116,7 @@ export class FormManager {
 
     this.appendLocalStyleSection(formElement, target);
     this.appendRuleMatchesSection(formElement, target);
+    this.appendGroupMatchesSection(formElement, target);
   }
   
   /**
@@ -371,17 +391,16 @@ export class FormManager {
     
     console.log("Affichage du formulaire pour le nœud:", node.id);
     
-    // Hide all forms first.
-    this.hideAllForms();
-    
     // Update form values with node data.
     this.updateForm(this.nodeInputs, node);
     this.updateLocalStyleForm('node', node);
     this.updateRuleMatches('node', node);
+    this.updateGroupMatches('node', node);
     
     // Make the form visible.
     this.nodeForm.classList.remove('hidden');
     this.nodeForm.style.display = 'flex'; // Forcer l'affichage flex
+    this.updateEditorsLayout();
     
     // Determine the field to focus.
     const fieldToFocus = this.graphState.globalSettings.nodeLabelField;
@@ -409,17 +428,16 @@ export class FormManager {
     
     console.log("Affichage du formulaire pour le lien:", link.id);
     
-    // Hide all forms first.
-    this.hideAllForms();
-    
     // Update form values with link data.
     this.updateForm(this.linkInputs, link);
     this.updateLocalStyleForm('link', link);
     this.updateRuleMatches('link', link);
+    this.updateGroupMatches('link', link);
     
     // Make the form visible.
     this.linkForm.classList.remove('hidden');
     this.linkForm.style.display = 'flex'; // Forcer l'affichage flex
+    this.updateEditorsLayout();
     
     // Determine the field to focus.
     const fieldToFocus = this.graphState.globalSettings.linkLabelField;
@@ -647,6 +665,190 @@ export class FormManager {
     });
   }
 
+  appendGroupMatchesSection(formElement, target) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'rule-match-block';
+
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = 'Groupes';
+    wrapper.appendChild(title);
+
+    const quickRow = document.createElement('div');
+    quickRow.className = 'd-flex flex-wrap align-items-center mb-2';
+
+    const select = document.createElement('select');
+    select.className = 'form-control form-control-sm mr-2 mb-1';
+    select.style.maxWidth = '260px';
+    quickRow.appendChild(select);
+
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn btn-sm btn-outline-secondary mr-1 mb-1';
+    addBtn.dataset.groupAction = 'add-selected-manual';
+    addBtn.textContent = 'Ajouter manuel';
+    quickRow.appendChild(addBtn);
+
+    const createBtn = document.createElement('button');
+    createBtn.type = 'button';
+    createBtn.className = 'btn btn-sm btn-outline-secondary mb-1';
+    createBtn.dataset.groupAction = 'create-and-add';
+    createBtn.textContent = 'Nouveau groupe + ajouter';
+    quickRow.appendChild(createBtn);
+
+    wrapper.appendChild(quickRow);
+
+    const list = document.createElement('div');
+    list.className = 'rule-match-list';
+    wrapper.appendChild(list);
+    formElement.appendChild(wrapper);
+
+    this.groupMatchContainers[target] = list;
+    this.groupQuickControls[target] = { select };
+
+    wrapper.addEventListener('click', event => {
+      const btn = event.target.closest('button[data-group-action]');
+      if (!btn) return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.handleGroupAction(target, btn.dataset.groupAction);
+    });
+  }
+
+  handleGroupAction(target, action) {
+    const item = target === 'node' ? this.graphState.selectedNode : this.graphState.selectedLink;
+    if (!item?.id) return;
+    const groupsKey = target === 'node' ? 'nodes' : 'links';
+    graphConfig.groups = graphConfig.groups || { nodes: [], links: [] };
+    graphConfig.groups[groupsKey] = Array.isArray(graphConfig.groups[groupsKey]) ? graphConfig.groups[groupsKey] : [];
+    const groups = graphConfig.groups[groupsKey];
+
+    if (action === 'add-selected-manual') {
+      const selectedId = this.groupQuickControls[target]?.select?.value || '';
+      if (!selectedId) return;
+      const group = groups.find(g => String(g?.id || '') === String(selectedId));
+      if (!group) return;
+      this.addItemToGroupManual(target, item, group);
+      return;
+    }
+
+    if (action === 'create-and-add') {
+      const group = {
+        id: `group-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        name: nextOrdinalName(target === 'node' ? 'Groupe noeud' : 'Groupe lien', groups),
+        enabled: true,
+        target,
+        priority: 0,
+        when: '',
+        manualIds: [String(item.id)]
+      };
+      groups.push(group);
+      eventBus.emit('group-rules-updated', { rules: graphConfig.groups });
+      this.renderer.updateGraph();
+      this.updateGroupMatches(target, item);
+      return;
+    }
+  }
+
+  addItemToGroupManual(target, item, group) {
+    if (!item?.id || !group) return;
+    const itemId = String(item.id);
+    const manual = Array.isArray(group.manualIds) ? group.manualIds.map(v => String(v)) : [];
+    if (!manual.includes(itemId)) manual.push(itemId);
+    group.manualIds = manual;
+    eventBus.emit('group-rules-updated', { rules: graphConfig.groups });
+    this.renderer.updateGraph();
+    this.updateGroupMatches(target, item);
+  }
+
+  removeItemFromGroupManual(target, item, group) {
+    if (!item?.id || !group) return;
+    const itemId = String(item.id);
+    group.manualIds = (Array.isArray(group.manualIds) ? group.manualIds : [])
+      .map(v => String(v))
+      .filter(v => v !== itemId);
+    eventBus.emit('group-rules-updated', { rules: graphConfig.groups });
+    this.renderer.updateGraph();
+    this.updateGroupMatches(target, item);
+  }
+
+  updateGroupMatches(target, item) {
+    const list = this.groupMatchContainers[target];
+    const quick = this.groupQuickControls[target];
+    if (!list || !quick?.select) return;
+    if (!item?.id) {
+      list.innerHTML = '';
+      quick.select.innerHTML = '';
+      return;
+    }
+
+    const groups = target === 'node'
+      ? (graphConfig.groups?.nodes || [])
+      : (graphConfig.groups?.links || []);
+
+    quick.select.innerHTML = ['<option value="">Choisir un groupe...</option>']
+      .concat((groups || []).map(group => {
+        const id = this.escapeHtml(String(group?.id || '').trim());
+        const name = this.escapeHtml(String(group?.name || group?.id || '').trim());
+        return `<option value="${id}">${name}</option>`;
+      }))
+      .join('');
+
+    const entries = (groups || [])
+      .filter(group => group && group.enabled !== false)
+      .map(group => {
+        const inGroup = this.graphState.isItemInGroup(target, item, group);
+        if (!inGroup) return null;
+        const manual = Array.isArray(group.manualIds)
+          && group.manualIds.map(v => String(v)).includes(String(item.id));
+        return { group, manual };
+      })
+      .filter(Boolean);
+
+    if (!entries.length) {
+      list.innerHTML = '<div class="small text-muted">Aucun groupe actif pour cet element.</div>';
+      return;
+    }
+
+    list.innerHTML = entries.map(({ group, manual }) => {
+      const groupId = this.escapeHtml(group.id || '');
+      const groupName = this.escapeHtml(group.name || group.id || '(sans nom)');
+      const sourceLabel = manual ? 'Manuel' : 'Regle';
+      const toggleLabel = manual ? 'Retirer manuel' : 'Ajouter manuel';
+      return `
+        <div class="rule-match-item">
+          <span class="badge badge-light">Groupe</span>
+          <span class="rule-match-name">${groupName}</span>
+          <span class="rule-match-priority">${sourceLabel}</span>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-group-toggle="${groupId}">${toggleLabel}</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-group-jump="${groupId}" data-group-target="${target}">Modifier</button>
+        </div>
+      `;
+    }).join('');
+
+    list.querySelectorAll('button[data-group-toggle]').forEach(btn => {
+      btn.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const groupId = String(btn.dataset.groupToggle || '');
+        const group = (groups || []).find(g => String(g?.id || '') === groupId);
+        if (!group) return;
+        const manual = Array.isArray(group.manualIds)
+          && group.manualIds.map(v => String(v)).includes(String(item.id));
+        if (manual) this.removeItemFromGroupManual(target, item, group);
+        else this.addItemToGroupManual(target, item, group);
+      });
+    });
+
+    list.querySelectorAll('button[data-group-jump]').forEach(btn => {
+      btn.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.jumpToGroup(btn.dataset.groupJump, btn.dataset.groupTarget);
+      });
+    });
+  }
+
   updateRuleMatches(target, item) {
     const list = this.ruleMatchContainers[target];
     if (!list) return;
@@ -712,30 +914,82 @@ export class FormManager {
     }
   }
 
+  refreshGroupMatches() {
+    if (this.graphState.selectedNode) {
+      this.updateGroupMatches('node', this.graphState.selectedNode);
+    }
+    if (this.graphState.selectedLink) {
+      this.updateGroupMatches('link', this.graphState.selectedLink);
+    }
+  }
+
   jumpToRule(ruleId, type) {
     if (!ruleId) return;
-    const containerId = type === 'pie' ? 'pie-rules-list' : 'style-rules-list';
-    const container = document.getElementById(containerId);
-    if (!container) return;
     const ruleIdStr = String(ruleId);
-    const cards = container.querySelectorAll('[data-rule-id]');
-    const card = Array.from(cards).find(el => String(el.dataset.ruleId) === ruleIdStr);
-    if (!card) return;
 
-    // Activate the Graph Config tab if needed.
-    const tabLink = document.querySelector('.nav-link[href="#tab3"]');
-    tabLink?.click();
+    // Activate the Rules top tab and the matching subtab.
+    const topTab = document.querySelector('.nav-link[href="#tab7"]');
+    topTab?.click();
+    const subHref = type === 'pie' ? '#tab7-rules-pie' : '#tab7-rules-style';
+    const subTab = document.querySelector(`.nav-link[href="${subHref}"]`);
+    subTab?.click();
 
-    // Open the matching section.
-    const collapseId = type === 'pie' ? 'collapsePieRules' : 'collapseStyleRules';
-    const collapseEl = document.getElementById(collapseId);
-    if (collapseEl && !collapseEl.classList.contains('show')) {
-      collapseEl.classList.add('show');
+    const highlight = () => {
+      const primaryId = type === 'pie' ? 'pie-rules-list' : 'style-rules-list';
+      const fallbackId = type === 'pie' ? 'pie-rules-list-all' : 'style-rules-list-all';
+      const pick = (containerId) => {
+        const container = document.getElementById(containerId);
+        if (!container) return null;
+        return Array.from(container.querySelectorAll('[data-rule-id]'))
+          .find(el => String(el.dataset.ruleId) === ruleIdStr) || null;
+      };
+      const card = pick(primaryId) || pick(fallbackId);
+      if (!card) return false;
+      card.classList.add('rule-expanded');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('rule-card-highlight');
+      setTimeout(() => card.classList.remove('rule-card-highlight'), 1200);
+      return true;
+    };
+
+    if (!highlight()) {
+      setTimeout(highlight, 120);
+      setTimeout(highlight, 260);
     }
+  }
 
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    card.classList.add('rule-card-highlight');
-    setTimeout(() => card.classList.remove('rule-card-highlight'), 1200);
+  jumpToGroup(groupId, target) {
+    if (!groupId) return;
+    const groupIdStr = String(groupId);
+
+    const topTab = document.querySelector('.nav-link[href="#tab7"]');
+    topTab?.click();
+    const subTab = document.querySelector('.nav-link[href="#tab7-rules-groups"]');
+    subTab?.click();
+
+    const highlight = () => {
+      const pick = (containerId) => {
+        const container = document.getElementById(containerId);
+        if (!container) return null;
+        return Array.from(container.querySelectorAll('[data-group-id]')).find(card => {
+          if (String(card.dataset.groupId) !== groupIdStr) return false;
+          if (!target) return true;
+          return String(card.dataset.target || '') === String(target);
+        }) || null;
+      };
+      const card = pick('element-groups-list') || pick('element-groups-list-all');
+      if (!card) return false;
+      card.classList.add('rule-expanded');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('rule-card-highlight');
+      setTimeout(() => card.classList.remove('rule-card-highlight'), 1200);
+      return true;
+    };
+
+    if (!highlight()) {
+      setTimeout(highlight, 120);
+      setTimeout(highlight, 260);
+    }
   }
 
   escapeHtml(value) {
@@ -901,6 +1155,55 @@ export class FormManager {
     }
   }
 
+  updateEditorsLayout() {
+    const nodeVisible = !!(this.nodeForm && !this.nodeForm.classList.contains('hidden'));
+    const linkVisible = !!(this.linkForm && !this.linkForm.classList.contains('hidden'));
+
+    const setColState = (col, visible, half) => {
+      if (!col) return;
+      col.classList.toggle('d-none', !visible);
+      col.classList.remove('col-12', 'col-lg-6');
+      if (visible) {
+        col.classList.add('col-12');
+        if (half) col.classList.add('col-lg-6');
+      }
+    };
+
+    setColState(this.nodeFormCol, nodeVisible, nodeVisible && linkVisible);
+    setColState(this.linkFormCol, linkVisible, nodeVisible && linkVisible);
+  }
+
+  syncSelectionForms() {
+    const node = this.graphState.selectedNode;
+    const link = this.graphState.selectedLink;
+
+    if (node) {
+      this.updateForm(this.nodeInputs, node);
+      this.updateLocalStyleForm('node', node);
+      this.updateRuleMatches('node', node);
+      this.updateGroupMatches('node', node);
+      this.nodeForm.classList.remove('hidden');
+      this.nodeForm.style.display = 'flex';
+    } else if (this.nodeForm) {
+      this.nodeForm.classList.add('hidden');
+      this.nodeForm.style.display = 'none';
+    }
+
+    if (link) {
+      this.updateForm(this.linkInputs, link);
+      this.updateLocalStyleForm('link', link);
+      this.updateRuleMatches('link', link);
+      this.updateGroupMatches('link', link);
+      this.linkForm.classList.remove('hidden');
+      this.linkForm.style.display = 'flex';
+    } else if (this.linkForm) {
+      this.linkForm.classList.add('hidden');
+      this.linkForm.style.display = 'none';
+    }
+
+    this.updateEditorsLayout();
+  }
+
   /**
    * Hides all forms.
    */
@@ -914,6 +1217,7 @@ export class FormManager {
       this.linkForm.classList.add('hidden');
       this.linkForm.style.display = 'none'; // Force hide.
     }
+    this.updateEditorsLayout();
     
     console.log("Tous les formulaires sont maintenant cachés");
   }

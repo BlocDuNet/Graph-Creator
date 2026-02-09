@@ -46,6 +46,19 @@ function ensurePieRule(rule) {
   };
 }
 
+function nextOrdinalName(prefix, items) {
+  const re = new RegExp(`^${prefix}\\s+(\\d+)$`, 'i');
+  let max = 0;
+  (items || []).forEach(item => {
+    const name = String(item?.name || '').trim();
+    const match = name.match(re);
+    if (!match) return;
+    const n = Number(match[1]);
+    if (Number.isFinite(n) && n > max) max = n;
+  });
+  return `${prefix} ${max + 1}`;
+}
+
 export class StyleRuleManager {
   constructor(graphState, renderer) {
     this.graphState = graphState;
@@ -57,45 +70,80 @@ export class StyleRuleManager {
     this.pieRules.nodes = this.pieRules.nodes || [];
     this.ensureRuleIds();
     this.conditionRequests = new Map();
+    this.expandedCards = new Set();
     this.bindElements();
     this.bindEvents();
     this.render();
   }
 
   bindElements() {
+    const styleListPrimary = document.getElementById('style-rules-list');
+    const styleListAll = document.getElementById('style-rules-list-all');
+    const pieListPrimary = document.getElementById('pie-rules-list');
+    const pieListAll = document.getElementById('pie-rules-list-all');
+    const addNodePrimary = document.getElementById('style-rule-add-node');
+    const addNodeAll = document.getElementById('style-rule-add-node-all');
+    const addLinkPrimary = document.getElementById('style-rule-add-link');
+    const addLinkAll = document.getElementById('style-rule-add-link-all');
+    const addPiePrimary = document.getElementById('pie-rule-add');
+    const addPieAll = document.getElementById('pie-rule-add-all');
+    const compactToggle = document.getElementById('rules-compact-toggle');
+    const rulesTab = document.getElementById('tab7');
     this.el = {
-      styleList: document.getElementById('style-rules-list'),
-      pieList: document.getElementById('pie-rules-list'),
-      addNodeRule: document.getElementById('style-rule-add-node'),
-      addLinkRule: document.getElementById('style-rule-add-link'),
-      addPieRule: document.getElementById('pie-rule-add')
+      styleLists: [styleListPrimary, styleListAll].filter(Boolean),
+      pieLists: [pieListPrimary, pieListAll].filter(Boolean),
+      addNodeRules: [addNodePrimary, addNodeAll].filter(Boolean),
+      addLinkRules: [addLinkPrimary, addLinkAll].filter(Boolean),
+      addPieRules: [addPiePrimary, addPieAll].filter(Boolean),
+      compactToggle,
+      rulesTab
     };
   }
 
   bindEvents() {
-    this.el.addNodeRule?.addEventListener('click', () => {
-      const rule = ensureStyleRule({}, 'node');
-      this.rules.nodes.push(rule);
-      this.commitStyleRules();
+    this.el.addNodeRules.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rule = ensureStyleRule({}, 'node');
+        rule.name = nextOrdinalName('Regle noeud', this.rules.nodes);
+        this.rules.nodes.push(rule);
+        this.commitStyleRules();
+      });
     });
-    this.el.addLinkRule?.addEventListener('click', () => {
-      const rule = ensureStyleRule({}, 'link');
-      this.rules.links.push(rule);
-      this.commitStyleRules();
+    this.el.addLinkRules.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rule = ensureStyleRule({}, 'link');
+        rule.name = nextOrdinalName('Regle lien', this.rules.links);
+        this.rules.links.push(rule);
+        this.commitStyleRules();
+      });
     });
-    this.el.addPieRule?.addEventListener('click', () => {
-      const rule = ensurePieRule({});
-      this.pieRules.nodes.push(rule);
-      this.commitPieRules();
+    this.el.addPieRules.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rule = ensurePieRule({});
+        rule.name = nextOrdinalName('Pie chart', this.pieRules.nodes);
+        this.pieRules.nodes.push(rule);
+        this.commitPieRules();
+      });
     });
 
-    this.el.styleList?.addEventListener('input', e => this.onStyleRuleInput(e));
-    this.el.styleList?.addEventListener('change', e => this.onStyleRuleInput(e));
-    this.el.styleList?.addEventListener('click', e => this.onStyleRuleClick(e));
+    if (this.el.compactToggle && this.el.rulesTab) {
+      this.el.compactToggle.addEventListener('change', () => {
+        this.el.rulesTab.classList.toggle('rules-compact', !!this.el.compactToggle.checked);
+      });
+      this.el.rulesTab.classList.toggle('rules-compact', !!this.el.compactToggle.checked);
+    }
 
-    this.el.pieList?.addEventListener('input', e => this.onPieRuleInput(e));
-    this.el.pieList?.addEventListener('change', e => this.onPieRuleInput(e));
-    this.el.pieList?.addEventListener('click', e => this.onPieRuleClick(e));
+    this.el.styleLists.forEach(list => {
+      list.addEventListener('input', e => this.onStyleRuleInput(e));
+      list.addEventListener('change', e => this.onStyleRuleInput(e));
+      list.addEventListener('click', e => this.onStyleRuleClick(e));
+    });
+
+    this.el.pieLists.forEach(list => {
+      list.addEventListener('input', e => this.onPieRuleInput(e));
+      list.addEventListener('change', e => this.onPieRuleInput(e));
+      list.addEventListener('click', e => this.onPieRuleClick(e));
+    });
 
     eventBus.on('style-rules-updated', event => {
       // Avoid re-rendering while typing (prevents focus loss).
@@ -144,7 +192,7 @@ export class StyleRuleManager {
   }
 
   renderStyleRules() {
-    if (!this.el.styleList) return;
+    if (!this.el.styleLists.length) return;
     this.ensureRuleIds();
     const items = [];
     const addCard = (rule, target) => {
@@ -153,17 +201,23 @@ export class StyleRuleManager {
     };
     (this.rules.nodes || []).forEach(rule => addCard(rule, 'node'));
     (this.rules.links || []).forEach(rule => addCard(rule, 'link'));
-    this.el.styleList.innerHTML = items.join('');
+    const html = items.join('');
+    this.el.styleLists.forEach(list => {
+      list.innerHTML = html;
+    });
   }
 
   renderPieRules() {
-    if (!this.el.pieList) return;
+    if (!this.el.pieLists.length) return;
     this.ensureRuleIds();
     const items = (this.pieRules.nodes || []).map(rule => {
       const normalized = ensurePieRule(rule);
       return this.buildPieRuleCard(normalized);
     });
-    this.el.pieList.innerHTML = items.join('');
+    const html = items.join('');
+    this.el.pieLists.forEach(list => {
+      list.innerHTML = html;
+    });
   }
 
   ensureRuleIds() {
@@ -182,8 +236,12 @@ export class StyleRuleManager {
     const targetLabel = rule.target === 'link' ? 'Lien' : 'Noeud';
     const style = rule.style || {};
     const esc = v => this.escapeAttr(v);
+    const expanded = this.expandedCards.has(String(rule.id || ''));
+    const compactFields = rule.target === 'node'
+      ? `fill=${this.escapeText(style.fill || '-')}, stroke=${this.escapeText(style.stroke || '-')}, size=${this.escapeText(style.size || '-')}`
+      : `linkColor=${this.escapeText(style.linkColor || '-')}, linkWidth=${this.escapeText(style.linkWidth || '-')}, linkDash=${this.escapeText(style.linkDash || '-')}`;
     return `
-      <div class="rule-card" data-rule-id="${esc(rule.id)}" data-target="${esc(rule.target)}">
+      <div class="rule-card${expanded ? ' rule-expanded' : ''}" data-rule-id="${esc(rule.id)}" data-target="${esc(rule.target)}">
         <div class="rule-header">
           <label class="small">
             <input type="checkbox" data-field="enabled" ${rule.enabled ? 'checked' : ''}> Actif
@@ -191,17 +249,24 @@ export class StyleRuleManager {
           <span class="badge badge-light">${targetLabel}</span>
           <input class="form-control form-control-sm rule-name" data-field="name" value="${esc(rule.name || '')}" placeholder="Nom regle">
           <input class="form-control form-control-sm rule-priority" data-field="priority" type="number" value="${esc(rule.priority ?? 0)}" title="Priorite">
+          <button class="btn btn-sm btn-outline-secondary" data-action="toggle-expand" title="Developper/Reduire">+</button>
           <button class="btn btn-sm btn-outline-danger" data-action="remove">Supprimer</button>
         </div>
-        <div class="rule-row">
-          <label class="small">Condition (expression)</label>
-          <div class="rule-when">
-            <input class="form-control form-control-sm" data-field="when" value="${esc(rule.when || '')}" placeholder='ex: contains(status,"ok")'>
-            <button class="btn btn-sm btn-outline-secondary" data-action="edit-when">Builder</button>
-          </div>
+        <div class="rule-compact-preview">
+          <span><b>Condition:</b> ${this.escapeText(rule.when || '-')}</span>
+          <span><b>P:</b> ${this.escapeText(rule.priority ?? 0)}</span>
+          <span><b>Champs:</b> ${compactFields}</span>
         </div>
-        ${rule.target === 'node' ? `
-        <div class="rule-grid">
+        <div class="rule-details">
+          <div class="rule-row">
+            <label class="small">Condition (expression)</label>
+            <div class="rule-when">
+              <input class="form-control form-control-sm" data-field="when" value="${esc(rule.when || '')}" placeholder='ex: contains(status,"ok")'>
+              <button class="btn btn-sm btn-outline-secondary" data-action="edit-when">Builder</button>
+            </div>
+          </div>
+          ${rule.target === 'node' ? `
+          <div class="rule-grid">
           <div>
             <label class="small">Couleur</label>
             <div class="color-input">
@@ -242,8 +307,8 @@ export class StyleRuleManager {
               <input class="form-control form-control-sm" data-field="style.labelColor" value="${esc(style.labelColor || '')}" placeholder="#000">
             </div>
           </div>
-        </div>` : `
-        <div class="rule-grid">
+          </div>` : `
+          <div class="rule-grid">
           <div>
             <label class="small">Couleur lien</label>
             <div class="color-input">
@@ -270,7 +335,8 @@ export class StyleRuleManager {
               <input class="form-control form-control-sm" data-field="style.labelColor" value="${esc(style.labelColor || '')}" placeholder="#000">
             </div>
           </div>
-        </div>`}
+          </div>`}
+        </div>
       </div>
     `;
   }
@@ -278,8 +344,10 @@ export class StyleRuleManager {
   buildPieRuleCard(rule) {
     const esc = v => this.escapeAttr(v);
     const escText = v => this.escapeText(v);
+    const expanded = this.expandedCards.has(String(rule.id || ''));
+    const compactFields = `fields=${escText(rule.fields || '-')}, colors=${escText(rule.colors || '-')}, mode=${escText(rule.mode || '-')}`;
     return `
-      <div class="rule-card" data-rule-id="${esc(rule.id)}" data-target="pie">
+      <div class="rule-card${expanded ? ' rule-expanded' : ''}" data-rule-id="${esc(rule.id)}" data-target="pie">
         <div class="rule-header">
           <label class="small">
             <input type="checkbox" data-field="enabled" ${rule.enabled ? 'checked' : ''}> Actif
@@ -287,16 +355,23 @@ export class StyleRuleManager {
           <span class="badge badge-light">Pie chart</span>
           <input class="form-control form-control-sm rule-name" data-field="name" value="${esc(rule.name || '')}" placeholder="Nom regle">
           <input class="form-control form-control-sm rule-priority" data-field="priority" type="number" value="${esc(rule.priority ?? 0)}" title="Priorite">
+          <button class="btn btn-sm btn-outline-secondary" data-action="toggle-expand" title="Developper/Reduire">+</button>
           <button class="btn btn-sm btn-outline-danger" data-action="remove">Supprimer</button>
         </div>
-        <div class="rule-row">
-          <label class="small">Condition (expression)</label>
-          <div class="rule-when">
-            <input class="form-control form-control-sm" data-field="when" value="${esc(rule.when || '')}" placeholder='ex: gt(score,50)'>
-            <button class="btn btn-sm btn-outline-secondary" data-action="edit-when">Builder</button>
-          </div>
+        <div class="rule-compact-preview">
+          <span><b>Condition:</b> ${escText(rule.when || '-')}</span>
+          <span><b>P:</b> ${escText(rule.priority ?? 0)}</span>
+          <span><b>Champs:</b> ${compactFields}</span>
         </div>
-        <div class="rule-grid">
+        <div class="rule-details">
+          <div class="rule-row">
+            <label class="small">Condition (expression)</label>
+            <div class="rule-when">
+              <input class="form-control form-control-sm" data-field="when" value="${esc(rule.when || '')}" placeholder='ex: gt(score,50)'>
+              <button class="btn btn-sm btn-outline-secondary" data-action="edit-when">Builder</button>
+            </div>
+          </div>
+          <div class="rule-grid">
           <div>
             <label class="small">Champs (option B)</label>
             <input class="form-control form-control-sm" data-field="fields" value="${esc(rule.fields || '')}" placeholder="ex: a,b,c">
@@ -327,10 +402,11 @@ export class StyleRuleManager {
             <label class="small">Taille min</label>
             <input class="form-control form-control-sm" data-field="minSize" value="${esc(rule.minSize || '')}" placeholder="0">
           </div>
-        </div>
-        <div class="rule-row">
-          <label class="small">Segments JSON (option A)</label>
-          <textarea class="form-control form-control-sm" data-field="segmentsJson" rows="2" placeholder='[{"label":"A","value":10,"color":"#f00"}]'>${escText(rule.segmentsJson || '')}</textarea>
+          </div>
+          <div class="rule-row">
+            <label class="small">Segments JSON (option A)</label>
+            <textarea class="form-control form-control-sm" data-field="segmentsJson" rows="2" placeholder='[{"label":"A","value":10,"color":"#f00"}]'>${escText(rule.segmentsJson || '')}</textarea>
+          </div>
         </div>
       </div>
     `;
@@ -364,7 +440,9 @@ export class StyleRuleManager {
     if (!btn) return;
     const ruleId = btn.closest('[data-rule-id]')?.dataset?.ruleId;
     if (!ruleId) return;
-    if (btn.dataset.action === 'remove') {
+    if (btn.dataset.action === 'toggle-expand') {
+      this.toggleExpandedRuleCard(ruleId);
+    } else if (btn.dataset.action === 'remove') {
       this.removeStyleRule(ruleId);
     } else if (btn.dataset.action === 'edit-when') {
       const rule = this.findStyleRule(ruleId);
@@ -413,7 +491,9 @@ export class StyleRuleManager {
     if (!btn) return;
     const ruleId = btn.closest('[data-rule-id]')?.dataset?.ruleId;
     if (!ruleId) return;
-    if (btn.dataset.action === 'remove') {
+    if (btn.dataset.action === 'toggle-expand') {
+      this.toggleExpandedRuleCard(ruleId);
+    } else if (btn.dataset.action === 'remove') {
       this.removePieRule(ruleId);
     } else if (btn.dataset.action === 'edit-when') {
       const rule = this.findPieRule(ruleId);
@@ -476,6 +556,22 @@ export class StyleRuleManager {
     graphConfig.pieRules = this.pieRules;
     eventBus.emit('pie-rules-updated', { rules: this.pieRules, source: opts.source });
     this.renderer.updateGraph();
+  }
+
+  toggleExpandedRuleCard(ruleId) {
+    const id = String(ruleId || '');
+    if (!id) return;
+    if (this.expandedCards.has(id)) this.expandedCards.delete(id);
+    else this.expandedCards.add(id);
+    const toggleDom = (list) => {
+      Array.from(list.querySelectorAll('[data-rule-id]'))
+        .filter(card => String(card.dataset.ruleId) === id)
+        .forEach(card => {
+          card.classList.toggle('rule-expanded', this.expandedCards.has(id));
+        });
+    };
+    this.el.styleLists.forEach(toggleDom);
+    this.el.pieLists.forEach(toggleDom);
   }
 
   normalizeHexColor(value) {

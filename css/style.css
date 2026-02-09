@@ -458,7 +458,7 @@ input[type="checkbox"] {
 
 .condition-row {
   display: grid;
-  grid-template-columns: 90px 1fr 1fr 70px 90px 1fr 1fr auto;
+  grid-template-columns: 90px 1fr 1fr 1fr 110px 70px 90px 1fr 1fr 1fr 110px auto;
   gap: 6px;
   align-items: center;
 }
@@ -493,6 +493,42 @@ input[type="checkbox"] {
   border-radius: 6px;
   padding: 8px;
   margin-bottom: 8px;
+}
+
+.rule-compact-preview {
+  display: none;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  color: #495057;
+}
+
+#tab7.rules-compact .rule-card .rule-compact-preview {
+  display: flex;
+}
+
+#tab7.rules-compact .rule-card .rule-details {
+  display: none;
+}
+
+#tab7.rules-compact .rule-card.rule-expanded .rule-details {
+  display: block;
+}
+
+#tab7.rules-compact .rule-card .rule-header .badge,
+#tab7.rules-compact .rule-card .rule-header .rule-priority,
+#tab7.rules-compact .rule-card .rule-header button[data-action="remove"] {
+  display: none;
+}
+
+#tab7.rules-compact .rule-card .rule-header {
+  gap: 6px;
+}
+
+#tab7.rules-compact .rule-card .rule-name {
+  flex: 1 1 auto;
+  min-width: 160px;
 }
 
 .rule-card-highlight {
@@ -579,6 +615,30 @@ input[type="checkbox"] {
 
 .rule-row {
   margin-bottom: 6px;
+}
+
+.group-ref-list {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 4px;
+  padding: 6px;
+  max-height: 120px;
+  overflow: auto;
+}
+
+.group-ref-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.group-ref-item:last-child {
+  margin-bottom: 0;
+}
+
+.group-ref-item .small {
+  flex: 1 1 auto;
 }
 
 .condition-row,

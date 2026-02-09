@@ -177,8 +177,8 @@ export class InteractionManager {
     
     // Normal click to select or deselect.
     if (this.graphState.selectedNode === d) {
-      // Explicitly deselect.
-      this.graphState.clearSelection();
+      // Deselect only the node (keep link selection if any).
+      this.graphState.selectedNode = null;
       
       // Explicitly emit the deselection event.
       eventBus.emit('selection-cleared');
@@ -198,7 +198,7 @@ export class InteractionManager {
    */
   handleLinkClick(event, d) {
     if (this.graphState.selectedLink === d) {
-      this.graphState.clearSelection();
+      this.graphState.selectedLink = null;
     } else {
       this.graphState.selectLink(d);
     }

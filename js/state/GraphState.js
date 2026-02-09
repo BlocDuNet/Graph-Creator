@@ -669,12 +669,6 @@ export class GraphState {
    */
   selectNode(node) {
     if (!node) return;
-    
-    // Deselect any currently selected item.
-    this.selectedNode = null;
-    this.selectedLink = null;
-    
-    // Select the new node.
     this.selectedNode = node;
     
     console.log(`noeud selectionn: ${node.id}`);
@@ -691,7 +685,6 @@ export class GraphState {
     }
     
     this.selectedLink = link;
-    this.selectedNode = null;
     
     console.log("Lien selectionn:", link);
   }
