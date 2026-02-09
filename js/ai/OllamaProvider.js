@@ -1,5 +1,5 @@
 /**
- * Fournisseur pour l'API Ollama
+ * Provider for the Ollama API.
  */
 import { aiConfig } from '../config/index.js';
 
@@ -9,7 +9,7 @@ export class OllamaProvider {
   }
   
   /**
-   * Récupère les modèles disponibles sur Ollama
+   * Fetches available models from Ollama.
    */
   async fetchModels() {
     try {
@@ -21,23 +21,23 @@ export class OllamaProvider {
       
       const data = await response.json();
       
-      // Extraire les noms des modèles de la réponse
+      // Extract model names from the response.
       if (data && Array.isArray(data.models)) {
         return data.models.map(model => model.name);
       } else {
-        // Fallback à un tableau simple s'il y a une réponse différente
+        // Fallback to a simple array if the response shape differs.
         const modelList = Array.isArray(data) ? data : [];
         return modelList.map(model => model.name || model.model || model);
       }
     } catch (error) {
       console.error("Error fetching Ollama models:", error);
-      // Retourner un modèle par défaut en cas d'erreur
+      // Return a default model on error.
       return [this.config.api.defaultModel];
     }
   }
   
   /**
-   * Lit un flux depuis la réponse d'Ollama
+   * Reads a stream from the Ollama response.
    */
   async readStream(reader, processChunk) {
     const decoder = new TextDecoder();
@@ -65,13 +65,13 @@ export class OllamaProvider {
   }
   
   /**
-   * Parse une réponse JSON avec mécanismes de fallback
+   * Parses a JSON response with fallback mechanisms.
    */
   parseJsonResponse(text) {
     try {
       return JSON.parse(text);
     } catch (err) {
-      // Tenter d'extraire JSON du texte qui pourrait avoir d'autres parties
+      // Try to extract JSON from text that may contain other parts.
       const jsonMatch = text.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
@@ -81,7 +81,7 @@ export class OllamaProvider {
   }
   
   /**
-   * Envoie une requête à l'API Ollama
+   * Sends a request to the Ollama API.
    */
   async sendRequest(options) {
     const {
@@ -114,7 +114,7 @@ export class OllamaProvider {
       
       const reader = response.body.getReader();
       
-      // Traiter chaque fragment du flux
+      // Process each stream fragment.
       const processFragment = (chunk) => {
         chunk.split("\n").forEach(line => {
           if (line.trim()) {
@@ -133,7 +133,7 @@ export class OllamaProvider {
       
       await this.readStream(reader, processFragment);
       
-      // Traiter la réponse complète
+      // Process the full response.
       if (onComplete) {
         try {
           const result = this.parseJsonResponse(responseText);

@@ -1,50 +1,50 @@
 ﻿/**
- * Configuration du graphe (forces, styles des liens)
+ * Graph configuration (forces, link styles).
  */
 
 import { listJsonFiles } from '../services/fileService.js';
 import eventBus from '../services/EventBus.js';
 
 export const graphConfig = {
-  // Configuration des chemins des fichiers de configuration
+  // Configuration file path settings.
   paths: {
     configDirectory: 'json_config/',
     defaultFile: 'manual_without_force.json'
   },
   
-  // Configuration des forces de la simulation
+  // Simulation force configuration.
   forces: {
     linkStrength: 0,
     linkDistance: 200,
-    chargeStrength: 0, // Force de charge
-    centerStrength: 0  // Force de centrage
+    chargeStrength: 0, // Charge force.
+    centerStrength: 0  // Centering force.
   },
   
-  // Style des liens
+  // Link style.
   linkStyle: {
-    curvedLinks: true,   // Valeur par défaut: liens courbes
+    curvedLinks: true,   // Default value: curved links.
     baseCurvature: 0.2,
     loopCurvature: 1.5,
     curvatureStep: 0.1
   },
   
-  // Option pour forcer la recréation des liens
+  // Option to force link recreation.
   forceRecreateLinks: true,
   
-  // Configuration des marqueurs (flèches)
+  // Marker configuration (arrows).
   markers: {
     arrowWidth: 8,
     arrowHeight: 8,
     markerAdjustment: 1
   },
 
-  // Regles de style pour noeuds/liens (conditions + styles)
+  // Style rules for nodes/links (conditions + styles).
   styleRules: {
     nodes: [],
     links: []
   },
 
-  // Regles de pie chart pour noeuds
+  // Pie chart rules for nodes.
   pieRules: {
     nodes: []
   }
@@ -66,9 +66,9 @@ function normalizePieRules(data) {
 }
 
 /**
- * Charge un fichier de configuration JSON
- * @param {string} filePath - Chemin du fichier à charger
- * @returns {Promise<Object>} - Données de configuration JSON
+ * Loads a JSON configuration file.
+ * Path to the file to load.
+ * JSON configuration data.
  */
 async function loadConfigFile(filePath) {
   try {
@@ -85,8 +85,8 @@ async function loadConfigFile(filePath) {
 }
 
 /**
- * Initialise la liste des fichiers de configuration disponibles
- * @param {Function} updateCallback - Fonction à appeler lors du changement de configuration
+ * Initializes the list of available configuration files.
+ * Function to call when configuration changes.
  */
 export async function initConfigFilesList(updateCallback) {
   try {
@@ -97,32 +97,32 @@ export async function initConfigFilesList(updateCallback) {
     }
     console.log(`Fichiers JSON trouvés: ${jsonFiles.join(', ')}`);
     
-    // Obtenir le conteneur
+    // Get the container.
     const container = document.getElementById("import-config-json");
     if (!container) {
       console.error("Conteneur import-config-json non trouvé!");
       return;
     }
     
-    // Vérifier si la liste déroulante existe déjà
+    // Check if the dropdown already exists.
     let select = document.getElementById('json-files');
     if (select) {
-      // Vider la liste existante
+      // Clear the existing list.
       while (select.firstChild) {
         select.removeChild(select.firstChild);
       }
     } else {
-      // Créer la liste déroulante
+      // Create the dropdown list.
       select = document.createElement('select');
       select.id = 'json-files';
       select.className = 'form-control form-control-sm';
       
-      // Ajouter la liste après le texte "Config:"
+      // Add the list after the "Config:" text.
       container.appendChild(document.createTextNode(' '));
       container.appendChild(select);
     }
     
-    // Ajouter les options
+    // Add options.
     jsonFiles.forEach(file => {
       const option = document.createElement('option');
       option.value = file;
@@ -130,10 +130,10 @@ export async function initConfigFilesList(updateCallback) {
       select.appendChild(option);
     });
     
-    // Définir la valeur par défaut
+    // Set the default value.
     select.value = graphConfig.paths.defaultFile;
     
-    // Ajouter l'écouteur d'événement
+    // Add the event listener.
     select.addEventListener('change', async function() {
       const selectedFile = this.value;
       if (selectedFile) {
@@ -149,7 +149,7 @@ export async function initConfigFilesList(updateCallback) {
       }
     });
     
-    // Charger le fichier par défaut au démarrage
+    // Load the default file on startup.
     loadConfigFile(graphConfig.paths.configDirectory + graphConfig.paths.defaultFile)
       .then(configData => {
         if (configData && updateCallback) {
@@ -168,9 +168,9 @@ export async function initConfigFilesList(updateCallback) {
 }
 
 /**
- * Met à jour la configuration du graphe à partir des données JSON
- * @param {Object} configData - Données de configuration
- * @param {Object} renderer - Renderer du graphe pour la mise à jour
+ * Updates graph configuration from JSON data.
+ * Configuration data.
+ * Graph renderer for updates.
  */
 export function updateGraphConfig(configData, renderer) {
   if (!configData) {
@@ -180,13 +180,13 @@ export function updateGraphConfig(configData, renderer) {
   
   console.log("Mise à jour de la configuration:", configData);
   
-  // Mettre à jour la configuration des forces
+  // Update force configuration.
   if (configData.linkStrength !== undefined) graphConfig.forces.linkStrength = configData.linkStrength;
   if (configData.linkDistance !== undefined) graphConfig.forces.linkDistance = configData.linkDistance;
   if (configData.chargeStrength !== undefined) graphConfig.forces.chargeStrength = configData.chargeStrength;
   if (configData.centerStrength !== undefined) graphConfig.forces.centerStrength = configData.centerStrength;
   
-  // Mettre à jour la configuration du style des liens
+  // Update link style configuration.
   if (configData.curvedLinks !== undefined) {
     graphConfig.linkStyle.curvedLinks = configData.curvedLinks;
     console.log(`Mise à jour curvedLinks à: ${configData.curvedLinks}`);
@@ -205,7 +205,7 @@ export function updateGraphConfig(configData, renderer) {
     eventBus.emit('pie-rules-updated', { rules: graphConfig.pieRules });
   }
   
-  // Mettre à jour la simulation de forces si le renderer est fourni
+  // Update force simulation if renderer is provided.
   if (renderer && renderer.simulation) {
     const { linkStrength, linkDistance, chargeStrength, centerStrength } = graphConfig.forces;
     
@@ -224,10 +224,10 @@ export function updateGraphConfig(configData, renderer) {
     }
   }
   
-  // Mettre à jour les contrôles HTML
+  // Update HTML controls.
   updateConfigControls();
   
-  // Mettre à jour le graphe si le renderer est fourni
+  // Update the graph if renderer is provided.
   if (renderer) {
     renderer.updateGraph();
   }
@@ -236,43 +236,43 @@ export function updateGraphConfig(configData, renderer) {
 }
 
 /**
- * Met à jour les contrôles HTML avec les valeurs actuelles de la configuration
+ * Updates HTML controls with current configuration values.
  */
 function updateConfigControls() {
   console.log("Mise à jour des contrôles HTML...");
   
-  // Force de lien
+  // Link force.
   const linkForceCheckbox = document.getElementById('link-force');
   if (linkForceCheckbox) {
     linkForceCheckbox.checked = graphConfig.forces.linkStrength > 0;
   }
   
-  // Distance de lien
+  // Link distance.
   const linkDistanceInput = document.getElementById('link-distance');
   if (linkDistanceInput) {
     linkDistanceInput.value = graphConfig.forces.linkDistance;
   }
   
-  // Force de charge
+  // Charge force.
   const chargeStrengthInput = document.getElementById('charge-strength');
   if (chargeStrengthInput) {
     chargeStrengthInput.value = graphConfig.forces.chargeStrength;
   }
   
-  // Force de centrage
+  // Centering force.
   const centerForceCheckbox = document.getElementById('center-force');
   if (centerForceCheckbox) {
     centerForceCheckbox.checked = graphConfig.forces.centerStrength > 0;
   }
   
-  // Liens courbés
+  // Curved links.
   const curvedLinksCheckbox = document.getElementById('curved-links');
   if (curvedLinksCheckbox) {
     curvedLinksCheckbox.checked = graphConfig.linkStyle.curvedLinks;
     console.log("Mise à jour de la case à cocher curvedLinks:", graphConfig.linkStyle.curvedLinks);
   }
   
-  // Paramètres de courbure
+  // Curvature parameters.
   const baseCurvatureInput = document.getElementById('base-curvature');
   const loopCurvatureInput = document.getElementById('loop-curvature');
   const curvatureStepInput = document.getElementById('curvature-step');
@@ -281,26 +281,26 @@ function updateConfigControls() {
   if (loopCurvatureInput) loopCurvatureInput.value = graphConfig.linkStyle.loopCurvature;
   if (curvatureStepInput) curvatureStepInput.value = graphConfig.linkStyle.curvatureStep;
   
-  // Recréation des liens
+  // Link recreation.
   const forceRecreateLinksCheckbox = document.getElementById('forceRecreateLinks');
   if (forceRecreateLinksCheckbox) {
     forceRecreateLinksCheckbox.checked = graphConfig.forceRecreateLinks;
   }
   
-  // Mise à jour des étiquettes d'affichage pour les sliders
+  // Update display labels for sliders.
   updateRangeValues();
   
-  // Afficher/masquer les contrôles de courbure selon l'état
+  // Show/hide curvature controls based on state.
   updateCurvatureControlsVisibility();
   
   console.log("Contrôles HTML mis à jour avec succès");
 }
 
 /**
- * Met à jour les valeurs affichées pour les contrôles de plage
+ * Updates displayed values for range controls.
  */
 function updateRangeValues() {
-  // Mise à jour des affichages de valeur
+  // Update value displays.
   const baseCurvatureValue = document.getElementById('base-curvature-value');
   const loopCurvatureValue = document.getElementById('loop-curvature-value');
   const curvatureStepValue = document.getElementById('curvature-step-value');
@@ -311,7 +311,7 @@ function updateRangeValues() {
 }
 
 /**
- * Met à jour la visibilité des contrôles de courbure
+ * Updates visibility of curvature controls.
  */
 function updateCurvatureControlsVisibility() {
   const curvatureControls = document.getElementById('curvature-controls');
@@ -320,6 +320,6 @@ function updateCurvatureControlsVisibility() {
   }
 }
 
-// (Les écouteurs UI sont gérés par EventManager pour centraliser la configuration)
+// (UI listeners are managed by EventManager to centralize configuration)
 
 

@@ -1,5 +1,5 @@
 /**
- * Gestion centralisée des fonctionnalités IA
+ * Centralized management of AI features.
  */
 import { performAction } from '../state/undo_redo.js';
 import { aiConfig } from '../config/index.js';
@@ -17,18 +17,18 @@ export class AIManager {
     this.graphState = graphState;
     this.renderer = renderer;
     
-    // État local
+    // Local state.
     this.currentAbortController = null;
     this.currentGraphData = null;
     this.currentProposalResponse = null;
     
-    // Initialiser les gestionnaires d'événements
+    // Initialize event handlers.
     this.initUIElements();
     this.initEventListeners();
   }
   
   /**
-   * Initialise les éléments d'interface
+   * Initializes UI elements.
    */
   initUIElements() {
     this.elements = {
@@ -94,12 +94,12 @@ export class AIManager {
   }
   
   /**
-   * Met à jour le menu déroulant des modèles
+   * Updates the model dropdown.
    */
   updateModelDropdown(models) {
     const modelElement = this.elements.model;
     
-    // Convertir en select si ce n'est pas déjà le cas
+    // Convert to a select if it isn't already.
     if (modelElement.tagName !== 'SELECT') {
       const select = document.createElement('select');
       select.id = modelElement.id;
@@ -109,18 +109,18 @@ export class AIManager {
       this.elements.model = select;
     }
     
-    // Vider les options actuelles
+    // Clear current options.
     while (this.elements.model.firstChild) {
       this.elements.model.removeChild(this.elements.model.firstChild);
     }
     
-    // Ajouter l'option par défaut
+    // Add the default option.
     const defaultOption = document.createElement('option');
     defaultOption.value = '';
     defaultOption.textContent = '-- Sélectionnez un modèle --';
     this.elements.model.appendChild(defaultOption);
     
-    // Ajouter les options pour chaque modèle
+    // Add options for each model.
     models.forEach(model => {
       const option = document.createElement('option');
       option.value = model;
@@ -128,14 +128,14 @@ export class AIManager {
       this.elements.model.appendChild(option);
     });
     
-    // Sélectionner le premier modèle
+    // Select the first model.
     if (models.length > 0) {
       this.elements.model.value = models[0];
     }
   }
   
   /**
-   * Initialise les écouteurs d'événements
+   * Initializes event listeners.
    */
   initEventListeners() {
     if (this.elements.sendBtn) {
@@ -207,7 +207,7 @@ export class AIManager {
   }
   
   /**
-   * Met à jour l'état de chargement d'un bouton
+   * Updates the loading state of a button.
    */
   updateLoadingState(element, isLoading, stateType) {
     if (!element) return;
@@ -218,7 +218,7 @@ export class AIManager {
   }
   
   /**
-   * Gère la demande de génération de graphe
+   * Handles graph generation requests.
    */
   handleGenerateGraph() {
     this.currentAbortController = new AbortController();
@@ -230,18 +230,18 @@ export class AIManager {
       return;
     }
     
-    // Construire le prompt en utilisant le template
+    // Build the prompt using the template.
     const promptTemplate = templates.getGraphGenerationPrompt(userPrompt);
     
-    // Réinitialiser les zones d'affichage
+    // Reset output areas.
     if (this.elements.result) this.elements.result.textContent = "Attendez la réponse...";
     if (this.elements.raw) this.elements.raw.value = "";
     this.currentGraphData = null;
     
-    // Mettre à jour l'état du bouton
+    // Update button state.
     this.updateLoadingState(this.elements.sendBtn, true, "generation");
     
-    // Envoyer la requête à Ollama
+    // Send the request to Ollama.
     sendAiRequest({
       prompt: promptTemplate,
       model,
@@ -250,18 +250,18 @@ export class AIManager {
       onChunk: (chunk, fullText) => {
         if (this.elements.raw) this.elements.raw.value = fullText;
         try {
-          // Essayer de parser la réponse en cours
+          // Try to parse the in-progress response.
           const testParse = JSON.parse(fullText);
           if (this.elements.result) this.elements.result.textContent = JSON.stringify(testParse, null, 2);
         } catch (e) {
-          // Ne pas afficher d'erreur, la réponse est incomplète
+          // Do not show errors; the response is incomplete.
           if (this.elements.result) this.elements.result.textContent = "Assemblage du JSON en cours...";
         }
       },
       onComplete: (result) => {
         console.log("Complete response received:", result);
         
-        // Validation des données
+        // Data validation.
         const isValid = result && 
                         Array.isArray(result.nodes) && 
                         Array.isArray(result.links) && 
@@ -281,7 +281,7 @@ export class AIManager {
           this.elements.importBtn.disabled = true;
         }
         
-        // Réactiver le bouton d'envoi
+        // Re-enable the send button.
         this.updateLoadingState(this.elements.sendBtn, false, "generation");
       },
       onError: (error) => {
@@ -296,7 +296,7 @@ export class AIManager {
   }
   
   /**
-   * Gère l'arrêt de la requête en cours
+   * Handles stopping the in-flight request.
    */
   handleStopRequest() {
     if (this.currentAbortController) {
@@ -307,7 +307,7 @@ export class AIManager {
   }
   
   /**
-   * Gère l'importation du graphe généré
+   * Handles importing the generated graph.
    */
   handleImportGraph() {
     if (!this.currentGraphData) {
@@ -316,16 +316,16 @@ export class AIManager {
     }
     
     try {
-      // Normaliser les données
+      // Normalize data.
       const normalizedGraph = this.normalizeGraphData(this.currentGraphData);
       
-      // Sauvegarder l'état précédent
+      // Save previous state.
       const oldState = {
         nodes: [...this.graphState.nodes],
         links: [...this.graphState.links]
       };
       
-      // Effectuer l'action avec Undo/Redo
+      // Perform the action with Undo/Redo.
       performAction({
         type: "import_graph",
         data: { 
@@ -335,13 +335,13 @@ export class AIManager {
         }
       });
       
-      // Mettre à jour le graphe
+      // Update the graph.
       this.renderer.updateGraph();
       
-      // Déclencher un événement pour notifier de l'importation et forcer le rafraîchissement des formulaires
+      // Emit an event to notify import and force form refresh.
       eventBus.emit('graph-imported', { nodes: normalizedGraph.nodes, links: normalizedGraph.links });
       
-      // Message de confirmation
+      // Confirmation message.
       const msg = `Graphe importé avec succès ! (${normalizedGraph.nodes.length} nœuds, ${normalizedGraph.links.length} liens)`;
       alert(msg);
       
@@ -352,23 +352,23 @@ export class AIManager {
   }
   
   /**
-   * Normalise les données du graphe pour l'importation
+   * Normalizes graph data for import.
    */
   normalizeGraphData(data) {
     console.log("Normalizing graph data from AI:", data);
     
-    // Normaliser les nœuds en préservant tous les champs
+    // Normalize nodes while preserving all fields.
     const nodes = data.nodes.map(node => {
-      // Conserver tous les champs originaux avec le spread operator
+      // Preserve all original fields via spread operator.
       const normalizedNode = {
-        ...node,  // Garde tous les champs personnalisés intacts!
-        // Assurer uniquement que les champs obligatoires sont normalisés
+        ...node,  // Preserve all custom fields intact!
+        // Ensure only required fields are normalized.
         id: String(node.id || Math.random().toString(36).substr(2, 9)),
         x: node.x !== undefined ? Number(node.x) : Math.random() * 500,
         y: node.y !== undefined ? Number(node.y) : Math.random() * 500
       };
       
-      // Ajouter les champs par défaut uniquement s'ils n'existent pas
+      // Add default fields only if they are missing.
       if (!node.name) normalizedNode.name = "Sans nom";
       if (!node.description) normalizedNode.description = "";
       if (!node.size && node.size !== 0) normalizedNode.size = 30;
@@ -378,7 +378,7 @@ export class AIManager {
     
     console.log("Normalized nodes with preserved fields:", nodes);
     
-    // Normaliser les liens en préservant tous les champs
+    // Normalize links while preserving all fields.
     const links = [];
     data.links.forEach(link => {
       const sourceNode = nodes.find(n => String(n.id) === String(link.source));
@@ -389,16 +389,16 @@ export class AIManager {
         return;
       }
       
-      // Conserver tous les champs originaux avec le spread operator
+      // Preserve all original fields via spread operator.
       const normalizedLink = {
-        ...link,  // Garde tous les champs personnalisés intacts!
-        // Remplacer uniquement les références et assurer les champs obligatoires
+        ...link,  // Preserve all custom fields intact!
+        // Replace references only and ensure required fields.
         id: String(link.id || Math.random().toString(36).substr(2, 9)),
         source: sourceNode,
         target: targetNode
       };
       
-      // Ajouter les champs par défaut uniquement s'ils n'existent pas
+      // Add default fields only if they are missing.
       if (!link.name) normalizedLink.name = `Lien ${sourceNode.name}-${targetNode.name}`;
       if (!link.description) normalizedLink.description = "";
       if (!link.width && link.width !== 0) normalizedLink.width = 2;
@@ -412,10 +412,10 @@ export class AIManager {
   }
   
   /**
-   * Gère la génération de propositions
+   * Handles proposal generation.
    */
   handleGenerateProposals() {
-    // Désactiver le bouton et indiquer la requête en cours
+    // Disable the button and indicate the in-flight request.
     this.updateLoadingState(this.elements.proposalsBtn, true, "proposals");
     
     this.currentAbortController = new AbortController();
@@ -423,16 +423,16 @@ export class AIManager {
       || this.elements.model?.value?.trim()
       || getModel();
     
-    // Générer le prompt pour les propositions
+    // Generate the prompt for proposals.
     const proposalPrompt = proposalTemplates.getProposalPrompt(this.graphState);
     
-    // Réinitialiser les zones d'affichage
+    // Reset output areas.
     if (this.elements.proposalNodes) this.elements.proposalNodes.innerHTML = "";
     if (this.elements.proposalLinks) this.elements.proposalLinks.innerHTML = "";
     this.currentProposalResponse = null;
     if (this.elements.raw) this.elements.raw.value = "Envoi de la requête à Ollama...";
     
-    // Envoyer la requête
+    // Send the request.
     sendAiRequest({
       prompt: proposalPrompt,
       model,
@@ -443,10 +443,10 @@ export class AIManager {
       },
       onComplete: (proposals) => {
         try {
-          // Valider la réponse
+          // Validate the response.
           this.validateProposal(proposals);
           
-          // Afficher les nœuds proposés
+          // Render proposed nodes.
           if (this.elements.proposalNodes) {
             proposals.nodes.forEach(nodeP => {
               const nodeElement = this.createProposalNodeElement(nodeP);
@@ -454,7 +454,7 @@ export class AIManager {
             });
           }
           
-          // Afficher les liens proposés
+          // Render proposed links.
           if (this.elements.proposalLinks) {
             proposals.links.forEach(linkP => {
               const linkElement = this.createProposalLinkElement(linkP, proposals.nodes);
@@ -468,7 +468,7 @@ export class AIManager {
           }
           alert("Erreur de traitement des propositions: " + error.message);
         } finally {
-          // Réactiver le bouton
+          // Re-enable the button.
           this.updateLoadingState(this.elements.proposalsBtn, false, "proposals");
         }
       },
@@ -479,14 +479,14 @@ export class AIManager {
             ((error.name === 'AbortError') ? "Génération des propositions arrêtée." : error.message);
         }
         
-        // Réactiver le bouton
+        // Re-enable the button.
         this.updateLoadingState(this.elements.proposalsBtn, false, "proposals");
       }
     });
   }
   
   /**
-   * Valide la structure de la réponse de propositions
+   * Validates the proposal response structure.
    */
   validateProposal(data) {
     if (!data || typeof data !== 'object') {
@@ -503,7 +503,7 @@ export class AIManager {
   }
   
   /**
-   * Crée un élément de nœud proposé
+   * Creates a proposed node element.
    */
   createProposalNodeElement(nodeData) {
     const li = document.createElement("li");
@@ -537,7 +537,7 @@ export class AIManager {
   }
   
   /**
-   * Crée un élément de lien proposé
+   * Creates a proposed link element.
    */
   createProposalLinkElement(linkData, proposalNodes) {
     const li = document.createElement("li");
@@ -580,7 +580,7 @@ export class AIManager {
   }
   
   /**
-   * Gère la suppression des propositions
+   * Handles clearing proposals.
    */
   handleClearProposals() {
     this.currentProposalResponse = null;
@@ -589,7 +589,7 @@ export class AIManager {
   }
 
   /**
-   * Traduire un champ pour le noeud/lien sélectionné
+   * Translates a field for the selected node/link.
    */
   handleTranslateSelected() {
     const field = this.elements.translateField?.value?.trim();

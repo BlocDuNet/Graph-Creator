@@ -1,5 +1,5 @@
 ﻿/**
- * Service pour l'import/export des données du graphe
+ * Service for importing/exporting graph data.
  */
 import { performAction } from '../state/undo_redo.js';
 import { uiConfig, graphConfig } from '../config/index.js';
@@ -17,8 +17,8 @@ let renderer = null;
 let pendingAdvancedImport = null;
 
 /**
- * Initialise le service d'entrée/sortie
- * @param {Object} state - État du graphe
+ * Initializes the I/O service.
+ * Graph state.
  * @param {Object} graphRenderer - Renderer du graphe
  */
 export function initIOServices(state, graphRenderer) {
@@ -38,7 +38,7 @@ function stripInternalFields(obj) {
 }
 
 /**
- * Exporte le graphe actuel en JSON
+ * Exports the current graph as JSON.
  */
 function exportJson() {
   exportJsonAdvanced({ format: 'auto' });
@@ -68,7 +68,7 @@ function exportJsonAdvanced(options = {}) {
         // no conversion
       }
 
-      // Gestion x/y à l'export
+      // Handle x/y during export.
       if (includeXY === 'no' || (includeXY === 'auto' && ((xField && xField !== 'x') || (yField && yField !== 'y')))) {
         if (xField !== 'x') delete out.x;
         if (yField !== 'y') delete out.y;
@@ -140,21 +140,21 @@ function exportJsonAdvanced(options = {}) {
 }
 
 /**
- * Charge un graphe à partir de données JSON
+ * Loads a graph from JSON data.
  */
 function loadJSONGraph(jsonContent) {
   try {
     const jsonData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
       const { nodes, links, schema, styleRules, pieRules } = normalizeImportedGraph(jsonData);
     
-    // Sauvegarder l'état précédent
+    // Save previous state.
     const oldState = {
       nodes: [...graphState.nodes],
       links: [...graphState.links],
       schema: graphState.getSchemaSnapshot?.() || graphState.schema
     };
     
-    // Appliquer la nouvelle structure de graphe
+    // Apply the new graph structure.
     performAction({ 
       type: "import_graph", 
       data: { 
@@ -164,11 +164,11 @@ function loadJSONGraph(jsonContent) {
       } 
     });
     
-    // Mettre à jour le graphe
+    // Update the graph.
     renderer.updateGraph();
     applyImportedRules(styleRules, pieRules);
     
-    // Émettre un événement personnalisé pour notifier l'importation
+    // Emit a custom event to notify import.
     eventBus.emit('graph-imported', { nodes, links });
     
   } catch (error) {
@@ -178,7 +178,7 @@ function loadJSONGraph(jsonContent) {
 }
 
 /**
- * Prépare l'import avancé (mapping utilisateur)
+ * Prepares advanced import (user mapping).
  */
 function prepareAdvancedImport(jsonContent) {
   try {
@@ -336,26 +336,26 @@ function fillInputWithDatalist(inputId, options, value) {
 }
 
 /**
- * Normalise et valide un JSON de graphes provenant de schémas variés.
- * Objectif: accepter plusieurs formats tout en garantissant des données sûres.
+ * Normalizes and validates graph JSON from various schemas.
+ * Goal: accept multiple formats while ensuring safe data.
  */
 function normalizeImportedGraph(raw, mapping = null) {
   if (!raw || typeof raw !== 'object') {
     throw new Error("Format JSON invalide: objet requis.");
   }
 
-  // Supporter les wrappers fréquents
+  // Support common wrappers.
   let data = raw;
   if (raw.graph && typeof raw.graph === 'object') data = raw.graph;
   if (raw.data && typeof raw.data === 'object') data = raw.data;
 
-  // Détecter les tableaux de noeuds/liens avec plusieurs noms possibles
+  // Detect node/link arrays with multiple possible names.
   const nodesArray = resolveRootArray(data, mapping?.nodesKey) ||
     data.nodes || data.vertices || data.items || data.nodeList || data.node || null;
   const linksArray = resolveRootArray(data, mapping?.linksKey) ||
     data.links || data.edges || data.relations || data.connections || data.link || null;
 
-  // Cas: tableau direct de noeuds
+  // Case: direct array of nodes.
   const nodesRaw = Array.isArray(data) ? data : nodesArray;
   let linksRaw = Array.isArray(linksArray) ? linksArray : [];
 
@@ -363,7 +363,7 @@ function normalizeImportedGraph(raw, mapping = null) {
     throw new Error("Format JSON invalide: aucun tableau de noeuds détecté.");
   }
 
-  // Normaliser les noeuds
+  // Normalize nodes.
   const nodes = nodesRaw.map((node, idx) => {
     if (!node || typeof node !== 'object') {
       throw new Error(`Noeud invalide à l'index ${idx}: objet requis.`);
@@ -386,12 +386,12 @@ function normalizeImportedGraph(raw, mapping = null) {
   // Index par id
   const nodeById = new Map(nodes.map(n => [String(n.id), n]));
 
-  // Si pas de liens fournis, tenter de dériver depuis les noeuds (adjacence)
+  // If no links are provided, try deriving from nodes (adjacency).
   if (!linksRaw.length) {
     linksRaw = deriveLinksFromNodes(nodes);
   }
 
-  // Normaliser les liens
+  // Normalize links.
   const links = linksRaw.map((link, idx) => {
     if (!link || typeof link !== 'object') {
       throw new Error(`Lien invalide à l'index ${idx}: objet requis.`);
@@ -405,7 +405,7 @@ function normalizeImportedGraph(raw, mapping = null) {
       return null;
     }
 
-    // Créer les noeuds manquants si besoin (schémas “liens uniquement”)
+    // Create missing nodes if needed ("links-only" schemas).
     if (!nodeById.has(String(sourceId))) {
       const newNode = { id: String(sourceId), name: String(sourceId), description: "" };
       nodeById.set(String(sourceId), newNode);
@@ -430,7 +430,7 @@ function normalizeImportedGraph(raw, mapping = null) {
     return normalized;
   }).filter(Boolean);
 
-  // Détection multilingue (objets) -> suffixes
+  // Multilingual detection (objects) -> suffixes.
   expandMultilangObjectsToSuffix(nodes, ['name', 'description']);
   expandMultilangObjectsToSuffix(links, ['name', 'description']);
 
@@ -929,11 +929,11 @@ function guessField(fields, candidates) {
 }
 
 /**
- * Initialise la liste des modèles JSON disponibles
+ * Initializes the list of available JSON models.
  */
 async function initJSONModelsList() {
   try {
-    // Récupérer la liste via le service commun
+    // Fetch the list via the shared service.
     const jsonFiles = await listJsonFiles(uiConfig.jsonModels.directoryPath);
     const select = document.getElementById('json-models');
     if (!select) return;
@@ -955,7 +955,7 @@ async function initJSONModelsList() {
 }
 
 /**
- * Charge un fichier JSON modèle depuis le serveur
+ * Loads a JSON model file from the server.
  */
 async function loadJSONModelFile(file) {
   try {
@@ -969,7 +969,7 @@ async function loadJSONModelFile(file) {
   }
 }
 
-// Export des fonctions pour utilisation externe
+// Export functions for external use.
 export { 
   exportJson, 
   exportJsonAdvanced,

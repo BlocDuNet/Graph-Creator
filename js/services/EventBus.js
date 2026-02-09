@@ -1,6 +1,6 @@
 /**
- * Bus d'événements applicatif (unique point de diffusion/écoute).
- * Utiliser eventBus.emit/on/off pour les événements métier.
+ * Application event bus (single point for emit/listen).
+ * Use eventBus.emit/on/off for domain events.
  */
 class EventBus extends EventTarget {
   emit(type, detail) {

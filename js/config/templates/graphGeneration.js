@@ -1,11 +1,11 @@
 /**
- * Templates pour les prompts de génération de graphes
+ * Templates for graph generation prompts.
  */
 
 /**
- * Template pour générer un graphe à partir d'un prompt
- * @param {string} userPrompt - Prompt utilisateur
- * @returns {string} Prompt formaté pour l'IA
+ * Template to generate a graph from a prompt.
+ * User prompt.
+ * Prompt formatted for the AI.
  */
 export function getGraphGenerationPrompt(userPrompt) {
   return `
@@ -28,10 +28,10 @@ Exemple :
 }
 
 /**
- * Template pour générer un graphe plus détaillé
- * @param {string} userPrompt - Prompt utilisateur
+ * Template to generate a more detailed graph.
+ * User prompt.
  * @param {Object} options - Options additionnelles
- * @returns {string} Prompt formaté pour l'IA
+ * Prompt formatted for the AI.
  */
 export function getDetailedGraphPrompt(userPrompt, options = {}) {
   const { minNodes = 5, maxNodes = 15, theme = "", style = "" } = options;

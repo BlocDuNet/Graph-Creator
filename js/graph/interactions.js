@@ -1,5 +1,5 @@
 /**
- * Gere les interactions utilisateur avec le graphe
+ * Handles user interactions with the graph.
  */
 import { performAction } from '../state/undo_redo.js';
 import eventBus from '../services/EventBus.js';
@@ -14,40 +14,40 @@ export class InteractionManager {
     this.initClickHandlers();
     this.initKeyboardHandlers();
     
-    // attacher handlers immdiatement et apres chaque updateGraph
+    // Attach handlers immediately and after each updateGraph.
     this.attachInteractionHandlers();
     eventBus.on('graph-updated', () => this.attachInteractionHandlers());
     
-    // Activer le zoom
+    // Enable zoom.
     this.renderer.enableZoom();
     
-    // Garde une trace si un noeud a t rcemment double-cliqu pour viter de creer un nouveau noeud
+    // Track if a node was recently double-clicked to avoid creating a new node.
     this.nodeDoubleClicked = false;
     this.lastPointer = null;
   }
   
   /**
-   * Initialise les gestionnaires de glisser-dposer
+   * Initialize drag handlers.
    */
   initDragHandlers() {
     const drag = this.createDragBehavior();
     
-    // Appliquer le comportement de drag aux noeuds existants et futurs
+    // Apply drag behavior to existing and future nodes.
     this.svg.selectAll('.node').call(drag);
   }
   
   /**
-   * Initialise les gestionnaires de clic
+   * Initialize click handlers.
    */
   initClickHandlers() {
-    // Suivre la derniere position souris dans l'espace du graphe
+    // Track the last mouse position in graph space.
     this.svg.on('mousemove', event => {
       this.updateLastPointer(event);
     });
 
-    // Double-clic sur une zone vide pour creer un noeud
+    // Double-click on empty space to create a node.
     this.svg.on('dblclick', event => {
-      // verifier si l'evenement provient d'un noeud
+      // Check if the event comes from a node.
       if (event.target.closest('.node')) {
         event.stopPropagation();
         return;
@@ -55,12 +55,12 @@ export class InteractionManager {
       this.handleSvgDblClick(event);
     });
     
-    // CTRL+clic pour creer un noeud et le relier
+    // CTRL+click to create a node and link it.
     this.svg.on('mousedown', event => this.handleSvgMouseDown(event));
   }
   
   /**
-   * Applique drag, click et dblclick aux lments SVG
+   * Apply drag, click, and dblclick to SVG elements.
    */
   attachInteractionHandlers() {
     const drag = this.createDragBehavior();
@@ -80,7 +80,7 @@ export class InteractionManager {
   }
   
   /**
-   * Cre le comportement de glisser-dposer
+   * Create drag behavior.
    */
   createDragBehavior() {
     return d3.drag()
@@ -97,7 +97,7 @@ export class InteractionManager {
         const pos0 = d.initialPosition;
         if (pos0 && (d.x !== pos0.x || d.y !== pos0.y)) {
           const { xField, yField } = this.graphState.globalSettings;
-          // mise  jour du champ X personnalis
+          // Update custom X field.
           if (xField) {
             const oldX = pos0.x;
             const newX = d.x;
@@ -113,7 +113,7 @@ export class InteractionManager {
             });
             d[xField] = newX;
           }
-          // mise  jour du champ Y personnalis
+          // Update custom Y field.
           if (yField) {
             const oldY = pos0.y;
             const newY = d.y;
@@ -135,58 +135,58 @@ export class InteractionManager {
   }
   
   /**
-   * Gere les clics sur les noeuds
+   * Handle node clicks.
    */
   handleNodeClick(event, d) {
-    // verifier que d est un objet valide
+    // Verify that d is a valid object.
     if (!d || typeof d !== 'object') {
       console.error("Erreur: noeud invalide:", d);
       return;
     }
     
-    // S'assurer que le noeud a un identifiant
+    // Ensure the node has an identifier.
     if (!d.id) {
       console.error("Erreur: noeud sans identifiant:", d);
       return;
     }
     
-    // Permettre de creer un auto-lien avec Alt+Click
+    // Allow creating a self-link with Alt+Click.
     if (event.altKey && this.graphState.selectedNode) {
-      // Si on fait Alt+Click sur le meme noeud que le noeud selectionn
+      // If Alt+Click is on the same selected node.
       if (d.id === this.graphState.selectedNode.id) {
-        const newLink = this.graphState.createLink(d, d); // Auto-lien
+        const newLink = this.graphState.createLink(d, d); // Self-link.
         this.renderer.updateGraph();
         this.graphState.clearSelection();
         return;
       }
     }
     
-    // CTRL+Click sur un noeud pour creer un lien
+    // CTRL+Click on a node to create a link.
     if (event.ctrlKey && this.graphState.selectedNode) {
-      // creer un lien entre le noeud selectionn et le noeud cliqu
+      // Create a link between the selected node and the clicked node.
       this.graphState.createLink(this.graphState.selectedNode, d);
       this.renderer.updateGraph();
       
-      // Important: Ne pas changer la selection et ne pas effacer selectedNode
-      // pour permettre de creer plusieurs liens  partir du meme noeud source
+      // Important: do not change selection or clear selectedNode.
+      // To allow creating multiple links from the same source node.
       
-      // Stopper la propagation pour viter de dclencher d'autres gestionnaires
+      // Stop propagation to avoid triggering other handlers.
       event.stopPropagation();
       return;
     }
     
-    // Clic normal pour selectionner ou dselectionner
+    // Normal click to select or deselect.
     if (this.graphState.selectedNode === d) {
-      // Dselectionner explicitement
+      // Explicitly deselect.
       this.graphState.clearSelection();
       
-      // Dclencher l'evenement de dselection explicitement
+      // Explicitly emit the deselection event.
       eventBus.emit('selection-cleared');
     } else {
-      // selectionner le nouveau noeud
+      // Select the new node.
       this.graphState.selectNode(d);
       
-      // mettre un evenement personnalis pour la selection
+      // Emit a custom event for selection.
       eventBus.emit('node-selected', { node: d });
     }
     
@@ -194,7 +194,7 @@ export class InteractionManager {
   }
 
   /**
-   * Gere les clics sur les liens
+   * Handle link clicks.
    */
   handleLinkClick(event, d) {
     if (this.graphState.selectedLink === d) {
@@ -205,12 +205,12 @@ export class InteractionManager {
     
     this.renderer.updateGraph();
     
-    // mettre un evenement personnalis
+    // Emit a custom event.
     eventBus.emit('link-selected', { link: this.graphState.selectedLink });
   }
   
   /**
-   * Gere le double-clic sur le SVG
+   * Handle double-click on the SVG.
    */
   handleSvgDblClick(event) {
     this.updateLastPointer(event);
@@ -222,18 +222,18 @@ export class InteractionManager {
     const newNode = this.graphState.createNode(px, py);
     this.pinNewNode(newNode);
     
-    // selectionner explicitement le nouveau noeud
+    // Explicitly select the new node.
     this.graphState.clearSelection();
     this.graphState.selectNode(newNode);
     
-    // Dclencher un evenement spcifique pour la creation
+    // Emit a specific event for creation.
     eventBus.emit('node-created', { node: newNode });
     
     this.renderer.updateGraph();
   }
   
   /**
-   * Gere le clic souris sur le SVG
+   * Handle mouse click on the SVG.
    */
   handleSvgMouseDown(event) {
     if (event.ctrlKey && this.graphState.selectedNode) {
@@ -246,7 +246,7 @@ export class InteractionManager {
       
       const defaultNodeSize = this.graphState.globalSettings.defaultNodeSize;
       
-      // verifier s'il existe dj un noeud  cet endroit
+      // Check if a node already exists at this spot.
       const existing = this.graphState.nodes.find(node => 
         Math.hypot(px - node.x, py - node.y) < defaultNodeSize
       );
@@ -257,12 +257,12 @@ export class InteractionManager {
         this.graphState.createLink(this.graphState.selectedNode, newNode);
         this.renderer.updateGraph();
         
-        // Si SHIFT est maintenu, selectionner le nouveau noeud
+        // If SHIFT is held, select the new node.
         if (event.shiftKey) {
           this.graphState.selectNode(newNode);
           this.renderer.updateGraph();
           
-          // mettre un evenement personnalis
+          // Emit a custom event.
           const nodeSelectEvent = new CustomEvent('node-selected', { 
             detail: { node: newNode } 
           });
@@ -294,14 +294,14 @@ export class InteractionManager {
 
     const transform = d3.zoomTransform(svgElement);
 
-    // 1) Pointer dans l'espace SVG puis inversion du zoom
+    // 1) Pointer in SVG space then invert zoom.
     let point = safePointer(event, svgElement);
     if (isValidPoint(point)) {
       const adjusted = transform ? transform.invert(point) : point;
       if (isValidPoint(adjusted)) return adjusted;
     }
 
-    // 2) Coordonnees x/y (preferees) puis clientX/clientY
+    // 2) X/Y coordinates (preferred) then clientX/clientY.
     const rawX = Number.isFinite(event?.x) ? event.x : (event?.clientX ?? event?.touches?.[0]?.clientX);
     const rawY = Number.isFinite(event?.y) ? event.y : (event?.clientY ?? event?.touches?.[0]?.clientY);
 
@@ -312,7 +312,7 @@ export class InteractionManager {
       if (isValidPoint(adjusted)) return adjusted;
     }
 
-    // 3) offsetX/offsetY (si la cible est bien le SVG)
+    // 3) offsetX/offsetY (if the target is the SVG).
     const offsetX = event?.offsetX;
     const offsetY = event?.offsetY;
     if (event?.target === svgElement && Number.isFinite(offsetX) && Number.isFinite(offsetY)) {
@@ -341,11 +341,11 @@ export class InteractionManager {
   }
 
   /**
-   * Initialise les gestionnaires de clavier
+   * Initialize keyboard handlers.
    */
   initKeyboardHandlers() {
     window.addEventListener('keyup', event => {
-      // Suppression avec Delete ou Backspace
+      // Delete with Delete or Backspace.
       const isEditable = ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target?.tagName) || event.target?.isContentEditable;
       if (!isEditable && event.ctrlKey && ['Delete', 'Backspace'].includes(event.key)) {
         let didDelete = false;
@@ -358,24 +358,24 @@ export class InteractionManager {
           didDelete = true;
         }
         if (didDelete) {
-          // forcer la dselection et cacher les formulaires
+          // Force deselection and hide forms.
           this.graphState.clearSelection();
           eventBus.emit('selection-cleared');
         }
         this.renderer.updateGraph();
       }
       
-      // Annulation de la selection avec Escape
+      // Clear selection with Escape.
       if (event.key === 'Escape') {
         this.graphState.clearSelection();
         this.renderer.updateGraph();
         
-        // mettre un evenement personnalis
+        // Emit a custom event.
         eventBus.emit('selection-cleared');
       }
     });
     
-    // Raccourcis Ctrl+Z / Ctrl+Y
+    // Shortcuts Ctrl+Z / Ctrl+Y.
     window.addEventListener('keydown', event => {
       // Undo
       if (event.ctrlKey && !event.shiftKey && (event.key === 'z' || event.key === 'Z')) {
@@ -395,7 +395,7 @@ export class InteractionManager {
     if (!node) return;
     node.fx = node.x;
     node.fy = node.y;
-    // Relacher rapidement pour laisser la simulation agir ensuite
+    // Release quickly to let the simulation act afterward.
     setTimeout(() => {
       if (!node) return;
       delete node.fx;

@@ -6,7 +6,7 @@ import { buildAppConfig, applyAppConfig } from './AppConfigService.js';
 
 export class EventManager {
   static init(state, renderer) {
-    // ----- 1) Courbure des liens -----
+    // ----- 1) Link curvature -----
     const curvedChk = document.getElementById('curved-links');
     curvedChk?.addEventListener('change', function() {
       graphConfig.linkStyle.curvedLinks = this.checked;
@@ -32,7 +32,7 @@ export class EventManager {
       renderer.updateGraph();
     });
 
-    // ----- 1bis) Paramètres de forces -----
+    // ----- 1bis) Force parameters -----
     document.getElementById('link-force')?.addEventListener('change', function() {
       graphConfig.forces.linkStrength = this.checked ? 1 : 0;
       renderer.updateForces();
@@ -54,7 +54,7 @@ export class EventManager {
       renderer.updateGraph();
     });
 
-    // ----- 2) Import/Export du graphe (JSON) -----
+    // ----- 2) Graph import/export (JSON) -----
     document.getElementById('export-json')?.addEventListener('click', () => {
       exportJson();
     });
@@ -76,7 +76,7 @@ export class EventManager {
       reader.readAsText(file);
     });
 
-    // Import avancé (mapping)
+    // Advanced import (mapping)
     document.getElementById('import-json-advanced')?.addEventListener('click', () => {
       document.getElementById('json-file-advanced')?.click();
     });
@@ -94,7 +94,7 @@ export class EventManager {
       cancelAdvancedImport();
     });
 
-    // ----- 3) Import/Export de la configuration du graphe -----
+    // ----- 3) Graph configuration import/export -----
     // Export config
     const exportCfgBtn = document.getElementById('export-config');
     exportCfgBtn?.addEventListener('click', () => {
@@ -137,7 +137,7 @@ export class EventManager {
       reader.readAsText(file);
     });
 
-    // ----- 4) Import/Export configuration logiciel -----
+    // ----- 4) App configuration import/export -----
     const exportAppBtn = document.getElementById('app-config-export');
     exportAppBtn?.addEventListener('click', () => {
       const includeAi = document.getElementById('app-config-include-ai')?.checked ?? true;

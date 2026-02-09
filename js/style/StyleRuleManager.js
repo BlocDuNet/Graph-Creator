@@ -98,14 +98,14 @@ export class StyleRuleManager {
     this.el.pieList?.addEventListener('click', e => this.onPieRuleClick(e));
 
     eventBus.on('style-rules-updated', event => {
-      // éviter de rerender pendant la saisie (perte de focus)
+      // Avoid re-rendering while typing (prevents focus loss).
       if (event?.detail?.source === 'style-ui-input') return;
       this.rules = graphConfig.styleRules;
       this.ensureRuleIds();
       this.renderStyleRules();
     });
     eventBus.on('pie-rules-updated', event => {
-      // éviter de rerender pendant la saisie (perte de focus)
+      // Avoid re-rendering while typing (prevents focus loss).
       if (event?.detail?.source === 'pie-ui-input') return;
       this.pieRules = graphConfig.pieRules;
       this.ensureRuleIds();

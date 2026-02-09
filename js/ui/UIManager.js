@@ -1,19 +1,19 @@
 /**
- * Gère l'interface utilisateur de l'application
+ * Manages the application's user interface.
  */
 import { undo, redo, jumpToHistory } from '../state/undo_redo.js';
 import { FormManager } from './forms.js';
-import { WindowEventManager } from '../services/WindowEventManager.js';  // ← import ajouté
+import { WindowEventManager } from '../services/WindowEventManager.js';  // ← import added
 import { syncGlobalSettingsUI as refreshFieldSelects } from './FieldSelectService.js';
 import UIContext from './UIContext.js';
-import { FIELD_TYPES } from '../services/FieldTypeService.js';    // ← import ajouté
+import { FIELD_TYPES } from '../services/FieldTypeService.js';    // ← import added
 
 export class UIManager {
   constructor(graphState, renderer) {
     this.graphState = graphState;
     this.renderer = renderer;
     
-    // 1) Récupérer et stocker toutes les références DOM (via UIContext)
+    // 1) Fetch and store all DOM references (via UIContext).
     this.el = {
       undoBtn:               UIContext.get('#undoButton'),
       redoBtn:               UIContext.get('#redoButton'),
@@ -39,29 +39,29 @@ export class UIManager {
       multilingualLangs:     UIContext.get('#multilingual-langs'),
       currentLanguage:       UIContext.get('#current-language'),
       multilingualConvert:   UIContext.get('#multilingual-convert')
-      // …ajouter d’autres références si nécessaire…
+      // …add other references if needed…
     };
     
-    // 2) Initialiser
+    // 2) Initialize.
     this.formManager = new FormManager(graphState, renderer);
     this.initEventListeners();
     this.initHistoryPanel();
     this.initTabPanel();
 
-    // 3) Synchroniser immédiatement les selects/inputs
+    // 3) Immediately sync selects/inputs.
     refreshFieldSelects(this.graphState);
     // keeps standard selects
     this.populateFieldTypeSelectors();
 
-    // 4) Lier tous les écouteurs window centralisés
+    // 4) Bind all centralized window listeners.
     WindowEventManager.bindAll(this);
 
-    // 5) Nettoyer les écouteurs sur window à la fermeture de la page
+    // 5) Clean up window listeners on page unload.
     window.addEventListener('unload', () => WindowEventManager.unbindAll());
   }
   
   /**
-   * Initialise les écouteurs d'événements de base
+   * Initializes base event listeners.
    */
   populateFieldTypeSelectors() {
     const options = FIELD_TYPES.filter(t => t.id !== 'object');
@@ -85,7 +85,7 @@ export class UIManager {
     // Label reset
     this.el.changeLabelBtn?.addEventListener('click', () => this.initializeLabels());
     
-    // Champs dynamiques
+    // Dynamic fields.
     this.el.addNodeFieldBtn?.addEventListener('click', () => {
       const name = this.el.addNodeFieldInput.value.trim();
       const type = this.el.addNodeFieldType?.value || 'text';
@@ -97,7 +97,7 @@ export class UIManager {
       if (name) this.formManager.addField(name, 'link', type);
     });
     
-    // Actions avancées
+    // Advanced actions.
     this.el.highlightNeighborsBtn?.addEventListener('click', () =>
       this.renderer.highlightNeighbors(this.graphState.selectedNode)
     );
@@ -112,12 +112,12 @@ export class UIManager {
       this.renderer.colorClusters()
     );
 
-    // Configuration globale
+    // Global configuration.
     this.setupGlobalSettingsListeners();
   }
   
   /**
-   * Configure DRY les écouteurs sur tous les contrôles de paramètres globaux
+   * DRY setup for listeners on all global-parameter controls.
    */
   setupGlobalSettingsListeners() {
     const mapping = [
@@ -151,12 +151,12 @@ export class UIManager {
         }
         this.graphState.updateGlobalSetting(field, val);
         this.renderer.updateGraph();
-        // mettre à jour les selects/inputs si besoin
+        // Update selects/inputs if needed.
         refreshFieldSelects(this.graphState);
       });
     });
 
-    // Langue active
+    // Active language.
     const langSelect = document.getElementById('current-language');
     if (langSelect) {
       langSelect.addEventListener('change', () => {
@@ -174,7 +174,7 @@ export class UIManager {
       });
     }
 
-    // Conversion multilingue explicite (modal)
+    // Explicit multilingual conversion (modal).
     this.el.multilingualConvert?.addEventListener('click', () => {
       this.openMultilingualConvertOverlay();
     });
@@ -218,7 +218,7 @@ export class UIManager {
           });
           alert("Conversion appliquée. Les champs d'origine ont été supprimés.");
         }
-        // update label fields to default language if needed
+        // Update label fields to default language if needed.
         const firstLang = (langs || '').split(',')[0]?.trim();
         if (firstLang) {
           if (this.graphState.globalSettings.nodeLabelField === 'name') {
@@ -250,7 +250,7 @@ export class UIManager {
           });
           alert("Conversion appliquée. Les champs multilingues ont été supprimés.");
         }
-        // revert label fields to base name if they were suffixes
+        // Revert label fields to base name if they were suffixed.
         if ((this.graphState.globalSettings.nodeLabelField || '').startsWith('name_')) {
           this.graphState.updateGlobalSetting('nodeLabelField', 'name');
         }
@@ -264,7 +264,7 @@ export class UIManager {
       document.getElementById('multilingual-convert-overlay')?.classList.add('hidden');
     });
 
-    // hide/show conversion language input depending on mode
+    // Show/hide conversion language input depending on mode.
     const modeSelect = document.getElementById('multilingual-convert-mode');
     if (modeSelect) {
       const updateModeUI = () => {
@@ -280,7 +280,7 @@ export class UIManager {
   }
   
   /**
-   * Gestionnaire pour le changement de label des nœuds
+   * Handler for node label changes.
    */
   handleNodeLabelChange() {
     const nodeLabelSelect = document.getElementById('node-label');
@@ -292,7 +292,7 @@ export class UIManager {
   }
   
   /**
-   * Gestionnaire pour le changement de label des liens
+   * Handler for link label changes.
    */
   handleLinkLabelChange() {
     const linkLabelSelect = document.getElementById('link-label');
@@ -304,7 +304,7 @@ export class UIManager {
   }
   
   /**
-   * Gestionnaire pour le changement du champ de taille des nœuds
+   * Handler for node size field changes.
    */
   handleNodeSizeFieldChange() {
     const nodeSizeSelect = document.getElementById('node-size-field');
@@ -316,7 +316,7 @@ export class UIManager {
   }
   
   /**
-   * Gestionnaire pour le changement de la taille par défaut des nœuds
+   * Handler for default node size changes.
    */
   handleDefaultNodeSizeChange() {
     const defaultNodeSizeInput = document.getElementById('defaultNodeSizeInput');
@@ -328,7 +328,7 @@ export class UIManager {
   }
   
   /**
-   * Gestionnaire pour le changement de la largeur par défaut des liens
+   * Handler for default link width changes.
    */
   handleDefaultLinkWidthChange() {
     const defaultLinkWidthInput = document.getElementById('defaultLinkWidthInput');
@@ -336,7 +336,7 @@ export class UIManager {
       const newValue = parseFloat(defaultLinkWidthInput.value) || 2;
       this.graphState.updateGlobalSetting('defaultLinkWidth', newValue);
       
-      // Mettre à jour tous les liens existants avec la nouvelle valeur
+      // Update all existing links with the new value.
       this.graphState.links.forEach(link => {
         link.width = newValue;
       });
@@ -346,7 +346,7 @@ export class UIManager {
   }
   
   /**
-   * Initialise le panneau d'historique
+   * Initializes the history panel.
    */
   initHistoryPanel() {
     const historySelect = document.getElementById('historySelect');
@@ -357,7 +357,7 @@ export class UIManager {
       });
     }
     
-    // Mise à jour de l'historique quand il change
+    // Update history when it changes.
     window.updateHistoryList = function(history) {
       const historySelect = document.getElementById('historySelect');
       if (!historySelect) return;
@@ -376,7 +376,7 @@ export class UIManager {
   }
   
   /**
-   * Initialise le panneau d'onglets
+   * Initializes the tab panel.
    */
   initTabPanel() {
     const bottomPanel = document.querySelector("#bottom-panel");
@@ -385,7 +385,7 @@ export class UIManager {
     const arrow = document.querySelector(".arrow");
     
     if (cardHeader && bottomPanel && headerToggle && arrow) {
-      // Bascule du volet
+      // Toggle the panel.
       cardHeader.addEventListener("click", event => {
         if (event.target === cardHeader || event.target === headerToggle) {
           bottomPanel.classList.toggle("collapsed");
@@ -394,7 +394,7 @@ export class UIManager {
         }
       });
       
-      // Ouvre le volet lors du clic sur un onglet
+      // Open the panel when clicking a tab.
       const tabs = document.querySelectorAll(".nav-item");
       tabs.forEach(tab => {
         tab.addEventListener("click", () => {
@@ -407,12 +407,12 @@ export class UIManager {
       });
     }
     
-    // Configuration des contrôles de courbure
+    // Configure curvature controls.
     this.setupRangeValueDisplays();
   }
   
   /**
-   * Configure l'affichage des valeurs pour les contrôles de plage
+   * Configures value display for range controls.
    */
   setupRangeValueDisplays() {
     function setupRangeValueDisplay(rangeId, valueId) {
@@ -420,22 +420,22 @@ export class UIManager {
       const valueDisplay = document.getElementById(valueId);
       
       if (range && valueDisplay) {
-        // Initialiser avec la valeur actuelle
+        // Initialize with the current value.
         valueDisplay.textContent = range.value;
         
-        // Mettre à jour pendant le glissement
+        // Update while dragging.
         range.addEventListener('input', () => {
           valueDisplay.textContent = range.value;
         });
       }
     }
     
-    // Configuration des affichages de valeur pour chaque slider
+    // Configure value displays for each slider.
     setupRangeValueDisplay('base-curvature', 'base-curvature-value');
     setupRangeValueDisplay('loop-curvature', 'loop-curvature-value');
     setupRangeValueDisplay('curvature-step', 'curvature-step-value');
     
-    // Ajout de la mise à jour en temps réel pendant le glissement (input) et pas seulement au changement (change)
+    // Real-time update while dragging (input), not only on change.
     d3.select('#base-curvature').on('input', function() {
       document.getElementById('base-curvature-value').textContent = this.value;
     });
@@ -448,7 +448,7 @@ export class UIManager {
       document.getElementById('curvature-step-value').textContent = this.value;
     });
 
-    // allow other modules to open conversion overlay
+    // Allow other modules to open the conversion overlay.
     window.openMultilingualConvertOverlay = this.openMultilingualConvertOverlay.bind(this);
   }
 
@@ -463,14 +463,14 @@ export class UIManager {
   }
 
   /**
-   * Expose une mise à jour globale des listes déroulantes
+   * Exposes a global refresh for dropdown lists.
    */
   updateAllFieldSelects() {
     refreshFieldSelects(this.graphState);
   }
   
   /**
-   * Met à jour les options d'un sélecteur
+   * Updates the options of a selector.
    */
   updateSelectOptions(selectElem, optionsArr, selectedValue) {
     while (selectElem.firstChild) {
@@ -490,7 +490,7 @@ export class UIManager {
   }
   
   /**
-   * Initialise les valeurs des champs de label
+   * Initializes label field values.
    */
   initializeLabels() {
     this.graphState.updateGlobalSetting('nodeLabelField', 'name');
@@ -511,7 +511,7 @@ export class UIManager {
 }
 
 /**
- * Helper testable: met à jour l’UI des paramètres globaux à partir d’un GraphState donné
+ * Testable helper: updates global-settings UI from a given GraphState.
  */
 export function syncGlobalSettingsUI(state) {
   refreshFieldSelects(state);

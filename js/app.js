@@ -1,6 +1,6 @@
 /**
- * Point d'entrée principal de l'application Graph-Creator
- * Initialise tous les composants et coordonne leur interaction
+ * Main entry point for the Graph-Creator application.
+ * Initializes all components and coordinates their interaction.
  */
 import { GraphState } from './state/GraphState.js';
 import { GraphRenderer } from './graph/renderer.js';
@@ -13,52 +13,56 @@ import { registerGraphState, registerUpdateCallback } from './state/undo_redo.js
 import { initLayoutManager } from './services/layoutManager.js';
 import { initIOServices } from './services/io.js';
 import { graphConfig, initConfigFilesList, updateGraphConfig } from './config/graph.js';
-import { EventManager } from './services/EventManager.js';  // ← nouveau
+import { EventManager } from './services/EventManager.js';  // new
+import { initI18n } from './i18n.js';
 
-// Attend que le DOM soit complètement chargé pour initialiser l'application
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Initialisation de Graph-Creator...');
+// Wait for the DOM to be fully loaded before initializing the app.
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('Initializing Graph-Creator...');
 
-  // 1. Création de l'état du graphe
+  // 1. Initialize UI translations.
+  await initI18n();
+
+  // 2. Create the graph state.
   const graphState = new GraphState();
   
-  // 2. Enregistrement de l'état pour le système undo/redo
+  // 3. Register the state for the undo/redo system.
   registerGraphState(graphState);
   
-  // 3. Création du renderer pour afficher le graphe
+  // 4. Create the renderer to display the graph.
   const renderer = new GraphRenderer(graphState, d3.select('svg'));
   
-  // 4. Enregistrement de la fonction de mise à jour du graphe
+  // 5. Register the graph update callback.
   registerUpdateCallback(() => renderer.updateGraph());
   
-  // 5. Initialisation du gestionnaire d'interactions
+  // 6. Initialize the interaction manager.
   const interactionManager = new InteractionManager(graphState, renderer, d3.select('svg'));
   
-  // 6. Initialisation du gestionnaire d'interface utilisateur
+  // 7. Initialize the UI manager.
   const uiManager = new UIManager(graphState, renderer);
 
-  // 6bis. Gestionnaire des champs personnalises
+  // 8. Custom fields manager.
   const conditionalFieldManager = new ConditionalFieldManager(graphState, renderer);
 
-  // 6ter. Gestionnaire des regles de style / pie charts
+  // 9. Style rules / pie charts manager.
   const styleRuleManager = new StyleRuleManager(graphState, renderer);
   
-  // 7. Initialisation du gestionnaire d'IA
+  // 10. Initialize the AI manager.
   const aiManager = new AIManager(graphState, renderer);
   
-  // 8. Initialisation des services
+  // 11. Initialize services.
   initIOServices(graphState, renderer);
   initLayoutManager(graphState, renderer);
   
-  // 9. Initialisation de la liste des fichiers de configuration
+  // 12. Initialize the list of config files.
   initConfigFilesList((configData) => {
     updateGraphConfig(configData, renderer);
   });
   
-  // 11. Affichage initial du graphe
+  // 13. Initial graph render.
   renderer.updateGraph();
   
-  // 12. Exporter les objets clés dans window pour le débogage
+  // 14. Expose key objects on window for debugging.
   const isDebugMode = window.location.search.includes('debug=true');
   if (isDebugMode) {
     window.app = {
@@ -72,8 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
   
-  console.log('Graph-Creator a été initialisé avec succès');
+  console.log('Graph-Creator initialized successfully');
   
-  // Initialiser le gestionnaire d'événements
+  // Initialize the event manager.
   EventManager.init(graphState, renderer);
 });

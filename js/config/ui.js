@@ -1,28 +1,28 @@
 /**
- * Configuration de l'interface utilisateur
+ * User interface configuration.
  */
 
 export const uiConfig = {
-  // Configuration du panneau inférieur
+  // Bottom panel configuration.
   bottomPanel: {
     defaultTab: "#tab1",
     collapsed: false
   },
   
-  // Configuration des formulaires
+  // Form configuration.
   forms: {
     nodeLabelDefault: "name",
     linkLabelDefault: "",
     focusDelay: 100
   },
   
-  // Champs exclus des formulaires
+  // Fields excluded from forms.
   excludedFields: {
     nodes: ["vx", "vy", "fx", "fy", "index"],
     links: ["index"]
   },
   
-  // Configuration des modèles JSON
+  // JSON model configuration.
   jsonModels: {
     directoryPath: 'json/',
     defaultFile: 'default.json'

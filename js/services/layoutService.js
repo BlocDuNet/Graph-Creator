@@ -1,5 +1,5 @@
 /**
- * Layout circulaire
+ * Circular layout.
  * @param {Array} nodes
  * @param {number} width
  * @param {number} height
@@ -16,7 +16,7 @@ export function applyCircleLayout(nodes, width, height) {
 }
 
 /**
- * Layout en grille
+ * Grid layout.
  * @param {Array} nodes
  * @param {number} width
  * @param {number} height
@@ -34,7 +34,7 @@ export function applyGridLayout(nodes, width, height) {
 }
 
 /**
- * Layout aléatoire
+ * Random layout.
  * @param {Array} nodes
  * @param {number} width
  * @param {number} height
@@ -50,7 +50,7 @@ export function applyRandomLayout(nodes, width, height, padding = 50) {
 }
 
 /**
- * 1. Sugiyama / hiérarchique
+ * 1. Sugiyama / hierarchical
  */
 export function applyHierarchicalLayout(nodes, width, height) {
   // simple layering by index
@@ -60,7 +60,7 @@ export function applyHierarchicalLayout(nodes, width, height) {
 }
 
 /**
- * 2. Radial (cône)
+ * 2. Radial (cone)
  */
 export function applyRadialLayout(nodes, width, height) {
   const cx = width/2, cy = height/2;
@@ -118,7 +118,7 @@ export function applyConcentricLayout(nodes, width, height) {
 }
 
 /**
- * 7. Bipartite / couche double
+ * 7. Bipartite / two-layer
  */
 export function applyBipartiteLayout(nodes, width, height) {
   const left = width*0.25, right = width*0.75;
@@ -130,7 +130,7 @@ export function applyBipartiteLayout(nodes, width, height) {
 }
 
 /**
- * 8. Force‑atlas (simplifié)
+ * 8. Force-atlas (simplified)
  */
 export function applyForceAtlasLayout(nodes, width, height) {
   console.warn("Force‑atlas stub, utilisez la simulation dynamique pour un vrai résultat");

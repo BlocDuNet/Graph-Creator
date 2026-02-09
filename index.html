@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>Graph Network avec D3.js v6</title>
+    <title data-i18n="app.title">Graph Network avec D3.js v6</title>
     <link
       rel="stylesheet"
       href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
@@ -18,10 +18,10 @@
   <body>
     <svg width="1000" height="1000">
       <defs>
-        <!-- La définition de marker sera remplacée dynamiquement par le JavaScript -->
+        <!-- Marker definition is replaced dynamically by JavaScript -->
       </defs>
     </svg>
-    <!-- Volet -->
+    <!-- Panel -->
     <div class="container-fluid">
       <div id="bottom-panel" class="card">
         <div class="card-header" id="bottom-panel-header">
@@ -31,22 +31,22 @@
                 <a class="nav-link" href="#tab_help" data-toggle="tab">?</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link active" href="#tab1" data-toggle="tab">Actions</a>
+                <a class="nav-link active" href="#tab1" data-toggle="tab" data-i18n="tabs.actions">Actions</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#tab2" data-toggle="tab">Valeurs</a>
+                <a class="nav-link" href="#tab2" data-toggle="tab" data-i18n="tabs.values">Valeurs</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#tab3" data-toggle="tab">Config graph</a>
+                <a class="nav-link" href="#tab3" data-toggle="tab" data-i18n="tabs.graph_config">Config graph</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#tab4" data-toggle="tab">AI Request</a>
+                <a class="nav-link" href="#tab4" data-toggle="tab" data-i18n="tabs.ai_request">AI Request</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#tab5" data-toggle="tab">Tableur</a>
+                <a class="nav-link" href="#tab5" data-toggle="tab" data-i18n="tabs.spreadsheet">Tableur</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#tab6" data-toggle="tab">Config logiciel</a>
+                <a class="nav-link" href="#tab6" data-toggle="tab" data-i18n="tabs.app_config">Config logiciel</a>
               </li>
             </ul>
             <span class="arrow arrow-down"></span>
@@ -56,106 +56,106 @@
           <div class="tab-content">
             <div class="tab-pane fade" id="tab_help">
               <p>
-                <center><b>How to do</b></center>
+                <center><b data-i18n="help.title">How to do</b></center>
               </p>
               <p>
                 <table class="table-container">
                   <tr>
-                    <th>Icon</th>
-                    <th>Actions</th>
-                    <th>Instructions</th>
+                    <th data-i18n="help.columns.icon">Icon</th>
+                    <th data-i18n="help.columns.actions">Actions</th>
+                    <th data-i18n="help.columns.instructions">Instructions</th>
                   </tr>
                   <tr>
-                    <td><object type="image/svg+xml" data="svg/create-node.svg" width="40" height="40" title="Create a node"></object></td>
-                    <td><b>Create a node</b></td>
-                    <td><b>Double click</b> in the void</td>
+                    <td><object type="image/svg+xml" data="svg/create-node.svg" width="40" height="40" title="Create a node" data-i18n-title="help.rows.create_node.icon_title"></object></td>
+                    <td data-i18n-html="help.rows.create_node.action"><b>Create a node</b></td>
+                    <td data-i18n-html="help.rows.create_node.instruction"><b>Double click</b> in the void</td>
                   </tr>
                   <tr>
-                    <td><object type="image/svg+xml" data="svg/create-edge.svg" width="40" height="40" title="Create an edge"></object></td>
-                    <td><b>Create an edge</b></td>
-                    <td>
+                    <td><object type="image/svg+xml" data="svg/create-edge.svg" width="40" height="40" title="Create an edge" data-i18n-title="help.rows.create_edge.icon_title"></object></td>
+                    <td data-i18n-html="help.rows.create_edge.action"><b>Create an edge</b></td>
+                    <td data-i18n-html="help.rows.create_edge.instruction">
                       <b>Click on a node</b> then <b>CTRL+Click on the target</b>
                       node</td
                     >
                   </tr>
                   <tr>
-                    <td><object type="image/svg+xml" data="svg/create-node-edge.svg" width="40" height="40" title="Create a node with edge"></object></td>
-                    <td><b>Create a node with edge</b></td>
-                    <td>
+                    <td><object type="image/svg+xml" data="svg/create-node-edge.svg" width="40" height="40" title="Create a node with edge" data-i18n-title="help.rows.create_node_edge.icon_title"></object></td>
+                    <td data-i18n-html="help.rows.create_node_edge.action"><b>Create a node with edge</b></td>
+                    <td data-i18n-html="help.rows.create_node_edge.instruction">
                       <b>Click on a node</b> then <b>CTRL+Click on empty space</b>
                       (Add <b>Shift</b> for focus on the new node)</td
                     >
                   </tr>
                   <tr>
-                    <td><object type="image/svg+xml" data="svg/delete.svg" width="40" height="40" title="Delete"></object></td>
-                    <td><b>Delete</b> (node/edge)</td>
-                    <td>
+                    <td><object type="image/svg+xml" data="svg/delete.svg" width="40" height="40" title="Delete" data-i18n-title="help.rows.delete.icon_title"></object></td>
+                    <td data-i18n-html="help.rows.delete.action"><b>Delete</b> (node/edge)</td>
+                    <td data-i18n-html="help.rows.delete.instruction">
                       <b>Select a node/edge</b> and press <b>Ctrl+Delete</b> or
                       <b>Ctrl+Backspace</b>
                     </td>
                   </tr>
                   <tr>
-                    <td><object type="image/svg+xml" data="svg/unselect.svg" width="40" height="40" title="Unselect"></object></td>
-                    <td><b>Unselect</b> (node/edge)</td>
-                    <td>
+                    <td><object type="image/svg+xml" data="svg/unselect.svg" width="40" height="40" title="Unselect" data-i18n-title="help.rows.unselect.icon_title"></object></td>
+                    <td data-i18n-html="help.rows.unselect.action"><b>Unselect</b> (node/edge)</td>
+                    <td data-i18n-html="help.rows.unselect.instruction">
                       Press <b>Escape</b> or <b>Click again on the same</b> node/edge
                     </td>
                   </tr>
                   <tr>
-                    <td><object type="image/svg+xml" data="svg/change-name.svg" width="40" height="40" title="Change name"></object></td>
-                    <td><b>Change name</b> (node/edge)</td>
-                    <td>
+                    <td><object type="image/svg+xml" data="svg/change-name.svg" width="40" height="40" title="Change name" data-i18n-title="help.rows.change_name.icon_title"></object></td>
+                    <td data-i18n-html="help.rows.change_name.action"><b>Change name</b> (node/edge)</td>
+                    <td data-i18n-html="help.rows.change_name.instruction">
                       <b>Select an item</b> then change value in <b>Valeurs</b> tab
                     </td>
                   </tr>
                   <tr>
-                    <td><object type="image/svg+xml" data="svg/zoom.svg" width="40" height="40" title="Zoom"></object></td>
-                    <td><b>Zoom</b></td>
-                    <td>Mouse <b>wheel scroll</b></td>
+                    <td><object type="image/svg+xml" data="svg/zoom.svg" width="40" height="40" title="Zoom" data-i18n-title="help.rows.zoom.icon_title"></object></td>
+                    <td data-i18n-html="help.rows.zoom.action"><b>Zoom</b></td>
+                    <td data-i18n-html="help.rows.zoom.instruction">Mouse <b>wheel scroll</b></td>
                   </tr>
                   <tr>
-                    <td><object type="image/svg+xml" data="svg/move-node.svg" width="40" height="40" title="Move node"></object></td>
-                    <td><b>Move node</b></td>
-                    <td><b>Left click + drag</b></td>
+                    <td><object type="image/svg+xml" data="svg/move-node.svg" width="40" height="40" title="Move node" data-i18n-title="help.rows.move_node.icon_title"></object></td>
+                    <td data-i18n-html="help.rows.move_node.action"><b>Move node</b></td>
+                    <td data-i18n-html="help.rows.move_node.instruction"><b>Left click + drag</b></td>
                   </tr>
                   <tr>
-                    <td><object type="image/svg+xml" data="svg/move-graph.svg" width="40" height="40" title="Move graph"></object></td>
-                    <td><b>Move graph</b></td>
-                    <td><b>Right click + drag</b></td>
+                    <td><object type="image/svg+xml" data="svg/move-graph.svg" width="40" height="40" title="Move graph" data-i18n-title="help.rows.move_graph.icon_title"></object></td>
+                    <td data-i18n-html="help.rows.move_graph.action"><b>Move graph</b></td>
+                    <td data-i18n-html="help.rows.move_graph.instruction"><b>Right click + drag</b></td>
                   </tr>
                   <tr>
-                    <td><object type="image/svg+xml" data="svg/undo-redo.svg" width="40" height="40" title="Undo/Redo"></object></td>
-                    <td><b>Undo/Redo</b></td>
-                    <td><b>CTRL + Z / CTRL + Y</b></td>
+                    <td><object type="image/svg+xml" data="svg/undo-redo.svg" width="40" height="40" title="Undo/Redo" data-i18n-title="help.rows.undo_redo.icon_title"></object></td>
+                    <td data-i18n-html="help.rows.undo_redo.action"><b>Undo/Redo</b></td>
+                    <td data-i18n-html="help.rows.undo_redo.instruction"><b>CTRL + Z / CTRL + Y</b></td>
                   </tr>
                   <tr>
-                    <td><object type="image/svg+xml" data="svg/self-loop.svg" width="40" height="40" title="Create self loop"></object></td>
-                    <td><b>Create a self loop</b></td>
-                    <td><b>Select a node</b> then <b>ALT+Click on the same node</b></td>
+                    <td><object type="image/svg+xml" data="svg/self-loop.svg" width="40" height="40" title="Create self loop" data-i18n-title="help.rows.self_loop.icon_title"></object></td>
+                    <td data-i18n-html="help.rows.self_loop.action"><b>Create a self loop</b></td>
+                    <td data-i18n-html="help.rows.self_loop.instruction"><b>Select a node</b> then <b>ALT+Click on the same node</b></td>
                   </tr>
                 </table>
-                <p>Tips: You can select nodes and edges by clicking on their labels</p>
+                <p data-i18n="help.tips">Tips: You can select nodes and edges by clicking on their labels</p>
               </p>
             </div>
             <div class="tab-pane fade show active" id="tab1">
-              <!-- Actions tab - organiser en sections repliables -->
+              <!-- Actions tab - organized in collapsible sections -->
               <div class="accordion" id="actionsAccordion">
                 <!-- Section 1: Undo/Redo -->
                 <div class="card">
                   <div class="card-header section-header" id="headingHistory">
                     <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseHistory" aria-expanded="true" aria-controls="collapseHistory">
-                      Undo/Redo - Historique
+                      <span data-i18n="actions.history.title">Undo/Redo - Historique</span>
                     </button>
                   </div>
                   <div id="collapseHistory" class="collapse show" aria-labelledby="headingHistory">
                     <div class="card-body">
                       <p>
-                        <button id="undoButton">Undo</button>
-                        <button id="redoButton">Redo</button>
-                        <button id="update">Debug</button>
+                        <button id="undoButton" data-i18n="actions.history.undo">Undo</button>
+                        <button id="redoButton" data-i18n="actions.history.redo">Redo</button>
+                        <button id="update" data-i18n="actions.history.debug">Debug</button>
                       </p>
                       <p>
-                        <label for="historySelect">History:</label>
+                        <label for="historySelect" data-i18n="actions.history.label">History:</label>
                         <select id="historySelect" size="8"></select>
                       </p>
                     </div>
@@ -163,27 +163,27 @@
                 </div>
                 <div class="card">
                   <div class="card-header section-header" id="headingCustom">
-                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseCustom">Actions Avancées</button>
+                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseCustom" data-i18n="actions.advanced.title">Actions Avancées</button>
                   </div>
                   <div id="collapseCustom" class="collapse show" aria-labelledby="headingCustom">
                     <div class="card-body">
-                      <button id="btn-highlight-neighbors">Highlight Neighbors</button>
-                      <button id="btn-clear-highlights">Clear Highlights</button>
-                      <button id="btn-high-degree">Highlight Degree ≥2</button>
-                      <button id="btn-color-clusters">Color Clusters</button>
+                      <button id="btn-highlight-neighbors" data-i18n="actions.advanced.highlight_neighbors">Highlight Neighbors</button>
+                      <button id="btn-clear-highlights" data-i18n="actions.advanced.clear_highlights">Clear Highlights</button>
+                      <button id="btn-high-degree" data-i18n="actions.advanced.highlight_degree">Highlight Degree ≥2</button>
+                      <button id="btn-color-clusters" data-i18n="actions.advanced.color_clusters">Color Clusters</button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
             <div class="tab-pane fade" id="tab2">
-              <!-- Valeurs tab - optimisation de l'agencement -->
+              <!-- Values tab - layout optimization -->
               <div class="accordion" id="valuesAccordion">
-                <!-- Section 1: Import/Export et Champs -->
+                <!-- Section 1: Import/Export and Fields -->
                 <div class="card mb-3">
                   <div class="card-header section-header" id="headingActions">
                     <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseActions" aria-expanded="true" aria-controls="collapseActions">
-                      Actions
+                      <span data-i18n="values.actions.title">Actions</span>
                     </button>
                   </div>
                   <div id="collapseActions" class="collapse show" aria-labelledby="headingActions">
@@ -192,81 +192,81 @@
                         <!-- Import/Export -->
                         <div class="col-md-5">
                           <div class="action-group">
-                            <h5>Import/Export</h5>
+                            <h5 data-i18n="values.import_export.title">Import/Export</h5>
                             <div class="d-flex flex-wrap">
-                              <button id="import-json" class="btn btn-sm btn-outline-primary m-1">Import JSON</button>
-                              <button id="import-json-advanced" class="btn btn-sm btn-outline-primary m-1">Import avancé</button>
-                              <button id="export-json" class="btn btn-sm btn-outline-primary m-1">Export JSON</button>
-                              <button id="export-image" class="btn btn-sm btn-outline-primary m-1">Export image</button>
-                              <button id="export-json-advanced" class="btn btn-sm btn-outline-primary m-1">Export avancé (à faire)</button>
-                              <button id="changeLabelButton" class="btn btn-sm btn-outline-secondary m-1">Initialize Labels</button>
+                              <button id="import-json" class="btn btn-sm btn-outline-primary m-1" data-i18n="values.import_export.import_json">Import JSON</button>
+                              <button id="import-json-advanced" class="btn btn-sm btn-outline-primary m-1" data-i18n="values.import_export.import_json_advanced">Import avancé</button>
+                              <button id="export-json" class="btn btn-sm btn-outline-primary m-1" data-i18n="values.import_export.export_json">Export JSON</button>
+                              <button id="export-image" class="btn btn-sm btn-outline-primary m-1" data-i18n="values.import_export.export_image">Export image</button>
+                              <button id="export-json-advanced" class="btn btn-sm btn-outline-primary m-1" data-i18n="values.import_export.export_json_advanced">Export avancé (à faire)</button>
+                              <button id="changeLabelButton" class="btn btn-sm btn-outline-secondary m-1" data-i18n="values.import_export.init_labels">Initialize Labels</button>
                             </div>
                             <div class="mt-2">
-                              <label for="json-models">Modèles prédéfinis:</label>
+                              <label for="json-models" data-i18n="values.import_export.presets">Modèles prédéfinis:</label>
                               <select id="json-models" class="form-control form-control-sm"></select>
                             </div>
-                            <label for="json-file" class="sr-only">Import JSON file</label>
-                            <input type="file" id="json-file" accept=".json" class="hidden" title="Select JSON file to import" aria-label="Import JSON file">
-                            <label for="json-file-advanced" class="sr-only">Import JSON file (advanced)</label>
-                            <input type="file" id="json-file-advanced" accept=".json" class="hidden" title="Select JSON file to import (advanced)" aria-label="Import JSON file (advanced)">
+                            <label for="json-file" class="sr-only" data-i18n="values.import_export.import_file">Import JSON file</label>
+                            <input type="file" id="json-file" accept=".json" class="hidden" title="Select JSON file to import" aria-label="Import JSON file" data-i18n-title="values.import_export.import_file_title" data-i18n-aria-label="values.import_export.import_file">
+                            <label for="json-file-advanced" class="sr-only" data-i18n="values.import_export.import_file_advanced">Import JSON file (advanced)</label>
+                            <input type="file" id="json-file-advanced" accept=".json" class="hidden" title="Select JSON file to import (advanced)" aria-label="Import JSON file (advanced)" data-i18n-title="values.import_export.import_file_advanced_title" data-i18n-aria-label="values.import_export.import_file_advanced">
                             <div id="advanced-import-overlay" class="advanced-import-overlay hidden">
                               <div id="advanced-import-panel" class="advanced-import-modal">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                  <h6 class="mb-0">Import avancé (mapping)</h6>
-                                  <button id="advanced-import-cancel" class="btn btn-sm btn-outline-secondary">Fermer</button>
+                                  <h6 class="mb-0" data-i18n="values.import_export.advanced.title">Import avancé (mapping)</h6>
+                                  <button id="advanced-import-cancel" class="btn btn-sm btn-outline-secondary" data-i18n="common.close">Fermer</button>
                                 </div>
                                 <div class="row">
                                   <div class="col-md-6">
-                                    <label class="small">Clé des noeuds (root)</label>
+                                    <label class="small" data-i18n="values.import_export.advanced.nodes_key">Clé des noeuds (root)</label>
                                     <select id="advanced-nodes-key" class="form-control form-control-sm"></select>
                                   </div>
                                   <div class="col-md-6">
-                                    <label class="small">Clé des liens (root)</label>
+                                    <label class="small" data-i18n="values.import_export.advanced.links_key">Clé des liens (root)</label>
                                     <select id="advanced-links-key" class="form-control form-control-sm"></select>
                                   </div>
                                 </div>
                                 <div class="row mt-2">
                                   <div class="col-md-6">
-                                    <label class="small">Champ ID noeud</label>
+                                    <label class="small" data-i18n="values.import_export.advanced.node_id_field">Champ ID noeud</label>
                                     <select id="advanced-node-id" class="form-control form-control-sm"></select>
                                   </div>
                                   <div class="col-md-6">
-                                    <label class="small">Champ label noeud (ex: name ou name.fr)</label>
+                                    <label class="small" data-i18n="values.import_export.advanced.node_label_field">Champ label noeud (ex: name ou name.fr)</label>
                                     <select id="advanced-node-label" class="form-control form-control-sm"></select>
                                   </div>
                                 </div>
                                 <div class="row mt-2">
                                   <div class="col-md-6">
-                                    <label class="small">Champ description noeud (ex: description ou description.fr)</label>
+                                    <label class="small" data-i18n="values.import_export.advanced.node_desc_field">Champ description noeud (ex: description ou description.fr)</label>
                                     <select id="advanced-node-desc" class="form-control form-control-sm"></select>
                                   </div>
                                   <div class="col-md-6">
-                                    <label class="small">Langue (optionnel, ex: fr)</label>
+                                    <label class="small" data-i18n="values.import_export.advanced.language">Langue (optionnel, ex: fr)</label>
                                     <input id="advanced-language-key" class="form-control form-control-sm">
                                   </div>
                                 </div>
                                 <div class="row mt-2">
                                   <div class="col-md-4">
-                                    <label class="small">Champ source lien</label>
+                                    <label class="small" data-i18n="values.import_export.advanced.link_source_field">Champ source lien</label>
                                     <select id="advanced-link-source" class="form-control form-control-sm"></select>
                                   </div>
                                   <div class="col-md-4">
-                                    <label class="small">Champ target lien</label>
+                                    <label class="small" data-i18n="values.import_export.advanced.link_target_field">Champ target lien</label>
                                     <select id="advanced-link-target" class="form-control form-control-sm"></select>
                                   </div>
                                   <div class="col-md-4">
-                                    <label class="small">Champ label lien (ex: name ou name.fr)</label>
+                                    <label class="small" data-i18n="values.import_export.advanced.link_label_field">Champ label lien (ex: name ou name.fr)</label>
                                     <select id="advanced-link-label" class="form-control form-control-sm"></select>
                                   </div>
                                 </div>
                                 <div class="row mt-2">
                                   <div class="col-md-12">
-                                    <label class="small">Prévisualisation (10 noeuds / 15 liens)</label>
+                                    <label class="small" data-i18n="values.import_export.advanced.preview">Prévisualisation (10 noeuds / 15 liens)</label>
                                     <div id="advanced-import-preview" class="pre-scroll"></div>
                                   </div>
                                 </div>
                                 <div class="mt-2 d-flex flex-wrap">
-                                  <button id="advanced-import-apply" class="btn btn-sm btn-success m-1">Importer</button>
+                                  <button id="advanced-import-apply" class="btn btn-sm btn-success m-1" data-i18n="values.import_export.advanced.apply">Importer</button>
                                 </div>
                               </div>
                             </div>
@@ -278,37 +278,37 @@
                   </div>
                 </div>
             
-                <!-- Section 2: Paramètres Globaux -->
+                <!-- Section 2: Global Parameters -->
                 <div class="card mb-3">
                   <div class="card-header section-header" id="headingGlobalParams">
                     <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseGlobalParams" aria-expanded="true" aria-controls="collapseGlobalParams">
-                      Paramètres Globaux
+                      <span data-i18n="values.global.title">Paramètres Globaux</span>
                     </button>
                   </div>
                   <div id="collapseGlobalParams" class="collapse show" aria-labelledby="headingGlobalParams">
                     <div class="card-body">
                       <div class="row">
                                                 
-                        <!-- Gestion des champs -->
+                        <!-- Field management -->
                         <div class="col-md-7">
                           <div class="field-group">
-                            <h5>Ajouter des champs</h5>
+                            <h5 data-i18n="values.global.fields.title">Ajouter des champs</h5>
                             <div class="row mb-2">
                               <div class="col-sm-6">
                                 <div class="input-group input-group-sm">
-                                  <input type="text" id="addNodeFieldInput" class="form-control" placeholder="Nouveau champ noeud">
+                                  <input type="text" id="addNodeFieldInput" class="form-control" placeholder="Nouveau champ noeud" data-i18n-placeholder="values.global.fields.new_node_field">
                                   <select id="addNodeFieldType" class="form-control form-control-sm field-type-select"></select>
                                   <div class="input-group-append">
-                                    <button id="addNodeFieldButton" class="btn btn-outline-secondary">+Node</button>
+                                    <button id="addNodeFieldButton" class="btn btn-outline-secondary" data-i18n="values.global.fields.add_node">+Node</button>
                                   </div>
                                 </div>
                               </div>
                               <div class="col-sm-6">
                                 <div class="input-group input-group-sm">
-                                  <input type="text" id="addLinkFieldInput" class="form-control" placeholder="Nouveau champ lien">
+                                  <input type="text" id="addLinkFieldInput" class="form-control" placeholder="Nouveau champ lien" data-i18n-placeholder="values.global.fields.new_link_field">
                                   <select id="addLinkFieldType" class="form-control form-control-sm field-type-select"></select>
                                   <div class="input-group-append">
-                                    <button id="addLinkFieldButton" class="btn btn-outline-secondary">+Link</button>
+                                    <button id="addLinkFieldButton" class="btn btn-outline-secondary" data-i18n="values.global.fields.add_link">+Link</button>
                                   </div>
                                 </div>
                               </div>
@@ -317,66 +317,66 @@
                               <div class="col-sm-6">
                                 <div class="custom-control custom-checkbox">
                                   <input type="checkbox" class="custom-control-input" id="multilingual-enabled">
-                                  <label class="custom-control-label" for="multilingual-enabled">Multilingue</label>
+                                  <label class="custom-control-label" for="multilingual-enabled" data-i18n="values.global.fields.multilingual">Multilingue</label>
                                 </div>
                               </div>
                               <div class="col-sm-6">
-                                <input type="text" id="multilingual-langs" class="form-control form-control-sm" placeholder="Langues (ex: fr,en)">
+                                <input type="text" id="multilingual-langs" class="form-control form-control-sm" placeholder="Langues (ex: fr,en)" data-i18n-placeholder="values.global.fields.languages">
                               </div>
                               <div class="col-sm-6 mt-2">
-                                <button id="multilingual-convert" class="btn btn-sm btn-outline-secondary">Conversion multilingue</button>
+                                <button id="multilingual-convert" class="btn btn-sm btn-outline-secondary" data-i18n="values.global.fields.multilingual_convert">Conversion multilingue</button>
                               </div>
                             </div>
                           </div>
                         </div>
-                        <!-- Labels et tailles -->
+                        <!-- Labels and sizes -->
                         <div class="col-md-6">
-                          <!-- Labels et tailles -->
+                          <!-- Labels and sizes -->
                           <div class="row mb-2">
                             <div class="col-sm-4">
-                              <label for="node-label" class="small">Label nœud :</label>
+                              <label for="node-label" class="small" data-i18n="values.global.labels.node_label">Label nœud :</label>
                               <select id="node-label" class="form-control form-control-sm"></select>
                             </div>
                             <div class="col-sm-6">
-                              <label for="link-label" class="small">Label lien :</label>
+                              <label for="link-label" class="small" data-i18n="values.global.labels.link_label">Label lien :</label>
                               <select id="link-label" class="form-control form-control-sm"></select>
                             </div>
                           </div>
-                          <!-- Champs ID/X/Y -->
+                          <!-- ID/X/Y fields -->
                           <div class="row mb-2">
                             <div class="col-sm-4">
-                              <label for="node-id-field" class="small">Champ ID :</label>
+                              <label for="node-id-field" class="small" data-i18n="values.global.labels.node_id_field">Champ ID :</label>
                               <select id="node-id-field" class="form-control form-control-sm"></select>
                             </div>
                             <div class="col-sm-4">
-                              <label for="node-x-field" class="small">Champ X :</label>
+                              <label for="node-x-field" class="small" data-i18n="values.global.labels.node_x_field">Champ X :</label>
                               <select id="node-x-field" class="form-control form-control-sm"></select>
                             </div>
                             <div class="col-sm-4">
-                              <label for="node-y-field" class="small">Champ Y :</label>
+                              <label for="node-y-field" class="small" data-i18n="values.global.labels.node_y_field">Champ Y :</label>
                               <select id="node-y-field" class="form-control form-control-sm"></select>
                             </div>
                           </div>
-                          <!-- Taille par défaut et largeur lien -->
+                          <!-- Default size and link width -->
                           <div class="row mb-2">
                             <div class="col-sm-4">
-                              <label for="node-size-field" class="small">Champ de taille :</label>
+                              <label for="node-size-field" class="small" data-i18n="values.global.labels.node_size_field">Champ de taille :</label>
                               <select id="node-size-field" class="form-control form-control-sm"></select>
                             </div>
                             <div class="col-sm-4">
-                              <label for="defaultNodeSizeInput" class="small">Taille des nœuds (par défaut) :</label>
+                              <label for="defaultNodeSizeInput" class="small" data-i18n="values.global.labels.default_node_size">Taille des nœuds (par défaut) :</label>
                               <input type="number" id="defaultNodeSizeInput" class="form-control form-control-sm" value="30" min="0.1" step="0.1">
                             </div>
                             <div class="col-sm-4">
-                              <label for="defaultLinkWidthInput" class="small">Largeur des liens (par défaut) :</label>
+                              <label for="defaultLinkWidthInput" class="small" data-i18n="values.global.labels.default_link_width">Largeur des liens (par défaut) :</label>
                               <input type="number" id="defaultLinkWidthInput" class="form-control form-control-sm" 
                                      value="5" min="0.1" max="20" step="0.1"
-                                     title="Entrez une valeur entre 0.1 et 20">
+                                     title="Entrez une valeur entre 0.1 et 20" data-i18n-title="values.global.labels.default_link_width_hint">
                             </div>
                           </div>
                           <div class="row mb-2">
                             <div class="col-sm-4">
-                              <label for="current-language" class="small">Langue active :</label>
+                              <label for="current-language" class="small" data-i18n="values.global.labels.active_language">Langue active :</label>
                               <select id="current-language" class="form-control form-control-sm"></select>
                             </div>
                           </div>
@@ -386,28 +386,28 @@
                   </div>
                 </div>
             
-                <!-- Section 3: Édition d'éléments -->
+                <!-- Section 3: Element editing -->
                 <div class="card mb-3">
                   <div class="card-header section-header" id="headingElementEdit">
                     <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseElementEdit" aria-expanded="true" aria-controls="collapseElementEdit">
-                      Édition des Noeuds/Liens
+                      <span data-i18n="values.edit.title">Édition des Noeuds/Liens</span>
                     </button>
                   </div>
                   <div id="collapseElementEdit" class="collapse show" aria-labelledby="headingElementEdit">
                     <div class="card-body">
                       <div class="row">
-                        <!-- Formulaire des noeuds -->
+                        <!-- Node form -->
                         <div class="col-md-6">
                           <div class="form-container">
-                            <h5 class="edit-title">Édition Noeud</h5>
+                            <h5 class="edit-title" data-i18n="values.edit.node_title">Édition Noeud</h5>
                             <form id="node-form" class="hidden"></form>
                           </div>
                         </div>
                         
-                        <!-- Formulaire des liens -->
+                        <!-- Link form -->
                         <div class="col-md-6">
                           <div class="form-container">
-                            <h5 class="edit-title">Édition Lien</h5>
+                            <h5 class="edit-title" data-i18n="values.edit.link_title">Édition Lien</h5>
                             <form id="link-form" class="hidden"></form>
                           </div>
                         </div>
@@ -419,45 +419,45 @@
             </div>
             
             <div class="tab-pane fade" id="tab3">
-              <!-- Config Graph tab - organiser en sections repliables -->
+              <!-- Graph config tab - organized in collapsible sections -->
               <div class="accordion" id="configAccordion">
                 <div class="row">
       
-                  <!-- Colonne 1 -->
+                  <!-- Column 1 -->
                   <div class="col-12 col-lg-4 mb-3">
-                    <!-- Section 1: Import/Export Config -->
+                    <!-- Section 1: Config Import/Export -->
                     <div class="card h-100">
                       <div class="card-header section-header" id="headingConfigIO">
                         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseConfigIO" aria-expanded="true" aria-controls="collapseConfigIO">
-                          Configuration Import/Export
+                          <span data-i18n="graph_config.io.title">Configuration Import/Export</span>
                         </button>
                       </div>
                       <div id="collapseConfigIO" class="collapse show" aria-labelledby="headingConfigIO">
                         <div class="card-body">
                           <p>
-                            <span id="import-config-json">Config:</span><br />
-                            <label for="export-config">Export config:</label>
-                            <button id="export-config">Export config</button><br />
-                            <label for="import-config">Import config:</label>
+                            <span id="import-config-json" data-i18n="graph_config.io.config_label">Config:</span><br />
+                            <label for="export-config" data-i18n="graph_config.io.export_label">Export config:</label>
+                            <button id="export-config" data-i18n="graph_config.io.export_button">Export config</button><br />
+                            <label for="import-config" data-i18n="graph_config.io.import_label">Import config:</label>
                             <input type="file" id="import-config" accept=".json" />
                           </p>
                           <p>
-                            <label for="layoutSelect">Layout:</label>
+                            <label for="layoutSelect" data-i18n="graph_config.io.layout_label">Layout:</label>
                             <select id="layoutSelect">
-                              <option value="">-- Select layout --</option>
-                              <option value="circle">Circle</option>
-                              <option value="grid">Grid</option>
-                              <option value="random">Random</option>
-                              <option value="hierarchical">Hierarchical</option>
-                              <option value="radial">Radial</option>
-                              <option value="spiral">Spiral</option>
-                              <option value="arc">Arc diagram</option>
-                              <option value="concentric">Concentric clusters</option>
-                              <option value="bipartite">Bipartite</option>
-                              <option value="forceAtlas">Force‑atlas</option>
-                              <!-- Orthogonal, Geographic, Treemap supprimés -->
+                              <option value="" data-i18n="graph_config.io.layout_select">-- Select layout --</option>
+                              <option value="circle" data-i18n="graph_config.layouts.circle">Circle</option>
+                              <option value="grid" data-i18n="graph_config.layouts.grid">Grid</option>
+                              <option value="random" data-i18n="graph_config.layouts.random">Random</option>
+                              <option value="hierarchical" data-i18n="graph_config.layouts.hierarchical">Hierarchical</option>
+                              <option value="radial" data-i18n="graph_config.layouts.radial">Radial</option>
+                              <option value="spiral" data-i18n="graph_config.layouts.spiral">Spiral</option>
+                              <option value="arc" data-i18n="graph_config.layouts.arc">Arc diagram</option>
+                              <option value="concentric" data-i18n="graph_config.layouts.concentric">Concentric clusters</option>
+                              <option value="bipartite" data-i18n="graph_config.layouts.bipartite">Bipartite</option>
+                              <option value="forceAtlas" data-i18n="graph_config.layouts.force_atlas">Force‑atlas</option>
+                              <!-- Orthogonal, Geographic, Treemap removed -->
                             </select>
-                            <button id="reloadLayout" class="btn btn-sm btn-outline-secondary ml-2" title="Réappliquer le layout sélectionné">
+                            <button id="reloadLayout" class="btn btn-sm btn-outline-secondary ml-2" title="Réappliquer le layout sélectionné" data-i18n-title="graph_config.io.layout_reload">
                               🔄
                             </button>
                           </p>
@@ -466,45 +466,45 @@
                     </div>
                   </div>
                   
-                  <!-- Colonne 2 -->
+                  <!-- Column 2 -->
                   <div class="col-12 col-md-6 col-lg-4 mb-3">
                     <!-- Section 2: Link Appearance -->
                     <div class="card h-100">
                       <div class="card-header section-header" id="headingLinkStyle">
                         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseLinkStyle" aria-expanded="true" aria-controls="collapseLinkStyle">
-                          Link Style
+                          <span data-i18n="graph_config.links.title">Link Style</span>
                         </button>
                       </div>
                       <div id="collapseLinkStyle" class="collapse show" aria-labelledby="headingLinkStyle">
                         <div class="card-body">
-                          <!-- Toggle amélioré pour liens droits/courbés -->
+                          <!-- Enhanced toggle for straight/curved links -->
                           <div class="toggle-container mb-3">
-                            <div class="toggle-label">Liens droits</div>
+                            <div class="toggle-label" data-i18n="graph_config.links.straight">Liens droits</div>
                             <label class="toggle-switch" for="curved-links">
-                              <input type="checkbox" id="curved-links" checked title="Toggle entre liens droits et liens courbés" aria-label="Toggle entre liens droits et liens courbés">
+                              <input type="checkbox" id="curved-links" checked title="Toggle entre liens droits et liens courbés" aria-label="Toggle entre liens droits et liens courbés" data-i18n-title="graph_config.links.toggle_title" data-i18n-aria-label="graph_config.links.toggle_title">
                               <span class="slider round"></span>
                             </label>
-                            <div class="toggle-label">Liens courbés</div>
+                            <div class="toggle-label" data-i18n="graph_config.links.curved">Liens courbés</div>
                           </div>
                           
-                          <!-- Contrôles pour la courbure avec meilleure organisation -->
+                          <!-- Curvature controls -->
                           <div id="curvature-controls" class="card border-light mb-3">
-                            <div class="card-header bg-light">Paramètres de courbure</div>
+                            <div class="card-header bg-light" data-i18n="graph_config.links.curvature.title">Paramètres de courbure</div>
                             <div class="card-body">
                               <p>
-                                <label for="base-curvature">Courbure de base:</label>
-                                <input type="range" id="base-curvature" name="base-curvature" min="0" max="1" step="0.05" value="0.2" class="form-control-range" title="Courbure par défaut pour les liens simples">
-                                <small class="text-muted">Valeur: <span id="base-curvature-value">0.2</span></small>
+                                <label for="base-curvature" data-i18n="graph_config.links.curvature.base">Courbure de base:</label>
+                                <input type="range" id="base-curvature" name="base-curvature" min="0" max="1" step="0.05" value="0.2" class="form-control-range" title="Courbure par défaut pour les liens simples" data-i18n-title="graph_config.links.curvature.base_hint">
+                                <small class="text-muted"><span data-i18n="graph_config.links.curvature.value_label">Valeur:</span> <span id="base-curvature-value">0.2</span></small>
                               </p>
                               <p>
-                                <label for="loop-curvature">Taille des boucles:</label>
-                                <input type="range" id="loop-curvature" name="loop-curvature" min="0.5" max="3" step="0.1" value="1.5" class="form-control-range" title="Facteur de taille pour les auto-liens">
-                                <small class="text-muted">Valeur: <span id="loop-curvature-value">1.5</span></small>
+                                <label for="loop-curvature" data-i18n="graph_config.links.curvature.loop">Taille des boucles:</label>
+                                <input type="range" id="loop-curvature" name="loop-curvature" min="0.5" max="3" step="0.1" value="1.5" class="form-control-range" title="Facteur de taille pour les auto-liens" data-i18n-title="graph_config.links.curvature.loop_hint">
+                                <small class="text-muted"><span data-i18n="graph_config.links.curvature.value_label">Valeur:</span> <span id="loop-curvature-value">1.5</span></small>
                               </p>
                               <p>
-                                <label for="curvature-step">Décalage liens parallèles:</label>
-                                <input type="range" id="curvature-step" name="curvature-step" min="0.01" max="0.5" step="0.01" value="0.1" class="form-control-range" title="Écart entre liens parallèles">
-                                <small class="text-muted">Valeur: <span id="curvature-step-value">0.1</span></small>
+                                <label for="curvature-step" data-i18n="graph_config.links.curvature.step">Décalage liens parallèles:</label>
+                                <input type="range" id="curvature-step" name="curvature-step" min="0.01" max="0.5" step="0.01" value="0.1" class="form-control-range" title="Écart entre liens parallèles" data-i18n-title="graph_config.links.curvature.step_hint">
+                                <small class="text-muted"><span data-i18n="graph_config.links.curvature.value_label">Valeur:</span> <span id="curvature-step-value">0.1</span></small>
                               </p>
                             </div>
                           </div>
@@ -514,7 +514,7 @@
                             <div class="custom-control custom-checkbox">
                               <input type="checkbox" class="custom-control-input" id="forceRecreateLinks" checked>
                               <label class="custom-control-label" for="forceRecreateLinks">
-                                Recréer les liens à chaque mise à jour
+                                <span data-i18n="graph_config.links.recreate">Recréer les liens à chaque mise à jour</span>
                               </label>
                             </div>
                           </div>
@@ -523,13 +523,13 @@
                     </div>
                   </div>
                   
-                  <!-- Colonne 3 -->
+                  <!-- Column 3 -->
                   <div class="col-12 col-md-6 col-lg-4 mb-3">
                     <!-- Section 3: Force Parameters -->
                     <div class="card h-100">
                       <div class="card-header section-header" id="headingForce">
                         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseForce" aria-expanded="true" aria-controls="collapseForce">
-                          Force Parameters
+                          <span data-i18n="graph_config.forces.title">Force Parameters</span>
                         </button>
                       </div>
                       <div id="collapseForce" class="collapse show" aria-labelledby="headingForce">
@@ -538,22 +538,22 @@
                             <div class="form-field">
                               <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="link-force" name="link-force">
-                                <label class="custom-control-label" for="link-force">Link force</label>
+                                <label class="custom-control-label" for="link-force" data-i18n="graph_config.forces.link_force">Link force</label>
                               </div>
                               <div class="compact-control">
-                                <label for="link-distance">Link distance</label>
-                                <input type="number" id="link-distance" name="link-distance" class="form-control form-control-sm" title="Distance between linked nodes">
+                                <label for="link-distance" data-i18n="graph_config.forces.link_distance">Link distance</label>
+                                <input type="number" id="link-distance" name="link-distance" class="form-control form-control-sm" title="Distance between linked nodes" data-i18n-title="graph_config.forces.link_distance_hint">
                               </div>
                             </div>
                             <div class="form-field">
-                              <label for="charge-strength">Charge strength</label>
+                              <label for="charge-strength" data-i18n="graph_config.forces.charge_strength">Charge strength</label>
                               <input type="number" id="charge-strength" name="charge-strength" class="form-control form-control-sm" 
-                                     title="Use negative value with center force activated is recommended">
+                                     title="Use negative value with center force activated is recommended" data-i18n-title="graph_config.forces.charge_strength_hint">
                             </div>
                             <div class="form-field">
                               <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="center-force" name="center-force">
-                                <label class="custom-control-label" for="center-force">Center force</label>
+                                <label class="custom-control-label" for="center-force" data-i18n="graph_config.forces.center_force">Center force</label>
                               </div>
                             </div>
                           </div>
@@ -566,14 +566,14 @@
                     <div class="card h-100">
                       <div class="card-header section-header" id="headingStyleRules">
                         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseStyleRules" aria-expanded="true" aria-controls="collapseStyleRules">
-                          Regles de style (noeuds / liens)
+                          <span data-i18n="graph_config.style_rules.title">Regles de style (noeuds / liens)</span>
                         </button>
                       </div>
                       <div id="collapseStyleRules" class="collapse show" aria-labelledby="headingStyleRules">
                         <div class="card-body">
                           <div class="d-flex flex-wrap mb-2">
-                            <button id="style-rule-add-node" class="btn btn-sm btn-outline-secondary m-1">+ Regle noeud</button>
-                            <button id="style-rule-add-link" class="btn btn-sm btn-outline-secondary m-1">+ Regle lien</button>
+                            <button id="style-rule-add-node" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.style_rules.add_node">+ Regle noeud</button>
+                            <button id="style-rule-add-link" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.style_rules.add_link">+ Regle lien</button>
                           </div>
                           <div id="style-rules-list"></div>
                         </div>
@@ -585,13 +585,13 @@
                     <div class="card h-100">
                       <div class="card-header section-header" id="headingPieRules">
                         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapsePieRules" aria-expanded="true" aria-controls="collapsePieRules">
-                          Pie chart (groupes de noeuds)
+                          <span data-i18n="graph_config.pie_rules.title">Pie chart (groupes de noeuds)</span>
                         </button>
                       </div>
                       <div id="collapsePieRules" class="collapse show" aria-labelledby="headingPieRules">
                         <div class="card-body">
                           <div class="d-flex flex-wrap mb-2">
-                            <button id="pie-rule-add" class="btn btn-sm btn-outline-secondary m-1">+ Regle pie chart</button>
+                            <button id="pie-rule-add" class="btn btn-sm btn-outline-secondary m-1" data-i18n="graph_config.pie_rules.add">+ Regle pie chart</button>
                           </div>
                           <div id="pie-rules-list"></div>
                         </div>
@@ -604,114 +604,114 @@
             </div>
             
             <div class="tab-pane fade" id="tab4">
-              <!-- AI Request tab - organisé en sections repliables -->
+              <!-- AI Request tab - organized in collapsible sections -->
               <div class="accordion" id="aiAccordion">
                 <div class="row">
       
-                  <!-- Section 1: Génération par prompt - maintenant dans une colonne -->
+                  <!-- Section 1: Prompt generation - now in one column -->
                   <div class="col-12 col-md-6 mb-3">
                     <div class="card">
                       <div class="card-header section-header" id="headingGeneration">
                         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseGeneration" aria-expanded="true" aria-controls="collapseGeneration">
-                          Génération par prompt
+                          <span data-i18n="ai.prompt.title">Génération par prompt</span>
                         </button>
                       </div>
                       <div id="collapseGeneration" class="collapse show" aria-labelledby="headingGeneration">
                         <div class="card-body">
-                          <!-- Conteneur pour la génération par prompt -->
-                          <div id="div-generation">
-                            <div class="mb-2">
+                        <!-- Prompt generation container -->
+                        <div id="div-generation">
+                          <div class="mb-2">
                             <details class="mt-2">
-                              <summary>Configuration IA</summary>
-                              <label for="aiProvider" class="mt-2">Fournisseur IA:</label>
-                              <select id="aiProvider" class="w-100" title="Fournisseur IA">
+                              <summary data-i18n="ai.common.config_summary">Configuration IA</summary>
+                              <label for="aiProvider" class="mt-2" data-i18n="ai.common.provider_label">Fournisseur IA:</label>
+                              <select id="aiProvider" class="w-100" title="Fournisseur IA" data-i18n-title="ai.common.provider_title">
                                 <option value="ollama">Ollama</option>
                               </select>
-                              <label for="aiModel" class="mt-2">Modele d'IA:</label>
-                              <select id="aiModel" class="w-100 form-control form-control-sm" title="Nom du modele IA a utiliser"></select>
+                              <label for="aiModel" class="mt-2" data-i18n="ai.common.model_label">Modele d'IA:</label>
+                              <select id="aiModel" class="w-100 form-control form-control-sm" title="Nom du modele IA a utiliser" data-i18n-title="ai.common.model_title"></select>
                             </details>
-                            </div>
-                            <textarea id="ollamaPrompt" placeholder="Saisissez votre requête ici" class="w-100 prompt-textarea" title="Votre requête pour générer un graph"></textarea>
-                            <br>
-                            <button id="ollamaSend" title="Envoyer la requête à Ollama">Envoyer la requête</button>
-                            <button id="ollamaStop" title="Arrêter la génération en cours">Stop Generation</button>
-                            <button id="importGraph" title="Importer le graph généré dans l'application">Importer Graph Ollama</button>
                           </div>
+                          <textarea id="ollamaPrompt" placeholder="Saisissez votre requête ici" class="w-100 prompt-textarea" title="Votre requête pour générer un graph" data-i18n-placeholder="ai.prompt.placeholder" data-i18n-title="ai.prompt.title_hint"></textarea>
+                          <br>
+                          <button id="ollamaSend" title="Envoyer la requête à Ollama" data-i18n="ai.prompt.send" data-i18n-title="ai.prompt.send_title">Envoyer la requête</button>
+                          <button id="ollamaStop" title="Arrêter la génération en cours" data-i18n="common.stop_generation" data-i18n-title="ai.prompt.stop_title">Stop Generation</button>
+                          <button id="importGraph" title="Importer le graph généré dans l'application" data-i18n="ai.prompt.import_graph" data-i18n-title="ai.prompt.import_graph_title">Importer Graph Ollama</button>
+                        </div>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  <!-- Section 2: Propositions - maintenant dans une colonne -->
+                  <!-- Section 2: Proposals - now in one column -->
                   <div class="col-12 col-md-6 mb-3">
                     <div class="card">
                       <div class="card-header section-header" id="headingProposals">
                         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseProposals" aria-expanded="true" aria-controls="collapseProposals">
-                          Propositions basées sur le graph actuel
+                          <span data-i18n="ai.proposals.title">Propositions basées sur le graph actuel</span>
                         </button>
                       </div>
                       <div id="collapseProposals" class="collapse show" aria-labelledby="headingProposals">
                         <div class="card-body">
-                          <!-- Conteneur pour les propositions -->
+                          <!-- Proposals container -->
                           <div id="div-proposals">
-                            <button id="ollamaSendProposals">Envoyer le graph actuel pour propositions</button>
-                            <button id="ollamaStopProposals">Stop Generation</button>
+                            <button id="ollamaSendProposals" data-i18n="ai.proposals.send">Envoyer le graph actuel pour propositions</button>
+                            <button id="ollamaStopProposals" data-i18n="common.stop_generation">Stop Generation</button>
                             <details class="mt-2">
-                              <summary class="small">Configuration IA</summary>
+                              <summary class="small" data-i18n="ai.common.config_summary">Configuration IA</summary>
                               <div class="row mt-2">
                                 <div class="col-md-6">
-                                  <label class="small">Fournisseur</label>
+                                  <label class="small" data-i18n="ai.common.provider">Fournisseur</label>
                                   <select id="proposals-ai-provider" class="form-control form-control-sm"></select>
                                 </div>
                                 <div class="col-md-6">
-                                  <label class="small">Modele</label>
+                                  <label class="small" data-i18n="ai.common.model">Modele</label>
                                   <select id="proposals-ai-model" class="form-control form-control-sm"></select>
                                 </div>
                               </div>
                             </details>
                             <div id="proposalLists" class="mt-3">
                               <div>
-                                <h4>Noeuds proposés</h4>
+                                <h4 data-i18n="ai.proposals.nodes">Noeuds proposés</h4>
                                 <ul id="proposalNodes"></ul>
                               </div>
                               <div>
-                                <h4>Liens proposés</h4>
+                                <h4 data-i18n="ai.proposals.links">Liens proposés</h4>
                                 <ul id="proposalLinks"></ul>
                               </div>
                             </div>
                             <br>
-                            <button id="ollamaRejectProposals">Réinitialiser Propositions</button>
+                            <button id="ollamaRejectProposals" data-i18n="ai.proposals.reset">Réinitialiser Propositions</button>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  <!-- Section 2bis: Traduction -->
+                  <!-- Section 2bis: Translation -->
                   <div class="col-12 col-md-6 mb-3">
                     <div class="card">
                       <div class="card-header section-header" id="headingTranslate">
                         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTranslate" aria-expanded="true" aria-controls="collapseTranslate">
-                          Traduction (sélection)
+                          <span data-i18n="ai.translation.title">Traduction (sélection)</span>
                         </button>
                       </div>
                       <div id="collapseTranslate" class="collapse show" aria-labelledby="headingTranslate">
                         <div class="card-body">
-                          <label for="translateField">Champ à traduire (ex: name_fr)</label>
-                            <input id="translateField" class="form-control form-control-sm" placeholder="ex: name_fr">
-                            <label for="translateTarget" class="mt-2">Langue cible (ex: en)</label>
-                            <input id="translateTarget" class="form-control form-control-sm" placeholder="ex: en">
-                            <button id="translateBtn" class="btn btn-sm btn-outline-primary mt-2">Traduire le champ</button>
-                            <button id="translateStop" class="btn btn-sm btn-outline-secondary mt-2">Stop Generation</button>
+                          <label for="translateField" data-i18n="ai.translation.field_label">Champ à traduire (ex: name_fr)</label>
+                            <input id="translateField" class="form-control form-control-sm" placeholder="ex: name_fr" data-i18n-placeholder="ai.translation.field_placeholder">
+                            <label for="translateTarget" class="mt-2" data-i18n="ai.translation.target_label">Langue cible (ex: en)</label>
+                            <input id="translateTarget" class="form-control form-control-sm" placeholder="ex: en" data-i18n-placeholder="ai.translation.target_placeholder">
+                            <button id="translateBtn" class="btn btn-sm btn-outline-primary mt-2" data-i18n="ai.translation.translate">Traduire le champ</button>
+                            <button id="translateStop" class="btn btn-sm btn-outline-secondary mt-2" data-i18n="common.stop_generation">Stop Generation</button>
                             <details class="mt-2">
-                              <summary class="small">Configuration IA</summary>
+                              <summary class="small" data-i18n="ai.common.config_summary">Configuration IA</summary>
                               <div class="row mt-2">
                                 <div class="col-md-6">
-                                  <label class="small">Fournisseur</label>
+                                  <label class="small" data-i18n="ai.common.provider">Fournisseur</label>
                                   <select id="translate-ai-provider" class="form-control form-control-sm"></select>
                                 </div>
                                 <div class="col-md-6">
-                                  <label class="small">Modele</label>
+                                  <label class="small" data-i18n="ai.common.model">Modele</label>
                                   <select id="translate-ai-model" class="form-control form-control-sm"></select>
                                 </div>
                               </div>
@@ -721,20 +721,20 @@
                     </div>
                   </div>
                   
-                  <!-- Section 3: Logs - prend toute la largeur -->
+                  <!-- Section 3: Logs - full width -->
                   <div class="col-12 mb-3">
                     <div class="card">
                       <div class="card-header section-header" id="headingLogs">
                         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseLogs" aria-expanded="true" aria-controls="collapseLogs">
-                          Logs de réponse
+                          <span data-i18n="ai.logs.title">Logs de réponse</span>
                         </button>
                       </div>
                       <div id="collapseLogs" class="collapse show" aria-labelledby="headingLogs">
                         <div class="card-body">
-                          <!-- Conteneur pour les logs -->
+                          <!-- Logs container -->
                           <div id="div-logs">
-                            <textarea id="ollamaRaw" class="w-100 log-textarea mt-2" readonly title="Logs bruts de la réponse Ollama"></textarea>
-                            <pre id="ollamaResult" class="log-result" title="Résultat formaté de la réponse Ollama"></pre>
+                            <textarea id="ollamaRaw" class="w-100 log-textarea mt-2" readonly title="Logs bruts de la réponse Ollama" data-i18n-title="ai.logs.raw_title"></textarea>
+                            <pre id="ollamaResult" class="log-result" title="Résultat formaté de la réponse Ollama" data-i18n-title="ai.logs.result_title"></pre>
                           </div>
                         </div>
                       </div>
@@ -748,18 +748,18 @@
               <div class="card">
                 <div class="card-header section-header">
                   <button class="btn btn-link" type="button">
-                    Tableur multilingue
+                    <span data-i18n="sheet.title">Tableur multilingue</span>
                   </button>
                 </div>
                 <div class="card-body">
                   <div class="row">
                     <div class="col-md-6">
-                      <label class="small">Source</label>
-                      <input id="sheet-lang-source" class="form-control form-control-sm" placeholder="ex: fr">
+                      <label class="small" data-i18n="sheet.source_label">Source</label>
+                      <input id="sheet-lang-source" class="form-control form-control-sm" placeholder="ex: fr" data-i18n-placeholder="sheet.source_placeholder">
                     </div>
                     <div class="col-md-6">
-                      <label class="small">Cible</label>
-                      <input id="sheet-lang-target" class="form-control form-control-sm" placeholder="ex: en">
+                      <label class="small" data-i18n="sheet.target_label">Cible</label>
+                      <input id="sheet-lang-target" class="form-control form-control-sm" placeholder="ex: en" data-i18n-placeholder="sheet.target_placeholder">
                     </div>
                   </div>
                   <div class="row mt-2">
@@ -771,109 +771,109 @@
                         <div class="mr-3">
                           <input type="checkbox" id="sheet-field-description"> <label for="sheet-field-description">description</label>
                         </div>
-                        <button id="sheet-open-convert" class="btn btn-sm btn-outline-secondary ml-2">Conversion</button>
-                        <button id="sheet-refresh" class="btn btn-sm btn-outline-secondary ml-auto">Rafraîchir</button>
+                        <button id="sheet-open-convert" class="btn btn-sm btn-outline-secondary ml-2" data-i18n="sheet.convert">Conversion</button>
+                        <button id="sheet-refresh" class="btn btn-sm btn-outline-secondary ml-auto" data-i18n="sheet.refresh">Rafraîchir</button>
                       </div>
                     </div>
                   </div>
                   <div class="row mt-2">
                     <div class="col-md-4">
-                      <label class="small">Rechercher</label>
-                      <input id="sheet-find" class="form-control form-control-sm" placeholder="texte à chercher">
+                      <label class="small" data-i18n="sheet.search_label">Rechercher</label>
+                      <input id="sheet-find" class="form-control form-control-sm" placeholder="texte à chercher" data-i18n-placeholder="sheet.search_placeholder">
                     </div>
                     <div class="col-md-4">
-                      <label class="small">Remplacer</label>
-                      <input id="sheet-replace" class="form-control form-control-sm" placeholder="remplacement">
+                      <label class="small" data-i18n="sheet.replace_label">Remplacer</label>
+                      <input id="sheet-replace" class="form-control form-control-sm" placeholder="remplacement" data-i18n-placeholder="sheet.replace_placeholder">
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
-                      <button id="sheet-find-replace" class="btn btn-sm btn-outline-primary">Remplacer tout</button>
+                      <button id="sheet-find-replace" class="btn btn-sm btn-outline-primary" data-i18n="sheet.replace_all">Remplacer tout</button>
                     </div>
                   </div>
                   <div class="row mt-2">
                     <div class="col-md-3">
-                      <label class="small">Filtre texte</label>
-                      <input id="sheet-filter" class="form-control form-control-sm" placeholder="filtrer...">
+                      <label class="small" data-i18n="sheet.filter_text_label">Filtre texte</label>
+                      <input id="sheet-filter" class="form-control form-control-sm" placeholder="filtrer..." data-i18n-placeholder="sheet.filter_text_placeholder">
                     </div>
                     <div class="col-md-3">
-                      <label class="small">Filtre type</label>
+                      <label class="small" data-i18n="sheet.filter_type_label">Filtre type</label>
                       <select id="sheet-filter-type" class="form-control form-control-sm">
-                        <option value="">Tous</option>
-                        <option value="node">Noeud</option>
-                        <option value="link">Lien</option>
+                        <option value="" data-i18n="common.all">Tous</option>
+                        <option value="node" data-i18n="common.node">Noeud</option>
+                        <option value="link" data-i18n="common.link">Lien</option>
                       </select>
                     </div>
                     <div class="col-md-3">
-                      <label class="small">Filtre champ</label>
+                      <label class="small" data-i18n="sheet.filter_field_label">Filtre champ</label>
                       <select id="sheet-filter-field" class="form-control form-control-sm">
-                        <option value="">Tous</option>
+                        <option value="" data-i18n="common.all">Tous</option>
                         <option value="name">name</option>
                         <option value="description">description</option>
                       </select>
                     </div>
                     <div class="col-md-3">
-                      <label class="small">Filtre langue</label>
-                      <input id="sheet-filter-lang" class="form-control form-control-sm" placeholder="ex: fr">
+                      <label class="small" data-i18n="sheet.filter_lang_label">Filtre langue</label>
+                      <input id="sheet-filter-lang" class="form-control form-control-sm" placeholder="ex: fr" data-i18n-placeholder="sheet.filter_lang_placeholder">
                     </div>
                   </div>
                   <div class="row mt-2">
                     <div class="col-md-4">
-                      <label class="small">Trier par</label>
+                      <label class="small" data-i18n="sheet.sort_label">Trier par</label>
                       <select id="sheet-sort" class="form-control form-control-sm">
-                        <option value="type">Type</option>
-                        <option value="id">ID</option>
-                        <option value="field">Champ</option>
-                        <option value="lang">Langue</option>
-                        <option value="value">Valeur</option>
+                        <option value="type" data-i18n="sheet.sort.type">Type</option>
+                        <option value="id" data-i18n="sheet.sort.id">ID</option>
+                        <option value="field" data-i18n="sheet.sort.field">Champ</option>
+                        <option value="lang" data-i18n="sheet.sort.lang">Langue</option>
+                        <option value="value" data-i18n="sheet.sort.value">Valeur</option>
                       </select>
                     </div>
                     <div class="col-md-4">
-                      <label class="small">Sélection colonne</label>
+                      <label class="small" data-i18n="sheet.column_select_label">Sélection colonne</label>
                       <div class="d-flex">
                         <select id="sheet-column-field" class="form-control form-control-sm mr-2">
                           <option value="name">name</option>
                           <option value="description">description</option>
                         </select>
-                        <input id="sheet-column-lang" class="form-control form-control-sm" placeholder="langue">
+                        <input id="sheet-column-lang" class="form-control form-control-sm" placeholder="langue" data-i18n-placeholder="sheet.column_lang_placeholder">
                       </div>
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
-                      <button id="sheet-select-column" class="btn btn-sm btn-outline-secondary">Cocher colonne</button>
+                      <button id="sheet-select-column" class="btn btn-sm btn-outline-secondary" data-i18n="sheet.column_select">Cocher colonne</button>
                     </div>
                   </div>
                   <div class="mt-2">
                     <table class="table table-sm table-bordered">
                       <thead>
                         <tr>
-                          <th>Type</th>
-                          <th>ID</th>
-                          <th>Champ</th>
-                          <th>Langue</th>
-                          <th>Valeur</th>
-                          <th>Traduire</th>
+                          <th data-i18n="sheet.table.type">Type</th>
+                          <th data-i18n="sheet.table.id">ID</th>
+                          <th data-i18n="sheet.table.field">Champ</th>
+                          <th data-i18n="sheet.table.lang">Langue</th>
+                          <th data-i18n="sheet.table.value">Valeur</th>
+                          <th data-i18n="sheet.table.translate">Traduire</th>
                         </tr>
                       </thead>
                       <tbody id="multilingual-sheet-body"></tbody>
                     </table>
                   </div>
                   <details class="mt-2">
-                    <summary class="small">Configuration IA</summary>
+                    <summary class="small" data-i18n="ai.common.config_summary">Configuration IA</summary>
                     <div class="row mt-2">
                       <div class="col-md-6">
-                        <label class="small">Fournisseur</label>
+                        <label class="small" data-i18n="ai.common.provider">Fournisseur</label>
                         <select id="sheet-ai-provider" class="form-control form-control-sm"></select>
                       </div>
                       <div class="col-md-6">
-                        <label class="small">Modele</label>
+                        <label class="small" data-i18n="ai.common.model">Modele</label>
                         <select id="sheet-ai-model" class="form-control form-control-sm"></select>
                       </div>
                     </div>
                   </details>
                   <div class="mt-2 d-flex flex-wrap">
-                    <button id="sheet-select-all" class="btn btn-sm btn-outline-secondary m-1">Tout cocher</button>
-                    <button id="sheet-apply" class="btn btn-sm btn-outline-primary m-1">Appliquer modifications</button>
-                    <button id="sheet-translate" class="btn btn-sm btn-success m-1">Traduire la sélection</button>
-                    <button id="sheet-translate-stop" class="btn btn-sm btn-outline-secondary m-1">Stop Generation</button>
-                    <button id="sheet-export-csv" class="btn btn-sm btn-outline-primary m-1">Exporter CSV</button>
+                    <button id="sheet-select-all" class="btn btn-sm btn-outline-secondary m-1" data-i18n="sheet.actions.select_all">Tout cocher</button>
+                    <button id="sheet-apply" class="btn btn-sm btn-outline-primary m-1" data-i18n="sheet.actions.apply">Appliquer modifications</button>
+                    <button id="sheet-translate" class="btn btn-sm btn-success m-1" data-i18n="sheet.actions.translate">Traduire la sélection</button>
+                    <button id="sheet-translate-stop" class="btn btn-sm btn-outline-secondary m-1" data-i18n="common.stop_generation">Stop Generation</button>
+                    <button id="sheet-export-csv" class="btn btn-sm btn-outline-primary m-1" data-i18n="sheet.actions.export_csv">Exporter CSV</button>
                   </div>
                 </div>
               </div>
@@ -882,22 +882,22 @@
               <div class="card">
                 <div class="card-header section-header">
                   <button class="btn btn-link" type="button">
-                    Configuration IA
+                    <span data-i18n="app_config.ai.title">Configuration IA</span>
                   </button>
                 </div>
                 <div class="card-body">
                   <div class="row">
                     <div class="col-md-6">
-                      <label class="small">Fournisseur IA par defaut</label>
+                      <label class="small" data-i18n="app_config.ai.default_provider">Fournisseur IA par defaut</label>
                       <select id="config-ai-provider" class="form-control form-control-sm"></select>
                     </div>
                     <div class="col-md-6">
-                      <label class="small">Modele IA par defaut</label>
+                      <label class="small" data-i18n="app_config.ai.default_model">Modele IA par defaut</label>
                       <select id="config-ai-model" class="form-control form-control-sm"></select>
                     </div>
                   </div>
                   <details class="mt-3">
-                    <summary class="small">Log IA (echanges complets)</summary>
+                    <summary class="small" data-i18n="app_config.ai.log_summary">Log IA (echanges complets)</summary>
                     <textarea id="ai-log" class="w-100 log-textarea mt-2" readonly></textarea>
                   </details>
                 </div>
@@ -905,7 +905,18 @@
               <div class="card mt-3">
                 <div class="card-header section-header">
                   <button class="btn btn-link" type="button">
-                    Configuration logiciel Import/Export
+                    <span data-i18n="app_config.ui_language.title">Langue de l'interface</span>
+                  </button>
+                </div>
+                <div class="card-body">
+                  <label class="small" for="ui-language" data-i18n="app_config.ui_language.label">Langue UI</label>
+                  <select id="ui-language" class="form-control form-control-sm"></select>
+                </div>
+              </div>
+              <div class="card mt-3">
+                <div class="card-header section-header">
+                  <button class="btn btn-link" type="button">
+                    <span data-i18n="app_config.io.title">Configuration logiciel Import/Export</span>
                   </button>
                 </div>
                 <div class="card-body">
@@ -913,20 +924,20 @@
                     <div class="col-md-4">
                       <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="app-config-include-ai" checked>
-                        <label class="custom-control-label" for="app-config-include-ai">IA</label>
+                        <label class="custom-control-label" for="app-config-include-ai" data-i18n="app_config.io.include_ai">IA</label>
                       </div>
                       <div class="custom-control custom-checkbox mt-1">
                         <input type="checkbox" class="custom-control-input" id="app-config-include-style" checked>
-                        <label class="custom-control-label" for="app-config-include-style">Regles de style</label>
+                        <label class="custom-control-label" for="app-config-include-style" data-i18n="app_config.io.include_style">Regles de style</label>
                       </div>
                       <div class="custom-control custom-checkbox mt-1">
                         <input type="checkbox" class="custom-control-input" id="app-config-include-pie" checked>
-                        <label class="custom-control-label" for="app-config-include-pie">Pie charts</label>
+                        <label class="custom-control-label" for="app-config-include-pie" data-i18n="app_config.io.include_pie">Pie charts</label>
                       </div>
                     </div>
                   </div>
                   <div class="mt-2 d-flex flex-wrap">
-                    <button id="app-config-export" class="btn btn-sm btn-outline-primary m-1">Exporter config logiciel</button>
+                    <button id="app-config-export" class="btn btn-sm btn-outline-primary m-1" data-i18n="app_config.io.export">Exporter config logiciel</button>
                     <input type="file" id="app-config-import" accept=".json" class="m-1">
                   </div>
                 </div>
@@ -936,193 +947,193 @@
         </div>
       </div>
     </div>
-    <div id="conditional-field-overlay" class="advanced-import-overlay hidden">
+      <div id="conditional-field-overlay" class="advanced-import-overlay hidden">
         <div class="advanced-import-modal">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Champ personnalise</h6>
-            <button id="conditional-field-cancel" class="btn btn-sm btn-outline-secondary">Fermer</button>
+            <h6 class="mb-0" data-i18n="conditional.title">Champ personnalise</h6>
+            <button id="conditional-field-cancel" class="btn btn-sm btn-outline-secondary" data-i18n="common.close">Fermer</button>
           </div>
           <p class="small text-muted mb-2">
-            Creez une expression simple ou avancee. Le mode visuel couvre les cas courants.
+            <span data-i18n="conditional.subtitle">Creez une expression simple ou avancee. Le mode visuel couvre les cas courants.</span>
           </p>
         <div class="row">
           <div class="col-md-6">
-            <label class="small">Champ</label>
+            <label class="small" data-i18n="conditional.field_label">Champ</label>
             <div id="conditional-field-name" class="small font-weight-bold"></div>
           </div>
           <div class="col-md-6">
-            <label class="small">Mode</label>
+            <label class="small" data-i18n="conditional.mode_label">Mode</label>
             <select id="conditional-mode" class="form-control form-control-sm">
-              <option value="visual">Visuel</option>
-              <option value="expression">Expression</option>
+              <option value="visual" data-i18n="conditional.mode_visual">Visuel</option>
+              <option value="expression" data-i18n="conditional.mode_expression">Expression</option>
             </select>
           </div>
         </div>
 
-        <div id="conditional-visual" class="mt-2">
-          <div class="row">
-            <div class="col-md-6">
-              <label class="small">Type visuel</label>
-              <select id="conditional-visual-kind" class="form-control form-control-sm">
-                <option value="expression">Expression simple</option>
-                <option value="condition">Condition (Si/Alors)</option>
-              </select>
-            </div>
-          </div>
-
-          <div id="conditional-condition-block" class="mt-2">
-            <div class="row">
-              <div class="col-md-12">
-                <label class="small">Conditions (groupes imbriques)</label>
-              </div>
-            </div>
-            <div id="condition-group-root"></div>
-          </div>
-
-          <div id="conditional-then-else-block" class="mt-2">
+          <div id="conditional-visual" class="mt-2">
             <div class="row">
               <div class="col-md-6">
-                <label class="small" id="then-label">Alors</label>
-                <select id="then-mode" class="form-control form-control-sm mb-1">
-                  <option value="value">Valeur</option>
-                  <option value="concat">Concatener</option>
-                  <option value="calc">Calcul</option>
+                <label class="small" data-i18n="conditional.visual_type_label">Type visuel</label>
+                <select id="conditional-visual-kind" class="form-control form-control-sm">
+                  <option value="expression" data-i18n="conditional.visual_type_expression">Expression simple</option>
+                  <option value="condition" data-i18n="conditional.visual_type_condition">Condition (Si/Alors)</option>
                 </select>
-                <div id="then-value-block">
-                  <select id="then-source" class="form-control form-control-sm">
-                    <option value="field">Champ</option>
-                    <option value="value">Valeur</option>
-                  </select>
-                  <select id="then-field" class="form-control form-control-sm mt-1"></select>
-                  <input id="then-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
-                </div>
-                <div id="then-concat-block" class="hidden">
-                  <select id="then-concat-field-a" class="form-control form-control-sm"></select>
-                  <input id="then-concat-sep" class="form-control form-control-sm mt-1" placeholder="Separateur">
-                  <select id="then-concat-field-b" class="form-control form-control-sm mt-1"></select>
-                </div>
-                <div id="then-calc-block" class="hidden">
-                  <select id="then-calc-left-source" class="form-control form-control-sm">
-                    <option value="field">Champ</option>
-                    <option value="value">Valeur</option>
-                  </select>
-                  <select id="then-calc-left-field" class="form-control form-control-sm mt-1"></select>
-                  <input id="then-calc-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
-                  <select id="then-calc-op" class="form-control form-control-sm mt-1">
-                    <option value="add">+</option>
-                    <option value="sub">-</option>
-                    <option value="mul">*</option>
-                    <option value="div">/</option>
-                  </select>
-                  <select id="then-calc-right-source" class="form-control form-control-sm mt-1">
-                    <option value="field">Champ</option>
-                    <option value="value">Valeur</option>
-                  </select>
-                  <select id="then-calc-right-field" class="form-control form-control-sm mt-1"></select>
-                  <input id="then-calc-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+              </div>
+            </div>
+  
+            <div id="conditional-condition-block" class="mt-2">
+              <div class="row">
+                <div class="col-md-12">
+                  <label class="small" data-i18n="conditional.conditions_label">Conditions (groupes imbriques)</label>
                 </div>
               </div>
-              <div class="col-md-6" id="conditional-else-block">
-                <label class="small" id="else-label">Sinon</label>
-                <select id="else-mode" class="form-control form-control-sm mb-1">
-                  <option value="value">Valeur</option>
-                  <option value="concat">Concatener</option>
-                  <option value="calc">Calcul</option>
-                </select>
-                <div id="else-value-block">
-                  <select id="else-source" class="form-control form-control-sm">
-                    <option value="field">Champ</option>
-                    <option value="value">Valeur</option>
+              <div id="condition-group-root"></div>
+            </div>
+  
+            <div id="conditional-then-else-block" class="mt-2">
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="small" id="then-label" data-i18n="conditional.then_label">Alors</label>
+                  <select id="then-mode" class="form-control form-control-sm mb-1">
+                    <option value="value" data-i18n="conditional.option_value">Valeur</option>
+                    <option value="concat" data-i18n="conditional.option_concat">Concatener</option>
+                    <option value="calc" data-i18n="conditional.option_calc">Calcul</option>
                   </select>
-                  <select id="else-field" class="form-control form-control-sm mt-1"></select>
-                  <input id="else-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+                  <div id="then-value-block">
+                    <select id="then-source" class="form-control form-control-sm">
+                      <option value="field" data-i18n="conditional.option_field">Champ</option>
+                      <option value="value" data-i18n="conditional.option_value">Valeur</option>
+                    </select>
+                    <select id="then-field" class="form-control form-control-sm mt-1"></select>
+                    <input id="then-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
+                  </div>
+                  <div id="then-concat-block" class="hidden">
+                    <select id="then-concat-field-a" class="form-control form-control-sm"></select>
+                    <input id="then-concat-sep" class="form-control form-control-sm mt-1" placeholder="Separateur" data-i18n-placeholder="conditional.placeholder_separator">
+                    <select id="then-concat-field-b" class="form-control form-control-sm mt-1"></select>
+                  </div>
+                  <div id="then-calc-block" class="hidden">
+                    <select id="then-calc-left-source" class="form-control form-control-sm">
+                      <option value="field" data-i18n="conditional.option_field">Champ</option>
+                      <option value="value" data-i18n="conditional.option_value">Valeur</option>
+                    </select>
+                    <select id="then-calc-left-field" class="form-control form-control-sm mt-1"></select>
+                    <input id="then-calc-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
+                    <select id="then-calc-op" class="form-control form-control-sm mt-1">
+                      <option value="add">+</option>
+                      <option value="sub">-</option>
+                      <option value="mul">*</option>
+                      <option value="div">/</option>
+                    </select>
+                    <select id="then-calc-right-source" class="form-control form-control-sm mt-1">
+                      <option value="field" data-i18n="conditional.option_field">Champ</option>
+                      <option value="value" data-i18n="conditional.option_value">Valeur</option>
+                    </select>
+                    <select id="then-calc-right-field" class="form-control form-control-sm mt-1"></select>
+                    <input id="then-calc-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
+                  </div>
                 </div>
-                <div id="else-concat-block" class="hidden">
-                  <select id="else-concat-field-a" class="form-control form-control-sm"></select>
-                  <input id="else-concat-sep" class="form-control form-control-sm mt-1" placeholder="Separateur">
-                  <select id="else-concat-field-b" class="form-control form-control-sm mt-1"></select>
-                </div>
-                <div id="else-calc-block" class="hidden">
-                  <select id="else-calc-left-source" class="form-control form-control-sm">
-                    <option value="field">Champ</option>
-                    <option value="value">Valeur</option>
+                <div class="col-md-6" id="conditional-else-block">
+                  <label class="small" id="else-label" data-i18n="conditional.else_label">Sinon</label>
+                  <select id="else-mode" class="form-control form-control-sm mb-1">
+                    <option value="value" data-i18n="conditional.option_value">Valeur</option>
+                    <option value="concat" data-i18n="conditional.option_concat">Concatener</option>
+                    <option value="calc" data-i18n="conditional.option_calc">Calcul</option>
                   </select>
-                  <select id="else-calc-left-field" class="form-control form-control-sm mt-1"></select>
-                  <input id="else-calc-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
-                  <select id="else-calc-op" class="form-control form-control-sm mt-1">
-                    <option value="add">+</option>
-                    <option value="sub">-</option>
-                    <option value="mul">*</option>
-                    <option value="div">/</option>
-                  </select>
-                  <select id="else-calc-right-source" class="form-control form-control-sm mt-1">
-                    <option value="field">Champ</option>
-                    <option value="value">Valeur</option>
-                  </select>
-                  <select id="else-calc-right-field" class="form-control form-control-sm mt-1"></select>
-                  <input id="else-calc-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur">
+                  <div id="else-value-block">
+                    <select id="else-source" class="form-control form-control-sm">
+                      <option value="field" data-i18n="conditional.option_field">Champ</option>
+                      <option value="value" data-i18n="conditional.option_value">Valeur</option>
+                    </select>
+                    <select id="else-field" class="form-control form-control-sm mt-1"></select>
+                    <input id="else-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
+                  </div>
+                  <div id="else-concat-block" class="hidden">
+                    <select id="else-concat-field-a" class="form-control form-control-sm"></select>
+                    <input id="else-concat-sep" class="form-control form-control-sm mt-1" placeholder="Separateur" data-i18n-placeholder="conditional.placeholder_separator">
+                    <select id="else-concat-field-b" class="form-control form-control-sm mt-1"></select>
+                  </div>
+                  <div id="else-calc-block" class="hidden">
+                    <select id="else-calc-left-source" class="form-control form-control-sm">
+                      <option value="field" data-i18n="conditional.option_field">Champ</option>
+                      <option value="value" data-i18n="conditional.option_value">Valeur</option>
+                    </select>
+                    <select id="else-calc-left-field" class="form-control form-control-sm mt-1"></select>
+                    <input id="else-calc-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
+                    <select id="else-calc-op" class="form-control form-control-sm mt-1">
+                      <option value="add">+</option>
+                      <option value="sub">-</option>
+                      <option value="mul">*</option>
+                      <option value="div">/</option>
+                    </select>
+                    <select id="else-calc-right-source" class="form-control form-control-sm mt-1">
+                      <option value="field" data-i18n="conditional.option_field">Champ</option>
+                      <option value="value" data-i18n="conditional.option_value">Valeur</option>
+                    </select>
+                    <select id="else-calc-right-field" class="form-control form-control-sm mt-1"></select>
+                    <input id="else-calc-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
           <div id="conditional-expression" class="mt-2 hidden">
-            <label class="small">Expression</label>
-            <textarea id="conditional-expression-text" class="form-control form-control-sm" rows="4" placeholder='if(gt(age,18), concat(prenom," ",nom), "Mineur")'></textarea>
+            <label class="small" data-i18n="conditional.expression_label">Expression</label>
+            <textarea id="conditional-expression-text" class="form-control form-control-sm" rows="4" placeholder='if(gt(age,18), concat(prenom," ",nom), "Mineur")' data-i18n-placeholder="conditional.expression_placeholder"></textarea>
             <div id="conditional-expression-error" class="type-warning mt-1"></div>
             <div class="small text-muted mt-1">
-              Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks
+              <span data-i18n="conditional.functions_help">Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks</span>
             </div>
           </div>
 
           <div id="conditional-ai-help" class="mt-2">
-            <label class="small">Assistance IA (beta)</label>
+            <label class="small" data-i18n="conditional.ai_help_label">Assistance IA (beta)</label>
             <select id="conditional-ai-suggestion" class="form-control form-control-sm mb-1">
-              <option value="">Suggestion rapide...</option>
-              <option value="Creer un nom complet en concatenant prenom et nom.">Nom complet (prenom + nom)</option>
-              <option value="Si age >= 18 alors 'Majeur' sinon 'Mineur'.">Condition simple (age)</option>
-              <option value="Ajouter la TVA (prix * 1.2) et retourner le total.">Calcul (TVA)</option>
-              <option value="Si status contient 'ok' alors 'OK' sinon 'KO'.">Texte contient</option>
+              <option value="" data-i18n="conditional.ai_suggestion_placeholder">Suggestion rapide...</option>
+              <option value="Creer un nom complet en concatenant prenom et nom." data-i18n="conditional.ai_suggestion_full_name">Nom complet (prenom + nom)</option>
+              <option value="Si age >= 18 alors 'Majeur' sinon 'Mineur'." data-i18n="conditional.ai_suggestion_simple_condition">Condition simple (age)</option>
+              <option value="Ajouter la TVA (prix * 1.2) et retourner le total." data-i18n="conditional.ai_suggestion_tax">Calcul (TVA)</option>
+              <option value="Si status contient 'ok' alors 'OK' sinon 'KO'." data-i18n="conditional.ai_suggestion_contains">Texte contient</option>
             </select>
-            <button id="conditional-ai-fill" class="btn btn-sm btn-outline-secondary mb-1">Remplir suggestion</button>
-            <textarea id="conditional-ai-request" class="form-control form-control-sm" rows="2" placeholder="Decris la formule souhaitee"></textarea>
+            <button id="conditional-ai-fill" class="btn btn-sm btn-outline-secondary mb-1" data-i18n="conditional.ai_fill">Remplir suggestion</button>
+            <textarea id="conditional-ai-request" class="form-control form-control-sm" rows="2" placeholder="Decris la formule souhaitee" data-i18n-placeholder="conditional.ai_request_placeholder"></textarea>
             <details class="mt-2">
-              <summary class="small">Configuration IA</summary>
+              <summary class="small" data-i18n="ai.common.config_summary">Configuration IA</summary>
               <div class="mt-2">
-                <label class="small">Fournisseur</label>
+                <label class="small" data-i18n="ai.common.provider">Fournisseur</label>
                 <select id="conditional-ai-provider" class="form-control form-control-sm"></select>
-                <label class="small mt-2">Modele</label>
+                <label class="small mt-2" data-i18n="ai.common.model">Modele</label>
                 <select id="conditional-ai-model" class="form-control form-control-sm"></select>
               </div>
             </details>
             <div class="d-flex flex-wrap mt-1">
-              <button id="conditional-ai-generate" class="btn btn-sm btn-outline-primary m-1">Proposer expression</button>
-              <button id="conditional-ai-stop" class="btn btn-sm btn-outline-secondary m-1">Stop</button>
+              <button id="conditional-ai-generate" class="btn btn-sm btn-outline-primary m-1" data-i18n="conditional.ai_generate">Proposer expression</button>
+              <button id="conditional-ai-stop" class="btn btn-sm btn-outline-secondary m-1" data-i18n="common.stop">Stop</button>
               <span id="conditional-ai-status" class="small text-muted mt-1"></span>
             </div>
           </div>
 
           <div class="row mt-2">
             <div class="col-md-6">
-              <label class="small">Type de resultat</label>
+              <label class="small" data-i18n="conditional.result_type_label">Type de resultat</label>
               <select id="conditional-result-type" class="form-control form-control-sm">
-                <option value="auto">Auto</option>
-              <option value="text">Texte</option>
-              <option value="number">Nombre</option>
-              <option value="number_comma">Nombre (virgule)</option>
-              <option value="boolean">Booleen</option>
-              <option value="date">Date</option>
+                <option value="auto" data-i18n="conditional.result_type_auto">Auto</option>
+              <option value="text" data-i18n="conditional.result_type_text">Texte</option>
+              <option value="number" data-i18n="conditional.result_type_number">Nombre</option>
+              <option value="number_comma" data-i18n="conditional.result_type_number_comma">Nombre (virgule)</option>
+              <option value="boolean" data-i18n="conditional.result_type_boolean">Booleen</option>
+              <option value="date" data-i18n="conditional.result_type_date">Date</option>
             </select>
             </div>
             <div class="col-md-6">
-              <label class="small">Expression canonique</label>
+              <label class="small" data-i18n="conditional.canonical_label">Expression canonique</label>
               <input id="conditional-expression-canonical" class="form-control form-control-sm">
             </div>
           </div>
           <div class="mt-2 d-flex flex-wrap">
-            <button id="conditional-validate" class="btn btn-sm btn-outline-secondary m-1">Verifier</button>
-            <button id="conditional-apply" class="btn btn-sm btn-success m-1">Appliquer</button>
+            <button id="conditional-validate" class="btn btn-sm btn-outline-secondary m-1" data-i18n="common.check">Verifier</button>
+            <button id="conditional-apply" class="btn btn-sm btn-success m-1" data-i18n="common.apply">Appliquer</button>
           </div>
           <div id="conditional-validate-output" class="pre-scroll mt-2"></div>
         </div>
@@ -1130,40 +1141,40 @@
     <div id="multilingual-convert-overlay" class="advanced-import-overlay hidden">
       <div class="advanced-import-modal">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="mb-0">Conversion multilingue</h6>
-          <button id="multilingual-convert-cancel" class="btn btn-sm btn-outline-secondary">Fermer</button>
+          <h6 class="mb-0" data-i18n="multilingual_convert.title">Conversion multilingue</h6>
+          <button id="multilingual-convert-cancel" class="btn btn-sm btn-outline-secondary" data-i18n="common.close">Fermer</button>
         </div>
         <p class="small text-muted mb-2">
-          Par défaut, les champs convertis sont supprimés (ex: <code>name</code>).
+          <span data-i18n-html="multilingual_convert.subtitle">Par défaut, les champs convertis sont supprimés (ex: <code>name</code>).</span>
         </p>
         <div class="row">
           <div class="col-md-6">
-            <label class="small">Mode</label>
+            <label class="small" data-i18n="multilingual_convert.mode_label">Mode</label>
             <select id="multilingual-convert-mode" class="form-control form-control-sm">
-              <option value="to-multi">Unilingue → Multilingue</option>
-              <option value="to-uni">Multilingue → Unilingue</option>
+              <option value="to-multi" data-i18n="multilingual_convert.mode_to_multi">Unilingue → Multilingue</option>
+              <option value="to-uni" data-i18n="multilingual_convert.mode_to_uni">Multilingue → Unilingue</option>
             </select>
           </div>
           <div class="col-md-6">
-            <label class="small">Langues (ex: fr,en)</label>
-            <input id="multilingual-convert-langs" class="form-control form-control-sm" placeholder="fr,en">
+            <label class="small" data-i18n="multilingual_convert.langs_label">Langues (ex: fr,en)</label>
+            <input id="multilingual-convert-langs" class="form-control form-control-sm" placeholder="fr,en" data-i18n-placeholder="multilingual_convert.langs_placeholder">
           </div>
         </div>
         <div class="row mt-2">
           <div class="col-md-6">
-            <label class="small">Langue de conversion (ex: fr)</label>
-            <input id="multilingual-convert-lang" class="form-control form-control-sm" placeholder="fr">
+            <label class="small" data-i18n="multilingual_convert.lang_label">Langue de conversion (ex: fr)</label>
+            <input id="multilingual-convert-lang" class="form-control form-control-sm" placeholder="fr" data-i18n-placeholder="multilingual_convert.lang_placeholder">
           </div>
           <div class="col-md-6">
-            <label class="small">Conserver les champs d'origine</label>
+            <label class="small" data-i18n="multilingual_convert.keep_label">Conserver les champs d'origine</label>
             <div class="custom-control custom-checkbox">
               <input type="checkbox" class="custom-control-input" id="multilingual-convert-keep">
-              <label class="custom-control-label" for="multilingual-convert-keep">Oui (ne pas supprimer)</label>
+              <label class="custom-control-label" for="multilingual-convert-keep" data-i18n="multilingual_convert.keep_yes">Oui (ne pas supprimer)</label>
             </div>
           </div>
         </div>
         <div class="mt-2 d-flex flex-wrap">
-          <button id="multilingual-convert-apply" class="btn btn-sm btn-success m-1">Appliquer</button>
+          <button id="multilingual-convert-apply" class="btn btn-sm btn-success m-1" data-i18n="common.apply">Appliquer</button>
         </div>
       </div>
     </div>

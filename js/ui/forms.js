@@ -1,5 +1,5 @@
 ﻿/**
- * Gestion des formulaires pour éditer les nœuds et les liens
+ * Form handling for editing nodes and links.
  */
 import { performAction } from '../state/undo_redo.js';
 import {
@@ -18,32 +18,32 @@ export class FormManager {
     this.graphState = graphState;
     this.renderer = renderer;
     
-    // Sélectionner les formulaires
+    // Select the forms.
     this.nodeForm = document.getElementById('node-form');
     this.linkForm = document.getElementById('link-form');
     
-    // Stockage des inputs
+    // Input storage.
     this.nodeInputs = {};
     this.linkInputs = {};
     this.localStyleInputs = { node: {}, link: {} };
     this.ruleMatchContainers = { node: null, link: null };
     
-    // Initialiser les formulaires
+    // Initialize forms.
     this.refreshForms();
     
-    // Configurer les observateurs de sélection
+    // Configure selection observers.
     this.setupSelectionObservers();
 
-    // Rafraîchir l'affichage des règles actives
+    // Refresh active rule display.
     eventBus.on('style-rules-updated', () => this.refreshRuleMatches());
     eventBus.on('pie-rules-updated', () => this.refreshRuleMatches());
   }
   
   /**
-   * Configure les observateurs pour détecter les changements de sélection
+   * Configures observers to detect selection changes.
    */
   setupSelectionObservers() {
-    // Observer les changements de sélection dans graphState
+    // Observe selection changes in graphState.
     const originalSelectNode = this.graphState.selectNode;
     this.graphState.selectNode = (node) => {
       originalSelectNode.call(this.graphState, node);
@@ -67,7 +67,7 @@ export class FormManager {
   }
   
   /**
-   * Rafraîchit les formulaires avec les champs actuels
+   * Refreshes forms with current fields.
    */
   refreshForms() {
     this.createFormInputs(this.graphState.nodes, this.nodeForm, this.nodeInputs, 'node');
@@ -75,21 +75,21 @@ export class FormManager {
   }
   
   /**
-   * Crée les champs de formulaire basés sur les données
+   * Creates form fields based on data.
    */
   createFormInputs(data, formElement, inputObject, target) {
     if (!formElement) return;
     
-    // Vider le formulaire et les références précédentes
+    // Clear the form and previous references.
     while (formElement.firstChild) {
       formElement.removeChild(formElement.firstChild);
     }
     Object.keys(inputObject).forEach(key => delete inputObject[key]);
 
-    // Récupérer les noms de champs
+    // Get field names.
     const fieldNames = this.getFieldOptions(target);
     
-    // Créer les champs
+    // Create fields.
     fieldNames.forEach(fieldName =>
       this.createField(fieldName, formElement, inputObject, data, target)
     );
@@ -99,7 +99,7 @@ export class FormManager {
   }
   
   /**
-   * Récupère les options de champs disponibles
+   * Retrieves available field options.
    */
   getFieldOptions(target) {
     return target === 'node'
@@ -108,12 +108,12 @@ export class FormManager {
   }
   
   /**
-   * Crée un champ de formulaire
+   * Creates a form field.
    */
   createField(fieldName, formElement, inputObject, data, target) {
     const fieldDiv = document.createElement('div');
 
-    // Creer le label
+    // Create the label.
     const label = document.createElement('label');
     label.setAttribute('for', `${formElement.id}-${fieldName}`);
     label.textContent = `${fieldName}:`;
@@ -127,7 +127,7 @@ export class FormManager {
     const isConditional = fieldType === 'conditional';
     const isObject = fieldType === 'object';
 
-    // Creer le controle de saisie
+    // Create the input control.
     const input = isBoolean ? document.createElement('select') : document.createElement('input');
     input.setAttribute('id', `${formElement.id}-${fieldName}`);
     input.setAttribute('name', fieldName);
@@ -151,7 +151,7 @@ export class FormManager {
 
     fieldDiv.appendChild(input);
 
-    // Selecteur de type
+    // Type selector.
     const typeSelect = document.createElement('select');
     typeSelect.className = 'field-type-select';
     typeSelect.innerHTML = FIELD_TYPES
@@ -190,7 +190,7 @@ export class FormManager {
 
     updateWarning();
 
-    // Ajouter un ecouteur d'evenement pour les modifications
+    // Add a change listener.
     const commitValue = () => {
       if (input.disabled) return;
       const rawValue = input.value;
@@ -282,7 +282,7 @@ export class FormManager {
 
     inputObject[fieldName] = { input, typeSelect, warning };
 
-    // Ajouter un bouton de suppression pour les champs non essentiels
+    // Add a delete button for non-essential fields.
     if (!["id", "x", "y", "source", "target"].includes(fieldName)) {
       const button = document.createElement('button');
       button.setAttribute('type', 'button');
@@ -314,15 +314,15 @@ export class FormManager {
   }
 
   /**
-   * Affiche une confirmation personnalisée
+   * Shows a custom confirmation.
    * @param {string} message
    * @param {Function} onConfirm
    */
   showCustomConfirm(message, onConfirm) {
-    // Créer overlay
+    // Create overlay.
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
-    // Boîte de dialogue
+    // Dialog box.
     const box = document.createElement('div');
     box.className = 'confirm-modal';
     box.innerHTML = `
@@ -333,7 +333,7 @@ export class FormManager {
     overlay.appendChild(box);
     document.body.appendChild(overlay);
 
-    // Handlers pour les boutons
+    // Button handlers.
     box.querySelector('.btn-yes').onclick = () => {
       onConfirm();
       cleanup();
@@ -342,7 +342,7 @@ export class FormManager {
       cleanup();
     };
 
-    // Écouteurs de touche pour valider sur Entrée
+    // Key listener to confirm on Enter.
     const keyHandler = e => {
       if (e.key === 'Enter') {
         onConfirm();
@@ -351,7 +351,7 @@ export class FormManager {
     };
     document.addEventListener('keydown', keyHandler);
 
-    // Fonction de nettoyage des handlers et suppression de l'overlay
+    // Cleanup handler removal and overlay deletion.
     function cleanup() {
       document.body.removeChild(overlay);
       document.removeEventListener('keydown', keyHandler);
@@ -359,7 +359,7 @@ export class FormManager {
   }
   
   /**
-   * Affiche le formulaire d'édition de nœud
+   * Shows the node edit form.
    */
   showNodeForm(node) {
     if (!this.nodeForm || !node) {
@@ -370,34 +370,34 @@ export class FormManager {
     
     console.log("Affichage du formulaire pour le nœud:", node.id);
     
-    // Masquer tous les formulaires d'abord
+    // Hide all forms first.
     this.hideAllForms();
     
-    // Mettre à jour les valeurs du formulaire avec les données du nœud
+    // Update form values with node data.
     this.updateForm(this.nodeInputs, node);
     this.updateLocalStyleForm('node', node);
     this.updateRuleMatches('node', node);
     
-    // Rendre le formulaire visible
+    // Make the form visible.
     this.nodeForm.classList.remove('hidden');
     this.nodeForm.style.display = 'flex'; // Forcer l'affichage flex
     
-    // Déterminer le champ à focus
+    // Determine the field to focus.
     const fieldToFocus = this.graphState.globalSettings.nodeLabelField;
     
-    // IMPORTANT: Vérifier explicitement si le champ de label est une chaîne vide
-    // Utiliser === "" pour vérifier une chaîne vide exacte (et non undefined ou null)
+    // IMPORTANT: Explicitly check if the label field is an empty string.
+    // Use === "" to check for an exact empty string (not undefined or null).
     if (fieldToFocus === "") {
       console.log("Champ de label explicitement vide, pas de changement d'onglet ni de focus");
       return; // Terminer la fonction ici, ne rien faire de plus
     }
     
-    // DRY : bascule et focus
+    // DRY: tab switch and focus.
     this.activateValuesTab(this.nodeInputs, fieldToFocus);
   }
   
   /**
-   * Affiche le formulaire d'édition de lien
+   * Shows the link edit form.
    */
   showLinkForm(link) {
     if (!this.linkForm || !link) {
@@ -408,34 +408,34 @@ export class FormManager {
     
     console.log("Affichage du formulaire pour le lien:", link.id);
     
-    // Masquer tous les formulaires d'abord
+    // Hide all forms first.
     this.hideAllForms();
     
-    // Mettre à jour les valeurs du formulaire avec les données du lien
+    // Update form values with link data.
     this.updateForm(this.linkInputs, link);
     this.updateLocalStyleForm('link', link);
     this.updateRuleMatches('link', link);
     
-    // Rendre le formulaire visible
+    // Make the form visible.
     this.linkForm.classList.remove('hidden');
     this.linkForm.style.display = 'flex'; // Forcer l'affichage flex
     
-    // Déterminer le champ à focus
+    // Determine the field to focus.
     const fieldToFocus = this.graphState.globalSettings.linkLabelField;
     
-    // IMPORTANT: Vérifier explicitement si le champ de label est une chaîne vide
-    // Utiliser === "" pour vérifier une chaîne vide exacte (et non undefined ou null)
+    // IMPORTANT: Explicitly check if the label field is an empty string.
+    // Use === "" to check for an exact empty string (not undefined or null).
     if (fieldToFocus === "") {
       console.log("Champ de label explicitement vide, pas de changement d'onglet ni de focus");
       return; // Terminer la fonction ici, ne rien faire de plus
     }
     
-    // DRY : bascule et focus
+    // DRY: tab switch and focus.
     this.activateValuesTab(this.linkInputs, fieldToFocus);
   }
   
   /**
-   * Met à jour les valeurs du formulaire avec les données de l'élément
+   * Updates form values with item data.
    */
   updateForm(inputObject, dataItem) {
     if (!dataItem) return;
@@ -476,7 +476,7 @@ export class FormManager {
   }
 
   /**
-   * Ajoute la section d'override local
+   * Adds the local override section.
    */
   appendLocalStyleSection(formElement, target) {
     const inputs = {};
@@ -721,11 +721,11 @@ export class FormManager {
     const card = Array.from(cards).find(el => String(el.dataset.ruleId) === ruleIdStr);
     if (!card) return;
 
-    // Activer l'onglet Config graph si besoin
+    // Activate the Graph Config tab if needed.
     const tabLink = document.querySelector('.nav-link[href="#tab3"]');
     tabLink?.click();
 
-    // Ouvrir la section correspondante
+    // Open the matching section.
     const collapseId = type === 'pie' ? 'collapsePieRules' : 'collapseStyleRules';
     const collapseEl = document.getElementById(collapseId);
     if (collapseEl && !collapseEl.classList.contains('show')) {
@@ -878,7 +878,7 @@ export class FormManager {
       inputElement.focus();
       if (typeof inputElement.select === 'function') inputElement.select();
 
-      // Utiliser setTimeout pour une double assurance
+      // Use setTimeout for a second pass.
       setTimeout(() => {
         // Double tentative
         inputElement.focus();
@@ -901,43 +901,43 @@ export class FormManager {
   }
 
   /**
-   * Cache tous les formulaires
+   * Hides all forms.
    */
   hideAllForms() {
     if (this.nodeForm) {
       this.nodeForm.classList.add('hidden');
-      this.nodeForm.style.display = 'none'; // Forcer à masquer
+      this.nodeForm.style.display = 'none'; // Force hide.
     }
     
     if (this.linkForm) {
       this.linkForm.classList.add('hidden');
-      this.linkForm.style.display = 'none'; // Forcer à masquer
+      this.linkForm.style.display = 'none'; // Force hide.
     }
     
     console.log("Tous les formulaires sont maintenant cachés");
   }
   
   /**
-   * Ajoute un nouveau champ aux éléments
+   * Adds a new field to items.
    */
   addField(fieldName, target, fieldType = 'text') {
     if (fieldName.trim() === '') return;
     const isNodeField = target === 'node';
     const inputObject = isNodeField ? this.nodeInputs : this.linkInputs;
 
-    // Verifier si le champ existe deja
+    // Check if the field already exists.
     if (Object.keys(inputObject).includes(fieldName)) return;
 
-    // Dispatch action via undo/redo, GraphState.addField emettra 'action-applied'
+    // Dispatch action via undo/redo; GraphState.addField will emit 'action-applied'.
     this.graphState.addFieldWithType(fieldName, target, fieldType);
 
-    // Rafraichir formulaires et mise a jour du graphe
+    // Refresh forms and update the graph.
     this.refreshForms();
     this.renderer.updateGraph();
   }
 
   /**
-   * Bascule vers l'onglet Valeurs et focus sur le champ donné
+   * Switches to the Values tab and focuses the given field.
    */
   activateValuesTab(inputObject, fieldToFocus) {
     try {

@@ -3,9 +3,9 @@ export class UIContext {
     this.cache = new Map();
   }
   /**
-   * Récupère un élément DOM par sélecteur ou ID (id ou querySelector),
-   * le met en cache et le renvoie.
-   * @param {string} selector - id ou sélecteur CSS
+   * Fetches a DOM element by selector or ID (id or querySelector),
+   * caches it and returns it.
+   * @param {string} selector - id or CSS selector
    */
   get(selector) {
     if (!this.cache.has(selector)) {
@@ -17,7 +17,7 @@ export class UIContext {
     return this.cache.get(selector);
   }
   /**
-   * Vide le cache (utile au teardown)
+   * Clears the cache (useful on teardown).
    */
   clear() {
     this.cache.clear();

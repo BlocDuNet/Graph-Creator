@@ -1,4 +1,4 @@
-// Gestion de l'historique des actions pour les fonctionnalités annuler/rétablir
+// Action history management for undo/redo features
 import eventBus from '../services/EventBus.js';
 
 class HistoryManager extends EventTarget {
@@ -25,7 +25,7 @@ class HistoryManager extends EventTarget {
     if (action.type === "composite") {
       action.actions.forEach(sub => this.applyAction(sub));
     } else if (action.type === "update_global") {
-      // Les réglages globaux sont gérés dans GraphState
+      // Global settings are managed in GraphState.
       const { field, to } = action.data;
       this.graphState.globalSettings[field] = to;
     } else if (action.type === "import_graph") {
@@ -129,7 +129,7 @@ class HistoryManager extends EventTarget {
     eventBus.emit('action-performed', { action });
   }
 
-  // Table de correspondance pour les actions inverses
+  // Mapping table for inverse actions.
   getInverseAction(action) {
     if (action.type === "composite") {
       return {
@@ -178,7 +178,7 @@ class HistoryManager extends EventTarget {
       import_graph: act => ({
         type: "import_graph",
         data: {
-          // on restaure l'ancien état puis on le repartage sur redo
+          // restore the old state, then share it again on redo
           oldState: act.data.newState,
           newState: act.data.oldState,
           label: act.data.label
@@ -189,7 +189,7 @@ class HistoryManager extends EventTarget {
   }
 
   perform(action) {
-    // pour remove_field, capturer les anciennes valeurs
+    // For remove_field, capture previous values.
     if (action.type === "remove_field") {
       const { field, target } = action.data;
       const items = target === "node" ? this.graphState.nodes : this.graphState.links;
@@ -234,10 +234,10 @@ class HistoryManager extends EventTarget {
 
   _updateHistoryList() {
     this._history = [...this.actionHistory];
-    // Notifier les abonnés au singleton
+    // Notify subscribers of the singleton.
     this.dispatchEvent(new CustomEvent('history-updated', { detail:{ history:this._history } }));
     eventBus.emit('history-updated', { history: this._history });
-    // ← Compatibilité retour en arrière : maintenir window.updateHistoryList
+    // Backward compatibility: keep window.updateHistoryList
     window.historyList = this._history.slice();
     window.updateHistoryList?.(this._history);
   }

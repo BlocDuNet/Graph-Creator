@@ -1,6 +1,6 @@
 /**
- * Liste les fichiers .json disponibles dans un dossier accessible par HTTP.
- * @param {string} dirUrl - URL du répertoire à scanner.
+ * Lists .json files available in an HTTP-accessible directory.
+ * URL of the directory to scan.
  * @returns {Promise<string[]>}
  */
 export async function listJsonFiles(dirUrl) {

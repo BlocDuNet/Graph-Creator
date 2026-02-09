@@ -1,5 +1,5 @@
 /**
- * Point d'entrée centralisant les configurations
+ * Entry point that centralizes configuration.
  */
 import { graphConfig } from './graph.js';
 import { aiConfig } from './ai.js';
@@ -8,7 +8,7 @@ import * as graphGeneration from './templates/graphGeneration.js';
 import * as proposals from './templates/proposals.js';
 import * as expressions from './templates/expressions.js';
 
-// Exporter les configurations pour faciliter l'import
+// Export configurations to simplify imports.
 export {
   graphConfig,
   aiConfig,
@@ -18,7 +18,7 @@ export {
   expressions
 };
 
-// Exporter une structure unifiée pour la compatibilité avec le code existant
+// Export a unified structure for compatibility with existing code.
 export default {
   graph: graphConfig,
   ai: aiConfig,

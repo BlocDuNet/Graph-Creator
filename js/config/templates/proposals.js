@@ -1,14 +1,14 @@
 /**
- * Templates pour les prompts de propositions d'ajouts au graphe
+ * Templates for prompts proposing graph additions.
  */
 
 /**
- * Génère un prompt pour obtenir des propositions d'ajouts au graphe
- * @param {Object} currentGraph - État actuel du graphe
- * @returns {string} Prompt formaté pour l'IA
+ * Generates a prompt to get proposals for graph additions.
+ * Current graph state.
+ * Prompt formatted for the AI.
  */
 export function getProposalPrompt(currentGraph) {
-  // Préparer une version JSON propre des données actuelles
+  // Prepare a clean JSON version of current data.
   const currentGraphJSON = JSON.stringify({
     nodes: currentGraph.nodes.map(node => {
       const { vx, vy, fx, fy, index, ...rest } = node;
@@ -34,15 +34,15 @@ Ne retourne AUCUN texte explicatif avant ou après le JSON.`;
 }
 
 /**
- * Génère un prompt pour obtenir des propositions d'ajouts plus contextuelles
- * @param {Object} currentGraph - État actuel du graphe
- * @param {Object} options - Options supplémentaires
- * @returns {string} Prompt formaté pour l'IA
+ * Generates a prompt to get more contextual addition proposals.
+ * Current graph state.
+ * Additional options.
+ * Prompt formatted for the AI.
  */
 export function getContextualProposalPrompt(currentGraph, options = {}) {
   const { focus = "", maxProposals = 5, objective = "" } = options;
   
-  // Filtrer les données du graphe pour la sérialisation JSON
+  // Filter graph data for JSON serialization.
   const filteredGraph = {
     nodes: currentGraph.nodes.map(node => {
       const { vx, vy, fx, fy, index, ...rest } = node;

@@ -1,0 +1,385 @@
+{
+  "app": {
+    "title": "Graph Network avec D3.js v6"
+  },
+  "tabs": {
+    "actions": "Actions",
+    "values": "Valeurs",
+    "graph_config": "Config graph",
+    "ai_request": "Requête IA",
+    "spreadsheet": "Tableur",
+    "app_config": "Config logiciel"
+  },
+  "help": {
+    "title": "Mode d'emploi",
+    "columns": {
+      "icon": "Icone",
+      "actions": "Actions",
+      "instructions": "Instructions"
+    },
+    "rows": {
+      "create_node": {
+        "icon_title": "Créer un noeud",
+        "action": "<b>Créer un noeud</b>",
+        "instruction": "<b>Double clic</b> dans le vide"
+      },
+      "create_edge": {
+        "icon_title": "Créer un lien",
+        "action": "<b>Créer un lien</b>",
+        "instruction": "<b>Cliquez sur un noeud</b> puis <b>CTRL+Cliquez sur le noeud cible</b>"
+      },
+      "create_node_edge": {
+        "icon_title": "Créer un noeud avec lien",
+        "action": "<b>Créer un noeud avec lien</b>",
+        "instruction": "<b>Cliquez sur un noeud</b> puis <b>CTRL+Cliquez dans l'espace vide</b> (Ajoutez <b>Shift</b> pour focus sur le nouveau noeud)"
+      },
+      "delete": {
+        "icon_title": "Supprimer",
+        "action": "<b>Supprimer</b> (noeud/lien)",
+        "instruction": "<b>Sélectionnez un noeud/lien</b> et appuyez sur <b>Ctrl+Delete</b> ou <b>Ctrl+Backspace</b>"
+      },
+      "unselect": {
+        "icon_title": "Désélectionner",
+        "action": "<b>Désélectionner</b> (noeud/lien)",
+        "instruction": "Appuyez sur <b>Escape</b> ou <b>Cliquez à nouveau sur le même</b> noeud/lien"
+      },
+      "change_name": {
+        "icon_title": "Changer le nom",
+        "action": "<b>Changer le nom</b> (noeud/lien)",
+        "instruction": "<b>Sélectionnez un élément</b> puis modifiez la valeur dans l'onglet <b>Valeurs</b>"
+      },
+      "zoom": {
+        "icon_title": "Zoom",
+        "action": "<b>Zoom</b>",
+        "instruction": "Molette de la souris"
+      },
+      "move_node": {
+        "icon_title": "Déplacer un noeud",
+        "action": "<b>Déplacer un noeud</b>",
+        "instruction": "<b>Clic gauche + glisser</b>"
+      },
+      "move_graph": {
+        "icon_title": "Déplacer le graphe",
+        "action": "<b>Déplacer le graphe</b>",
+        "instruction": "<b>Clic droit + glisser</b>"
+      },
+      "undo_redo": {
+        "icon_title": "Annuler/Refaire",
+        "action": "<b>Annuler/Refaire</b>",
+        "instruction": "<b>CTRL + Z / CTRL + Y</b>"
+      },
+      "self_loop": {
+        "icon_title": "Créer une boucle",
+        "action": "<b>Créer une boucle</b>",
+        "instruction": "<b>Sélectionnez un noeud</b> puis <b>ALT+Cliquez sur le même noeud</b>"
+      }
+    },
+    "tips": "Astuce : Vous pouvez sélectionner des noeuds et des liens en cliquant sur leurs labels"
+  },
+  "actions": {
+    "history": {
+      "title": "Annuler/Refaire - Historique",
+      "undo": "Annuler",
+      "redo": "Refaire",
+      "debug": "Debug",
+      "label": "Historique:"
+    },
+    "advanced": {
+      "title": "Actions avancées",
+      "highlight_neighbors": "Surligner voisins",
+      "clear_highlights": "Effacer surlignage",
+      "highlight_degree": "Surligner degré ≥2",
+      "color_clusters": "Colorer clusters"
+    }
+  },
+  "values": {
+    "actions": {
+      "title": "Actions"
+    },
+    "import_export": {
+      "title": "Import/Export",
+      "import_json": "Importer JSON",
+      "import_json_advanced": "Import avancé",
+      "export_json": "Exporter JSON",
+      "export_image": "Exporter image",
+      "export_json_advanced": "Export avancé (à faire)",
+      "init_labels": "Initialiser labels",
+      "presets": "Modèles prédéfinis:",
+      "import_file": "Importer fichier JSON",
+      "import_file_title": "Sélectionner un fichier JSON à importer",
+      "import_file_advanced": "Importer fichier JSON (avancé)",
+      "import_file_advanced_title": "Sélectionner un fichier JSON à importer (avancé)",
+      "advanced": {
+        "title": "Import avancé (mapping)",
+        "nodes_key": "Clé des noeuds (racine)",
+        "links_key": "Clé des liens (racine)",
+        "node_id_field": "Champ ID noeud",
+        "node_label_field": "Champ label noeud (ex: name ou name.fr)",
+        "node_desc_field": "Champ description noeud (ex: description ou description.fr)",
+        "language": "Langue (optionnel, ex: fr)",
+        "link_source_field": "Champ source lien",
+        "link_target_field": "Champ target lien",
+        "link_label_field": "Champ label lien (ex: name ou name.fr)",
+        "preview": "Prévisualisation (10 noeuds / 15 liens)",
+        "apply": "Importer"
+      }
+    },
+    "global": {
+      "title": "Paramètres globaux",
+      "fields": {
+        "title": "Ajouter des champs",
+        "new_node_field": "Nouveau champ noeud",
+        "new_link_field": "Nouveau champ lien",
+        "add_node": "+Noeud",
+        "add_link": "+Lien",
+        "multilingual": "Multilingue",
+        "languages": "Langues (ex: fr,en)",
+        "multilingual_convert": "Conversion multilingue"
+      },
+      "labels": {
+        "node_label": "Label noeud :",
+        "link_label": "Label lien :",
+        "node_id_field": "Champ ID :",
+        "node_x_field": "Champ X :",
+        "node_y_field": "Champ Y :",
+        "node_size_field": "Champ de taille :",
+        "default_node_size": "Taille des noeuds (par défaut) :",
+        "default_link_width": "Largeur des liens (par défaut) :",
+        "default_link_width_hint": "Entrez une valeur entre 0.1 et 20",
+        "active_language": "Langue active :"
+      }
+    },
+    "edit": {
+      "title": "Édition des noeuds/liens",
+      "node_title": "Édition noeud",
+      "link_title": "Édition lien"
+    }
+  },
+  "graph_config": {
+    "io": {
+      "title": "Configuration Import/Export",
+      "config_label": "Config:",
+      "export_label": "Exporter config:",
+      "export_button": "Exporter config",
+      "import_label": "Importer config:",
+      "layout_label": "Layout:",
+      "layout_select": "-- Choisir un layout --",
+      "layout_reload": "Réappliquer le layout sélectionné"
+    },
+    "layouts": {
+      "circle": "Cercle",
+      "grid": "Grille",
+      "random": "Aléatoire",
+      "hierarchical": "Hiérarchique",
+      "radial": "Radial",
+      "spiral": "Spirale",
+      "arc": "Diagramme en arc",
+      "concentric": "Clusters concentriques",
+      "bipartite": "Biparti",
+      "force_atlas": "Force‑atlas"
+    },
+    "links": {
+      "title": "Style des liens",
+      "straight": "Liens droits",
+      "curved": "Liens courbés",
+      "toggle_title": "Basculer entre liens droits et liens courbés",
+      "curvature": {
+        "title": "Paramètres de courbure",
+        "base": "Courbure de base:",
+        "base_hint": "Courbure par défaut pour les liens simples",
+        "loop": "Taille des boucles:",
+        "loop_hint": "Facteur de taille pour les auto-liens",
+        "step": "Décalage liens parallèles:",
+        "step_hint": "Écart entre liens parallèles",
+        "value_label": "Valeur:"
+      },
+      "recreate": "Recréer les liens à chaque mise à jour"
+    },
+    "forces": {
+      "title": "Paramètres de forces",
+      "link_force": "Force de lien",
+      "link_distance": "Distance des liens",
+      "link_distance_hint": "Distance entre noeuds liés",
+      "charge_strength": "Force de charge",
+      "charge_strength_hint": "Utiliser une valeur négative avec la force de centrage est recommandé",
+      "center_force": "Force de centrage"
+    },
+    "style_rules": {
+      "title": "Règles de style (noeuds / liens)",
+      "add_node": "+ Règle noeud",
+      "add_link": "+ Règle lien"
+    },
+    "pie_rules": {
+      "title": "Pie chart (groupes de noeuds)",
+      "add": "+ Règle pie chart"
+    }
+  },
+  "ai": {
+    "prompt": {
+      "title": "Génération par prompt",
+      "placeholder": "Saisissez votre requête ici",
+      "title_hint": "Votre requête pour générer un graph",
+      "send": "Envoyer la requête",
+      "send_title": "Envoyer la requête à Ollama",
+      "stop_title": "Arrêter la génération en cours",
+      "import_graph": "Importer Graph Ollama",
+      "import_graph_title": "Importer le graph généré dans l'application"
+    },
+    "common": {
+      "config_summary": "Configuration IA",
+      "provider_label": "Fournisseur IA:",
+      "provider_title": "Fournisseur IA",
+      "model_label": "Modèle d'IA:",
+      "model_title": "Nom du modèle IA à utiliser",
+      "provider": "Fournisseur",
+      "model": "Modèle"
+    },
+    "proposals": {
+      "title": "Propositions basées sur le graph actuel",
+      "send": "Envoyer le graph actuel pour propositions",
+      "nodes": "Noeuds proposés",
+      "links": "Liens proposés",
+      "reset": "Réinitialiser propositions"
+    },
+    "translation": {
+      "title": "Traduction (sélection)",
+      "field_label": "Champ à traduire (ex: name_fr)",
+      "field_placeholder": "ex: name_fr",
+      "target_label": "Langue cible (ex: en)",
+      "target_placeholder": "ex: en",
+      "translate": "Traduire le champ"
+    },
+    "logs": {
+      "title": "Logs de réponse",
+      "raw_title": "Logs bruts de la réponse Ollama",
+      "result_title": "Résultat formaté de la réponse Ollama"
+    }
+  },
+  "sheet": {
+    "title": "Tableur multilingue",
+    "source_label": "Source",
+    "source_placeholder": "ex: fr",
+    "target_label": "Cible",
+    "target_placeholder": "ex: en",
+    "convert": "Conversion",
+    "refresh": "Rafraîchir",
+    "search_label": "Rechercher",
+    "search_placeholder": "texte à chercher",
+    "replace_label": "Remplacer",
+    "replace_placeholder": "remplacement",
+    "replace_all": "Remplacer tout",
+    "filter_text_label": "Filtre texte",
+    "filter_text_placeholder": "filtrer...",
+    "filter_type_label": "Filtre type",
+    "filter_field_label": "Filtre champ",
+    "filter_lang_label": "Filtre langue",
+    "filter_lang_placeholder": "ex: fr",
+    "sort_label": "Trier par",
+    "sort": {
+      "type": "Type",
+      "id": "ID",
+      "field": "Champ",
+      "lang": "Langue",
+      "value": "Valeur"
+    },
+    "column_select_label": "Sélection colonne",
+    "column_lang_placeholder": "langue",
+    "column_select": "Cocher colonne",
+    "table": {
+      "type": "Type",
+      "id": "ID",
+      "field": "Champ",
+      "lang": "Langue",
+      "value": "Valeur",
+      "translate": "Traduire"
+    },
+    "actions": {
+      "select_all": "Tout cocher",
+      "apply": "Appliquer modifications",
+      "translate": "Traduire la sélection",
+      "export_csv": "Exporter CSV"
+    }
+  },
+  "app_config": {
+    "ai": {
+      "title": "Configuration IA",
+      "default_provider": "Fournisseur IA par defaut",
+      "default_model": "Modele IA par defaut",
+      "log_summary": "Log IA (echanges complets)"
+    },
+    "ui_language": {
+      "title": "Langue de l'interface",
+      "label": "Langue UI"
+    },
+    "io": {
+      "title": "Configuration logiciel Import/Export",
+      "include_ai": "IA",
+      "include_style": "Regles de style",
+      "include_pie": "Pie charts",
+      "export": "Exporter config logiciel"
+    }
+  },
+  "common": {
+    "all": "Tous",
+    "apply": "Appliquer",
+    "check": "Verifier",
+    "close": "Fermer",
+    "link": "Lien",
+    "node": "Noeud",
+    "stop": "Stop",
+    "stop_generation": "Stop génération"
+  },
+  "conditional": {
+    "title": "Champ personnalise",
+    "subtitle": "Creez une expression simple ou avancee. Le mode visuel couvre les cas courants.",
+    "field_label": "Champ",
+    "mode_label": "Mode",
+    "mode_visual": "Visuel",
+    "mode_expression": "Expression",
+    "visual_type_label": "Type visuel",
+    "visual_type_expression": "Expression simple",
+    "visual_type_condition": "Condition (Si/Alors)",
+    "conditions_label": "Conditions (groupes imbriques)",
+    "then_label": "Alors",
+    "else_label": "Sinon",
+    "option_value": "Valeur",
+    "option_concat": "Concatener",
+    "option_calc": "Calcul",
+    "option_field": "Champ",
+    "placeholder_value": "Valeur",
+    "placeholder_separator": "Separateur",
+    "expression_label": "Expression",
+    "expression_placeholder": "if(gt(age,18), concat(prenom,\" \",nom), \"Mineur\")",
+    "functions_help": "Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks",
+    "ai_help_label": "Assistance IA (beta)",
+    "ai_suggestion_placeholder": "Suggestion rapide...",
+    "ai_suggestion_full_name": "Nom complet (prenom + nom)",
+    "ai_suggestion_simple_condition": "Condition simple (age)",
+    "ai_suggestion_tax": "Calcul (TVA)",
+    "ai_suggestion_contains": "Texte contient",
+    "ai_fill": "Remplir suggestion",
+    "ai_request_placeholder": "Decris la formule souhaitee",
+    "ai_generate": "Proposer expression",
+    "result_type_label": "Type de resultat",
+    "result_type_auto": "Auto",
+    "result_type_text": "Texte",
+    "result_type_number": "Nombre",
+    "result_type_number_comma": "Nombre (virgule)",
+    "result_type_boolean": "Booleen",
+    "result_type_date": "Date",
+    "canonical_label": "Expression canonique"
+  },
+  "multilingual_convert": {
+    "title": "Conversion multilingue",
+    "subtitle": "Par défaut, les champs convertis sont supprimés (ex: <code>name</code>).",
+    "mode_label": "Mode",
+    "mode_to_multi": "Unilingue → Multilingue",
+    "mode_to_uni": "Multilingue → Unilingue",
+    "langs_label": "Langues (ex: fr,en)",
+    "langs_placeholder": "fr,en",
+    "lang_label": "Langue de conversion (ex: fr)",
+    "lang_placeholder": "fr",
+    "keep_label": "Conserver les champs d'origine",
+    "keep_yes": "Oui (ne pas supprimer)"
+  }
+}

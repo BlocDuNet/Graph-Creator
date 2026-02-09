@@ -9,7 +9,7 @@ export class WindowEventManager {
       this._listeners.push({ evt, h });
     };
 
-    // undo/redo performed → rafraîchir forms & selects
+    // undo/redo performed → refresh forms & selects
     const historyHandler = () => {
       uiManager.formManager.refreshForms();
       uiManager.updateAllFieldSelects();
@@ -24,7 +24,7 @@ export class WindowEventManager {
       uiManager.renderer.updateGraph();
     });
 
-    // action-applied → certaines actions
+    // action-applied → specific actions
     const actionHandler = e => {
       const t = e.detail?.action?.type;
       if (t === 'delete_node' || t === 'delete_link') {

@@ -15,8 +15,8 @@ let graphState = null;
 let renderer = null;
 
 /**
- * Initialise le gestionnaire de layouts
- * @param {Object} state - État du graphe
+ * Initialize the layout manager.
+ * Graph state.
  * @param {Object} graphRenderer - Renderer du graphe
  */
 export function initLayoutManager(state, graphRenderer) {
@@ -27,7 +27,7 @@ export function initLayoutManager(state, graphRenderer) {
 }
 
 /**
- * Configure les écouteurs d'événements
+ * Configure event listeners.
  */
 function setupEventListeners() {
   document.getElementById("layoutSelect")?.addEventListener("change", function() {
@@ -40,8 +40,8 @@ function setupEventListeners() {
 }
 
 /**
- * Applique un layout au graphe
- * @param {string} layoutType - Type de layout à appliquer
+ * Apply a layout to the graph.
+ * Layout type to apply.
  */
 function applyLayout(layoutType) {
   if (!graphState || !renderer) return;
@@ -63,7 +63,7 @@ function applyLayout(layoutType) {
   renderer.updateGraph();
 }
 
-// Exporter les fonctions utiles pour d'autres modules
+// Export useful functions for other modules.
 export {
   applyLayout,
   applyCircleLayout,

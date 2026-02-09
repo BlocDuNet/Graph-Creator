@@ -1,0 +1,385 @@
+{
+  "app": {
+    "title": "Graph Network with D3.js v6"
+  },
+  "tabs": {
+    "actions": "Actions",
+    "values": "Values",
+    "graph_config": "Graph config",
+    "ai_request": "AI Request",
+    "spreadsheet": "Spreadsheet",
+    "app_config": "App config"
+  },
+  "help": {
+    "title": "How to do",
+    "columns": {
+      "icon": "Icon",
+      "actions": "Actions",
+      "instructions": "Instructions"
+    },
+    "rows": {
+      "create_node": {
+        "icon_title": "Create a node",
+        "action": "<b>Create a node</b>",
+        "instruction": "<b>Double click</b> in the void"
+      },
+      "create_edge": {
+        "icon_title": "Create an edge",
+        "action": "<b>Create an edge</b>",
+        "instruction": "<b>Click on a node</b> then <b>CTRL+Click on the target</b> node"
+      },
+      "create_node_edge": {
+        "icon_title": "Create a node with edge",
+        "action": "<b>Create a node with edge</b>",
+        "instruction": "<b>Click on a node</b> then <b>CTRL+Click on empty space</b> (Add <b>Shift</b> for focus on the new node)"
+      },
+      "delete": {
+        "icon_title": "Delete",
+        "action": "<b>Delete</b> (node/edge)",
+        "instruction": "<b>Select a node/edge</b> and press <b>Ctrl+Delete</b> or <b>Ctrl+Backspace</b>"
+      },
+      "unselect": {
+        "icon_title": "Unselect",
+        "action": "<b>Unselect</b> (node/edge)",
+        "instruction": "Press <b>Escape</b> or <b>Click again on the same</b> node/edge"
+      },
+      "change_name": {
+        "icon_title": "Change name",
+        "action": "<b>Change name</b> (node/edge)",
+        "instruction": "<b>Select an item</b> then change value in <b>Values</b> tab"
+      },
+      "zoom": {
+        "icon_title": "Zoom",
+        "action": "<b>Zoom</b>",
+        "instruction": "Mouse <b>wheel scroll</b>"
+      },
+      "move_node": {
+        "icon_title": "Move node",
+        "action": "<b>Move node</b>",
+        "instruction": "<b>Left click + drag</b>"
+      },
+      "move_graph": {
+        "icon_title": "Move graph",
+        "action": "<b>Move graph</b>",
+        "instruction": "<b>Right click + drag</b>"
+      },
+      "undo_redo": {
+        "icon_title": "Undo/Redo",
+        "action": "<b>Undo/Redo</b>",
+        "instruction": "<b>CTRL + Z / CTRL + Y</b>"
+      },
+      "self_loop": {
+        "icon_title": "Create self loop",
+        "action": "<b>Create a self loop</b>",
+        "instruction": "<b>Select a node</b> then <b>ALT+Click on the same node</b>"
+      }
+    },
+    "tips": "Tips: You can select nodes and edges by clicking on their labels"
+  },
+  "actions": {
+    "history": {
+      "title": "Undo/Redo - History",
+      "undo": "Undo",
+      "redo": "Redo",
+      "debug": "Debug",
+      "label": "History:"
+    },
+    "advanced": {
+      "title": "Advanced actions",
+      "highlight_neighbors": "Highlight Neighbors",
+      "clear_highlights": "Clear Highlights",
+      "highlight_degree": "Highlight Degree ≥2",
+      "color_clusters": "Color Clusters"
+    }
+  },
+  "values": {
+    "actions": {
+      "title": "Actions"
+    },
+    "import_export": {
+      "title": "Import/Export",
+      "import_json": "Import JSON",
+      "import_json_advanced": "Advanced import",
+      "export_json": "Export JSON",
+      "export_image": "Export image",
+      "export_json_advanced": "Advanced export (todo)",
+      "init_labels": "Initialize Labels",
+      "presets": "Presets:",
+      "import_file": "Import JSON file",
+      "import_file_title": "Select a JSON file to import",
+      "import_file_advanced": "Import JSON file (advanced)",
+      "import_file_advanced_title": "Select a JSON file to import (advanced)",
+      "advanced": {
+        "title": "Advanced import (mapping)",
+        "nodes_key": "Nodes key (root)",
+        "links_key": "Links key (root)",
+        "node_id_field": "Node ID field",
+        "node_label_field": "Node label field (e.g. name or name.fr)",
+        "node_desc_field": "Node description field (e.g. description or description.fr)",
+        "language": "Language (optional, e.g. fr)",
+        "link_source_field": "Link source field",
+        "link_target_field": "Link target field",
+        "link_label_field": "Link label field (e.g. name or name.fr)",
+        "preview": "Preview (10 nodes / 15 links)",
+        "apply": "Import"
+      }
+    },
+    "global": {
+      "title": "Global parameters",
+      "fields": {
+        "title": "Add fields",
+        "new_node_field": "New node field",
+        "new_link_field": "New link field",
+        "add_node": "+Node",
+        "add_link": "+Link",
+        "multilingual": "Multilingual",
+        "languages": "Languages (e.g. fr,en)",
+        "multilingual_convert": "Multilingual conversion"
+      },
+      "labels": {
+        "node_label": "Node label:",
+        "link_label": "Link label:",
+        "node_id_field": "ID field:",
+        "node_x_field": "X field:",
+        "node_y_field": "Y field:",
+        "node_size_field": "Size field:",
+        "default_node_size": "Default node size:",
+        "default_link_width": "Default link width:",
+        "default_link_width_hint": "Enter a value between 0.1 and 20",
+        "active_language": "Active language:"
+      }
+    },
+    "edit": {
+      "title": "Edit nodes/links",
+      "node_title": "Node editor",
+      "link_title": "Link editor"
+    }
+  },
+  "graph_config": {
+    "io": {
+      "title": "Config Import/Export",
+      "config_label": "Config:",
+      "export_label": "Export config:",
+      "export_button": "Export config",
+      "import_label": "Import config:",
+      "layout_label": "Layout:",
+      "layout_select": "-- Select layout --",
+      "layout_reload": "Reapply selected layout"
+    },
+    "layouts": {
+      "circle": "Circle",
+      "grid": "Grid",
+      "random": "Random",
+      "hierarchical": "Hierarchical",
+      "radial": "Radial",
+      "spiral": "Spiral",
+      "arc": "Arc diagram",
+      "concentric": "Concentric clusters",
+      "bipartite": "Bipartite",
+      "force_atlas": "Force‑atlas"
+    },
+    "links": {
+      "title": "Link Style",
+      "straight": "Straight links",
+      "curved": "Curved links",
+      "toggle_title": "Toggle between straight and curved links",
+      "curvature": {
+        "title": "Curvature settings",
+        "base": "Base curvature:",
+        "base_hint": "Default curvature for simple links",
+        "loop": "Loop size:",
+        "loop_hint": "Size factor for self-links",
+        "step": "Parallel link offset:",
+        "step_hint": "Spacing between parallel links",
+        "value_label": "Value:"
+      },
+      "recreate": "Recreate links on each update"
+    },
+    "forces": {
+      "title": "Force Parameters",
+      "link_force": "Link force",
+      "link_distance": "Link distance",
+      "link_distance_hint": "Distance between linked nodes",
+      "charge_strength": "Charge strength",
+      "charge_strength_hint": "Using a negative value with center force is recommended",
+      "center_force": "Center force"
+    },
+    "style_rules": {
+      "title": "Style rules (nodes / links)",
+      "add_node": "+ Node rule",
+      "add_link": "+ Link rule"
+    },
+    "pie_rules": {
+      "title": "Pie chart (node groups)",
+      "add": "+ Pie chart rule"
+    }
+  },
+  "ai": {
+    "prompt": {
+      "title": "Prompt generation",
+      "placeholder": "Enter your request here",
+      "title_hint": "Your request to generate a graph",
+      "send": "Send request",
+      "send_title": "Send the request to Ollama",
+      "stop_title": "Stop the current generation",
+      "import_graph": "Import Ollama graph",
+      "import_graph_title": "Import the generated graph into the app"
+    },
+    "common": {
+      "config_summary": "AI configuration",
+      "provider_label": "AI provider:",
+      "provider_title": "AI provider",
+      "model_label": "AI model:",
+      "model_title": "AI model name",
+      "provider": "Provider",
+      "model": "Model"
+    },
+    "proposals": {
+      "title": "Proposals based on current graph",
+      "send": "Send current graph for proposals",
+      "nodes": "Proposed nodes",
+      "links": "Proposed links",
+      "reset": "Reset proposals"
+    },
+    "translation": {
+      "title": "Translation (selection)",
+      "field_label": "Field to translate (e.g. name_fr)",
+      "field_placeholder": "e.g. name_fr",
+      "target_label": "Target language (e.g. en)",
+      "target_placeholder": "e.g. en",
+      "translate": "Translate field"
+    },
+    "logs": {
+      "title": "Response logs",
+      "raw_title": "Raw logs from Ollama response",
+      "result_title": "Formatted result of the Ollama response"
+    }
+  },
+  "sheet": {
+    "title": "Multilingual spreadsheet",
+    "source_label": "Source",
+    "source_placeholder": "e.g. fr",
+    "target_label": "Target",
+    "target_placeholder": "e.g. en",
+    "convert": "Convert",
+    "refresh": "Refresh",
+    "search_label": "Search",
+    "search_placeholder": "text to search",
+    "replace_label": "Replace",
+    "replace_placeholder": "replacement",
+    "replace_all": "Replace all",
+    "filter_text_label": "Text filter",
+    "filter_text_placeholder": "filter...",
+    "filter_type_label": "Type filter",
+    "filter_field_label": "Field filter",
+    "filter_lang_label": "Language filter",
+    "filter_lang_placeholder": "e.g. fr",
+    "sort_label": "Sort by",
+    "sort": {
+      "type": "Type",
+      "id": "ID",
+      "field": "Field",
+      "lang": "Language",
+      "value": "Value"
+    },
+    "column_select_label": "Column select",
+    "column_lang_placeholder": "language",
+    "column_select": "Select column",
+    "table": {
+      "type": "Type",
+      "id": "ID",
+      "field": "Field",
+      "lang": "Language",
+      "value": "Value",
+      "translate": "Translate"
+    },
+    "actions": {
+      "select_all": "Select all",
+      "apply": "Apply changes",
+      "translate": "Translate selection",
+      "export_csv": "Export CSV"
+    }
+  },
+  "app_config": {
+    "ai": {
+      "title": "AI configuration",
+      "default_provider": "Default AI provider",
+      "default_model": "Default AI model",
+      "log_summary": "AI log (full exchanges)"
+    },
+    "ui_language": {
+      "title": "Interface language",
+      "label": "UI language"
+    },
+    "io": {
+      "title": "App config Import/Export",
+      "include_ai": "AI",
+      "include_style": "Style rules",
+      "include_pie": "Pie charts",
+      "export": "Export app config"
+    }
+  },
+  "common": {
+    "all": "All",
+    "apply": "Apply",
+    "check": "Check",
+    "close": "Close",
+    "link": "Link",
+    "node": "Node",
+    "stop": "Stop",
+    "stop_generation": "Stop Generation"
+  },
+  "conditional": {
+    "title": "Custom field",
+    "subtitle": "Create a simple or advanced expression. Visual mode covers common cases.",
+    "field_label": "Field",
+    "mode_label": "Mode",
+    "mode_visual": "Visual",
+    "mode_expression": "Expression",
+    "visual_type_label": "Visual type",
+    "visual_type_expression": "Simple expression",
+    "visual_type_condition": "Condition (If/Then)",
+    "conditions_label": "Conditions (nested groups)",
+    "then_label": "Then",
+    "else_label": "Else",
+    "option_value": "Value",
+    "option_concat": "Concatenate",
+    "option_calc": "Calculation",
+    "option_field": "Field",
+    "placeholder_value": "Value",
+    "placeholder_separator": "Separator",
+    "expression_label": "Expression",
+    "expression_placeholder": "if(gt(age,18), concat(firstname,\" \",lastname), \"Minor\")",
+    "functions_help": "Functions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks",
+    "ai_help_label": "AI assistance (beta)",
+    "ai_suggestion_placeholder": "Quick suggestion...",
+    "ai_suggestion_full_name": "Full name (first + last)",
+    "ai_suggestion_simple_condition": "Simple condition (age)",
+    "ai_suggestion_tax": "Calculation (VAT)",
+    "ai_suggestion_contains": "Text contains",
+    "ai_fill": "Fill suggestion",
+    "ai_request_placeholder": "Describe the desired formula",
+    "ai_generate": "Propose expression",
+    "result_type_label": "Result type",
+    "result_type_auto": "Auto",
+    "result_type_text": "Text",
+    "result_type_number": "Number",
+    "result_type_number_comma": "Number (comma)",
+    "result_type_boolean": "Boolean",
+    "result_type_date": "Date",
+    "canonical_label": "Canonical expression"
+  },
+  "multilingual_convert": {
+    "title": "Multilingual conversion",
+    "subtitle": "By default, converted fields are removed (e.g. <code>name</code>).",
+    "mode_label": "Mode",
+    "mode_to_multi": "Single language → Multilingual",
+    "mode_to_uni": "Multilingual → Single language",
+    "langs_label": "Languages (e.g. fr,en)",
+    "langs_placeholder": "fr,en",
+    "lang_label": "Conversion language (e.g. fr)",
+    "lang_placeholder": "fr",
+    "keep_label": "Keep original fields",
+    "keep_yes": "Yes (do not remove)"
+  }
+}

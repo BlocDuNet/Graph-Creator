@@ -1,9 +1,9 @@
 /**
- * Configuration pour l'interaction avec les API d'IA
+ * Configuration for interacting with AI APIs.
  */
 
 export const aiConfig = {
-  // Configuration de l'API Ollama
+  // Ollama API configuration.
   ollama: {
     api: {
       url: "http://localhost:11434/api/generate",
@@ -15,7 +15,7 @@ export const aiConfig = {
       }
     },
     
-    // États de chargement pour l'interface
+    // UI loading states.
     ui: {
       loadingStates: {
         generation: {

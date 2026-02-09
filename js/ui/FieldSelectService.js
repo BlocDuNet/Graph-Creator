@@ -1,5 +1,5 @@
 /**
- * Met à jour tous les <select> et inputs liés aux settings globaux
+ * Updates all <select> and inputs tied to global settings.
  */
 export function syncGlobalSettingsUI(state) {
   const mapping = [

@@ -1,5 +1,5 @@
 /**
- * Gere l'tat global du graphe et fournit des mthodes pour le manipuler
+ * Manages the global graph state and provides methods to manipulate it.
  */
 import { performAction } from './undo_redo.js';
 import { graphConfig } from '../config/index.js';
@@ -20,26 +20,26 @@ const INTERNAL_NODE_FIELDS = new Set(['vx', 'vy', 'fx', 'fy', 'index']);
 
 export class GraphState {
   constructor() {
-    // Initialisation avec des donnes par dfaut
+    // Initialize with default data.
     this.nodes = [
-      // Utiliser fx et fy pour fixer les positions initiales
+      // Use fx and fy to fix initial positions.
       { id: '1', name: 'Node1', description: 'Description1', x: 100, y: 300, size: 30, fx: 100, fy: 300 },
       { id: '2', name: 'Node2', description: 'Description2', x: 200, y: 200, size: 30, fx: 200, fy: 200 },
       { id: '3', name: 'Node3', description: 'Description3', x: 300, y: 300, size: 30, fx: 300, fy: 300 }
     ];
     
-    // Initialisation des liens avec references directes aux objets noeuds
+    // Initialize links with direct references to node objects.
     this.links = [];
     
-    // Compteurs pour les IDs
+    // Counters for IDs.
     this.nextNodeId = this.nodes.length + 1;
     this.nextLinkId = 1;
     
-    // tat de selection
+    // Selection state.
     this.selectedNode = null;
     this.selectedLink = null;
     
-    // Configuration globale
+    // Global configuration.
     this.globalSettings = {
       nodeIdField: "id",
       nodeLabelField: "name",
@@ -55,31 +55,31 @@ export class GraphState {
       currentLanguage: "fr"
     };
     
-    // Initialiser les liens apres avoir cr les nodes
+    // Initialize links after creating nodes.
     this.initializeLinks();
 
-    // Schema de types pour les champs
+    // Type schema for fields.
     this.schema = { nodes: {}, links: {} };
     this.initializeSchema();
 
-    // Mettre a jour les compteurs d'IDs a partir des donnees actuelles
+    // Update ID counters from current data.
     this.syncNextIds();
   }
   
   /**
-   * Initialise les liens avec references aux objets noeuds
+   * Initialize links with references to node objects.
    */
   initializeLinks() {
-    // recuperer les noeuds par ID
+    // Get nodes by ID.
     const getNodeById = (id) => this.nodes.find(n => n.id === id);
     
-    // creer les liens avec references directes
+    // Create links with direct references.
     const linksData = [
       { id: '1', name: 'Link1', description: 'Description1', source: '1', target: '2', width: this.globalSettings.defaultLinkWidth },
       { id: '2', name: 'Link2', description: 'Description2', source: '2', target: '3', width: this.globalSettings.defaultLinkWidth }
     ];
     
-    // Convertir les references d'ID en references d'objets
+    // Convert ID references to object references.
     this.links = linksData.map(link => ({
       ...link,
       source: getNodeById(link.source),
@@ -88,7 +88,7 @@ export class GraphState {
   }
   
   /**
-   * Cre un nouveau noeud  la position specifie
+   * Create a new node at the specified position.
    */
   createNode(x, y) {
     let id = String(this.nextNodeId++);
@@ -116,7 +116,7 @@ export class GraphState {
       size: this.globalSettings.defaultNodeSize || 30
     };
 
-    // Ajouter les champs manquants selon le schema
+    // Add missing fields according to the schema.
     Object.keys(this.schema.nodes).forEach(field => {
       if (INTERNAL_NODE_FIELDS.has(field)) return;
       if (newNode[field] === undefined) {
@@ -124,8 +124,8 @@ export class GraphState {
       }
     });
 
-    // Si l'utilisateur utilise des champs de coordonnes personnaliss,
-    // initialiser ces champs avec la position cre.
+    // If the user uses custom coordinate fields,
+    // initialize those fields with the created position.
     const { xField, yField } = this.globalSettings;
     if (xField && xField !== 'x') newNode[xField] = finalX;
     if (yField && yField !== 'y') newNode[yField] = finalY;
@@ -162,7 +162,7 @@ export class GraphState {
   }
   
   /**
-   * Supprime un noeud du graphe
+   * Delete a node from the graph.
    */
   deleteNode(node) {
     const relatedLinks = this.links.filter(link => 
@@ -180,7 +180,7 @@ export class GraphState {
   }
   
   /**
-   * Cre un nouveau lien entre deux noeuds
+   * Create a new link between two nodes.
    */
   createLink(source, target) {
     const id = String(this.nextLinkId++);
@@ -211,7 +211,7 @@ export class GraphState {
   }
   
   /**
-   * Supprime un lien du graphe
+   * Delete a link from the graph.
    */
   deleteLink(link) {
     performAction({ 
@@ -224,7 +224,7 @@ export class GraphState {
   }
   
   /**
-   * Met  jour un noeud avec une nouvelle valeur
+   * Update a node with a new value.
    */
   updateNodeField(nodeId, field, newValue) {
     const node = this.nodes.find(n => n.id === nodeId);
@@ -246,7 +246,7 @@ export class GraphState {
   }
   
   /**
-   * Met  jour un lien avec une nouvelle valeur
+   * Update a link with a new value.
    */
   updateLinkField(linkId, field, newValue) {
     const link = this.links.find(l => l.id === linkId);
@@ -268,14 +268,14 @@ export class GraphState {
   }
   
   /**
-   * Ajoute un champ  tous les noeuds ou liens
+   * Add a field to all nodes or links.
    */
   addField(fieldName, target) {
     return this.addFieldWithType(fieldName, target, 'text');
   }
 
   /**
-   * Ajoute un champ a tous les n"uds ou liens avec un type
+   * Add a field with a type to all nodes or links.
    */
   addFieldWithType(fieldName, target, fieldType) {
     if (fieldName.trim() === '') return;
@@ -326,7 +326,7 @@ export class GraphState {
   }
 
   /**
-   * Initialise le schema de types a partir des donnees et des defauts connus
+   * Initialize type schema from data and known defaults.
    */
   initializeSchema() {
     const defaults = {
@@ -526,7 +526,7 @@ export class GraphState {
   }
 
   /**
-   * Convertit des champs existants vers des variantes multilingues (suffixes)
+   * Convert existing fields to multilingual variants (suffixes).
    */
   convertFieldsToMultilingual(fields, target, baseLang = "") {
     const langs = (this.globalSettings.multilingualLangs || "")
@@ -581,7 +581,7 @@ export class GraphState {
   }
 
   /**
-   * Convertit des champs multilingues (suffixes) vers un champ unilingue
+   * Convert multilingual fields (suffixes) to a unilingual field.
    */
   convertFieldsToUnilingual(fields, target, lang) {
     const chosen = (lang || "").trim();
@@ -609,7 +609,7 @@ export class GraphState {
   }
   
   /**
-   * Supprime un champ de tous les noeuds ou liens
+   * Remove a field from all nodes or links.
    */
   removeField(fieldName, target) {
     performAction({ 
@@ -624,7 +624,7 @@ export class GraphState {
   }
   
   /**
-   * Met  jour un paramtre de configuration global
+   * Update a global configuration setting.
    */
   updateGlobalSetting(field, value) {
     const oldValue = this.globalSettings[field];
@@ -644,7 +644,7 @@ export class GraphState {
   }
   
   /**
-   * Importe un graphe complet
+   * Import a full graph.
    */
   importGraph(newGraph) {
     const oldState = {
@@ -664,23 +664,23 @@ export class GraphState {
   }
   
   /**
-   * selectionne un noeud
+   * Select a node.
    */
   selectNode(node) {
     if (!node) return;
     
-    // Dselection de tout lment actuellement selectionn
+    // Deselect any currently selected item.
     this.selectedNode = null;
     this.selectedLink = null;
     
-    // selection du nouveau noeud
+    // Select the new node.
     this.selectedNode = node;
     
     console.log(`noeud selectionn: ${node.id}`);
   }
   
   /**
-   * selectionne un lien
+   * Select a link.
    * @param {Object} link - Le lien  selectionner
    */
   selectLink(link) {
@@ -696,7 +696,7 @@ export class GraphState {
   }
   
   /**
-   * Efface toutes les selections actuelles
+   * Clear all current selections.
    */
   clearSelection() {
     if (this.selectedNode || this.selectedLink) {
@@ -707,14 +707,14 @@ export class GraphState {
   }
   
   /**
-   * Retourne les champs de noeuds disponibles
+   * Return available node fields.
    */
   getNodeFields() {
     return this.getFieldsByType('node');
   }
   
   /**
-   * Retourne les champs de liens disponibles
+   * Return available link fields.
    */
   getLinkFields() {
     return this.getFieldsByType('link');

@@ -1,5 +1,5 @@
 /**
- * Templates pour l'assistance IA sur les expressions
+ * Templates for AI assistance on expressions.
  */
 
 export function getExpressionAssistantPrompt(options = {}) {
