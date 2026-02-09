@@ -21,8 +21,6 @@ export class InteractionManager {
     // Enable zoom.
     this.renderer.enableZoom();
     
-    // Track if a node was recently double-clicked to avoid creating a new node.
-    this.nodeDoubleClicked = false;
     this.lastPointer = null;
   }
   
@@ -67,11 +65,8 @@ export class InteractionManager {
     this.svg.selectAll('.node')
       .call(drag)
       .on('click', (event, d) => this.handleNodeClick(event, d))
-      .on('dblclick', (event, d) => {
+      .on('dblclick', event => {
         event.stopPropagation();
-        this.nodeDoubleClicked = true;
-        setTimeout(() => { this.nodeDoubleClicked = false; }, 300);
-        console.log("Node double-clicked");
       });
     this.svg.selectAll('.link')
       .on('click',   (event, d) => this.handleLinkClick(event, d));
@@ -154,7 +149,7 @@ export class InteractionManager {
     if (event.altKey && this.graphState.selectedNode) {
       // If Alt+Click is on the same selected node.
       if (d.id === this.graphState.selectedNode.id) {
-        const newLink = this.graphState.createLink(d, d); // Self-link.
+        this.graphState.createLink(d, d); // Self-link.
         this.renderer.updateGraph();
         this.graphState.clearSelection();
         return;
@@ -263,9 +258,6 @@ export class InteractionManager {
           this.renderer.updateGraph();
           
           // Emit a custom event.
-          const nodeSelectEvent = new CustomEvent('node-selected', { 
-            detail: { node: newNode } 
-          });
           eventBus.emit('node-selected', { node: newNode });
         }
       }

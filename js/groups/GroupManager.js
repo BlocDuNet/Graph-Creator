@@ -13,13 +13,29 @@ function parseIdList(value) {
     .filter(Boolean);
 }
 
+function toFiniteNumber(value, fallback = 0) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function sameId(a, b) {
+  return String(a ?? '') === String(b ?? '');
+}
+
+function normalizeGroupStore(groups) {
+  const safe = groups || { nodes: [], links: [] };
+  safe.nodes = Array.isArray(safe.nodes) ? safe.nodes : [];
+  safe.links = Array.isArray(safe.links) ? safe.links : [];
+  return safe;
+}
+
 function ensureGroup(group, target) {
   return {
     id: group?.id || uid('group'),
     name: group?.name || (target === 'link' ? 'Groupe lien' : 'Groupe noeud'),
     enabled: group?.enabled !== false,
     target,
-    priority: Number(group?.priority ?? 0),
+    priority: toFiniteNumber(group?.priority, 0),
     when: group?.when || '',
     manualIds: Array.isArray(group?.manualIds) ? group.manualIds.map(v => String(v)) : []
   };
@@ -68,9 +84,7 @@ export class GroupManager {
   constructor(graphState, renderer) {
     this.graphState = graphState;
     this.renderer = renderer;
-    this.groups = graphConfig.groups || { nodes: [], links: [] };
-    this.groups.nodes = this.groups.nodes || [];
-    this.groups.links = this.groups.links || [];
+    this.groups = normalizeGroupStore(graphConfig.groups);
     this.ensureIds();
     this.conditionRequests = new Map();
     this.expandedCards = new Set();
@@ -120,9 +134,7 @@ export class GroupManager {
 
     eventBus.on('group-rules-updated', event => {
       if (event?.detail?.source === 'groups-ui-input') return;
-      this.groups = graphConfig.groups || { nodes: [], links: [] };
-      this.groups.nodes = this.groups.nodes || [];
-      this.groups.links = this.groups.links || [];
+      this.groups = normalizeGroupStore(graphConfig.groups);
       this.ensureIds();
       this.render();
     });
@@ -425,6 +437,7 @@ export class GroupManager {
 
   onInput(event) {
     const target = event.target;
+    if (!(target instanceof Element)) return;
     const card = target?.closest('[data-group-id]');
     const groupId = card?.dataset?.groupId;
     const field = target?.dataset?.field;
@@ -436,7 +449,7 @@ export class GroupManager {
     if (field === 'manualIds') {
       group.manualIds = parseIdList(value);
     } else if (field === 'priority') {
-      group.priority = Number(value || 0);
+      group.priority = toFiniteNumber(value, 0);
     } else {
       group[field] = value;
     }
@@ -670,13 +683,13 @@ export class GroupManager {
   }
 
   findGroupById(id) {
-    return (this.groups.nodes || []).find(g => g.id === id)
-      || (this.groups.links || []).find(g => g.id === id);
+    return (this.groups.nodes || []).find(g => sameId(g?.id, id))
+      || (this.groups.links || []).find(g => sameId(g?.id, id));
   }
 
   removeGroup(id) {
-    this.groups.nodes = (this.groups.nodes || []).filter(g => g.id !== id);
-    this.groups.links = (this.groups.links || []).filter(g => g.id !== id);
+    this.groups.nodes = (this.groups.nodes || []).filter(g => !sameId(g?.id, id));
+    this.groups.links = (this.groups.links || []).filter(g => !sameId(g?.id, id));
     this.commitGroups();
   }
 
