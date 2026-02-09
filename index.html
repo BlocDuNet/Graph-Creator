@@ -174,7 +174,7 @@
                       </p>
                       <p>
                         <label for="historySelect" data-i18n="actions.history.label">History:</label>
-                        <select id="historySelect" size="8"></select>
+                        <select id="historySelect" size="8" title="historySelect" aria-label="historySelect"></select>
                       </p>
                     </div>
                   </div>
@@ -221,7 +221,7 @@
                             </div>
                             <div class="mt-2">
                               <label for="json-models" data-i18n="values.import_export.presets">Modèles prédéfinis:</label>
-                              <select id="json-models" class="form-control form-control-sm"></select>
+                              <select id="json-models" class="form-control form-control-sm" title="json models" aria-label="json models"></select>
                             </div>
                             <label for="json-file" class="sr-only" data-i18n="values.import_export.import_file">Import JSON file</label>
                             <input type="file" id="json-file" accept=".json" class="hidden" title="Select JSON file to import" aria-label="Import JSON file" data-i18n-title="values.import_export.import_file_title" data-i18n-aria-label="values.import_export.import_file">
@@ -236,45 +236,45 @@
                                 <div class="row">
                                   <div class="col-md-6">
                                     <label class="small" data-i18n="values.import_export.advanced.nodes_key">Clé des noeuds (root)</label>
-                                    <select id="advanced-nodes-key" class="form-control form-control-sm"></select>
+                                    <select id="advanced-nodes-key" class="form-control form-control-sm" title="advanced nodes key" aria-label="advanced nodes key"></select>
                                   </div>
                                   <div class="col-md-6">
                                     <label class="small" data-i18n="values.import_export.advanced.links_key">Clé des liens (root)</label>
-                                    <select id="advanced-links-key" class="form-control form-control-sm"></select>
+                                    <select id="advanced-links-key" class="form-control form-control-sm" title="advanced links key" aria-label="advanced links key"></select>
                                   </div>
                                 </div>
                                 <div class="row mt-2">
                                   <div class="col-md-6">
                                     <label class="small" data-i18n="values.import_export.advanced.node_id_field">Champ ID noeud</label>
-                                    <select id="advanced-node-id" class="form-control form-control-sm"></select>
+                                    <select id="advanced-node-id" class="form-control form-control-sm" title="advanced node id" aria-label="advanced node id"></select>
                                   </div>
                                   <div class="col-md-6">
                                     <label class="small" data-i18n="values.import_export.advanced.node_label_field">Champ label noeud (ex: name ou name.fr)</label>
-                                    <select id="advanced-node-label" class="form-control form-control-sm"></select>
+                                    <select id="advanced-node-label" class="form-control form-control-sm" title="advanced node label" aria-label="advanced node label"></select>
                                   </div>
                                 </div>
                                 <div class="row mt-2">
                                   <div class="col-md-6">
                                     <label class="small" data-i18n="values.import_export.advanced.node_desc_field">Champ description noeud (ex: description ou description.fr)</label>
-                                    <select id="advanced-node-desc" class="form-control form-control-sm"></select>
+                                    <select id="advanced-node-desc" class="form-control form-control-sm" title="advanced node desc" aria-label="advanced node desc"></select>
                                   </div>
                                   <div class="col-md-6">
                                     <label class="small" data-i18n="values.import_export.advanced.language">Langue (optionnel, ex: fr)</label>
-                                    <input id="advanced-language-key" class="form-control form-control-sm">
+                                    <input id="advanced-language-key" class="form-control form-control-sm" title="advanced language key" aria-label="advanced language key">
                                   </div>
                                 </div>
                                 <div class="row mt-2">
                                   <div class="col-md-4">
                                     <label class="small" data-i18n="values.import_export.advanced.link_source_field">Champ source lien</label>
-                                    <select id="advanced-link-source" class="form-control form-control-sm"></select>
+                                    <select id="advanced-link-source" class="form-control form-control-sm" title="advanced link source" aria-label="advanced link source"></select>
                                   </div>
                                   <div class="col-md-4">
                                     <label class="small" data-i18n="values.import_export.advanced.link_target_field">Champ target lien</label>
-                                    <select id="advanced-link-target" class="form-control form-control-sm"></select>
+                                    <select id="advanced-link-target" class="form-control form-control-sm" title="advanced link target" aria-label="advanced link target"></select>
                                   </div>
                                   <div class="col-md-4">
                                     <label class="small" data-i18n="values.import_export.advanced.link_label_field">Champ label lien (ex: name ou name.fr)</label>
-                                    <select id="advanced-link-label" class="form-control form-control-sm"></select>
+                                    <select id="advanced-link-label" class="form-control form-control-sm" title="advanced link label" aria-label="advanced link label"></select>
                                   </div>
                                 </div>
                                 <div class="row mt-2">
@@ -315,7 +315,7 @@
                               <div class="col-sm-6">
                                 <div class="input-group input-group-sm">
                                   <input type="text" id="addNodeFieldInput" class="form-control" placeholder="Nouveau champ noeud" data-i18n-placeholder="values.global.fields.new_node_field">
-                                  <select id="addNodeFieldType" class="form-control form-control-sm field-type-select"></select>
+                                  <select id="addNodeFieldType" class="form-control form-control-sm field-type-select" title="addNodeFieldType" aria-label="addNodeFieldType"></select>
                                   <div class="input-group-append">
                                     <button id="addNodeFieldButton" class="btn btn-outline-secondary" data-i18n="values.global.fields.add_node">+Node</button>
                                   </div>
@@ -324,7 +324,7 @@
                               <div class="col-sm-6">
                                 <div class="input-group input-group-sm">
                                   <input type="text" id="addLinkFieldInput" class="form-control" placeholder="Nouveau champ lien" data-i18n-placeholder="values.global.fields.new_link_field">
-                                  <select id="addLinkFieldType" class="form-control form-control-sm field-type-select"></select>
+                                  <select id="addLinkFieldType" class="form-control form-control-sm field-type-select" title="addLinkFieldType" aria-label="addLinkFieldType"></select>
                                   <div class="input-group-append">
                                     <button id="addLinkFieldButton" class="btn btn-outline-secondary" data-i18n="values.global.fields.add_link">+Link</button>
                                   </div>
@@ -334,7 +334,7 @@
                             <div class="row mb-2">
                               <div class="col-sm-6">
                                 <div class="custom-control custom-checkbox">
-                                  <input type="checkbox" class="custom-control-input" id="multilingual-enabled">
+                                  <input type="checkbox" class="custom-control-input" id="multilingual-enabled" title="multilingual enabled" aria-label="multilingual enabled">
                                   <label class="custom-control-label" for="multilingual-enabled" data-i18n="values.global.fields.multilingual">Multilingue</label>
                                 </div>
                               </div>
@@ -353,37 +353,37 @@
                           <div class="row mb-2">
                             <div class="col-sm-4">
                               <label for="node-label" class="small" data-i18n="values.global.labels.node_label">Label nœud :</label>
-                              <select id="node-label" class="form-control form-control-sm"></select>
+                              <select id="node-label" class="form-control form-control-sm" title="node label" aria-label="node label"></select>
                             </div>
                             <div class="col-sm-6">
                               <label for="link-label" class="small" data-i18n="values.global.labels.link_label">Label lien :</label>
-                              <select id="link-label" class="form-control form-control-sm"></select>
+                              <select id="link-label" class="form-control form-control-sm" title="link label" aria-label="link label"></select>
                             </div>
                           </div>
                           <!-- ID/X/Y fields -->
                           <div class="row mb-2">
                             <div class="col-sm-4">
                               <label for="node-id-field" class="small" data-i18n="values.global.labels.node_id_field">Champ ID :</label>
-                              <select id="node-id-field" class="form-control form-control-sm"></select>
+                              <select id="node-id-field" class="form-control form-control-sm" title="node id field" aria-label="node id field"></select>
                             </div>
                             <div class="col-sm-4">
                               <label for="node-x-field" class="small" data-i18n="values.global.labels.node_x_field">Champ X :</label>
-                              <select id="node-x-field" class="form-control form-control-sm"></select>
+                              <select id="node-x-field" class="form-control form-control-sm" title="node x field" aria-label="node x field"></select>
                             </div>
                             <div class="col-sm-4">
                               <label for="node-y-field" class="small" data-i18n="values.global.labels.node_y_field">Champ Y :</label>
-                              <select id="node-y-field" class="form-control form-control-sm"></select>
+                              <select id="node-y-field" class="form-control form-control-sm" title="node y field" aria-label="node y field"></select>
                             </div>
                           </div>
                           <!-- Default size and link width -->
                           <div class="row mb-2">
                             <div class="col-sm-4">
                               <label for="node-size-field" class="small" data-i18n="values.global.labels.node_size_field">Champ de taille :</label>
-                              <select id="node-size-field" class="form-control form-control-sm"></select>
+                              <select id="node-size-field" class="form-control form-control-sm" title="node size field" aria-label="node size field"></select>
                             </div>
                             <div class="col-sm-4">
                               <label for="defaultNodeSizeInput" class="small" data-i18n="values.global.labels.default_node_size">Taille des nœuds (par défaut) :</label>
-                              <input type="number" id="defaultNodeSizeInput" class="form-control form-control-sm" value="30" min="0.1" step="0.1">
+                              <input type="number" id="defaultNodeSizeInput" class="form-control form-control-sm" value="30" min="0.1" step="0.1" title="defaultNodeSizeInput" aria-label="defaultNodeSizeInput">
                             </div>
                             <div class="col-sm-4">
                               <label for="defaultLinkWidthInput" class="small" data-i18n="values.global.labels.default_link_width">Largeur des liens (par défaut) :</label>
@@ -395,7 +395,7 @@
                           <div class="row mb-2">
                             <div class="col-sm-4">
                               <label for="current-language" class="small" data-i18n="values.global.labels.active_language">Langue active :</label>
-                              <select id="current-language" class="form-control form-control-sm"></select>
+                              <select id="current-language" class="form-control form-control-sm" title="current language" aria-label="current language"></select>
                             </div>
                           </div>
                         </div>
@@ -459,11 +459,11 @@
                             <label for="export-config" data-i18n="graph_config.io.export_label">Export config:</label>
                             <button id="export-config" data-i18n="graph_config.io.export_button">Export config</button><br />
                             <label for="import-config" data-i18n="graph_config.io.import_label">Import config:</label>
-                            <input type="file" id="import-config" accept=".json" />
+                            <input type="file" id="import-config" accept=".json" title="import config" aria-label="import config" />
                           </p>
                           <p>
                             <label for="layoutSelect" data-i18n="graph_config.io.layout_label">Layout:</label>
-                            <select id="layoutSelect">
+                            <select id="layoutSelect" title="layoutSelect" aria-label="layoutSelect">
                               <option value="" data-i18n="graph_config.io.layout_select">-- Select layout --</option>
                               <option value="circle" data-i18n="graph_config.layouts.circle">Circle</option>
                               <option value="grid" data-i18n="graph_config.layouts.grid">Grid</option>
@@ -532,7 +532,7 @@
                           <!-- Force recreate links option -->
                           <div id="forceRecreateLinksDiv" class="form-group mt-3">
                             <div class="custom-control custom-checkbox">
-                              <input type="checkbox" class="custom-control-input" id="forceRecreateLinks" checked>
+                              <input type="checkbox" class="custom-control-input" id="forceRecreateLinks" checked title="forceRecreateLinks" aria-label="forceRecreateLinks">
                               <label class="custom-control-label" for="forceRecreateLinks">
                                 <span data-i18n="graph_config.links.recreate">Recréer les liens à chaque mise à jour</span>
                               </label>
@@ -557,7 +557,7 @@
                           <div class="control-group">
                             <div class="form-field">
                               <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="link-force" name="link-force">
+                                <input type="checkbox" class="custom-control-input" id="link-force" name="link-force" title="link force" aria-label="link force">
                                 <label class="custom-control-label" for="link-force" data-i18n="graph_config.forces.link_force">Link force</label>
                               </div>
                               <div class="compact-control">
@@ -572,7 +572,7 @@
                             </div>
                             <div class="form-field">
                               <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="center-force" name="center-force">
+                                <input type="checkbox" class="custom-control-input" id="center-force" name="center-force" title="center force" aria-label="center force">
                                 <label class="custom-control-label" for="center-force" data-i18n="graph_config.forces.center_force">Center force</label>
                               </div>
                             </div>
@@ -607,7 +607,7 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-end align-items-center mb-2">
                     <label class="small mb-0">
-                      <input type="checkbox" id="rules-compact-toggle" class="mr-1">
+                      <input type="checkbox" id="rules-compact-toggle" class="mr-1" title="rules compact toggle" aria-label="rules compact toggle">
                       Mode compact
                     </label>
                   </div>
@@ -780,11 +780,11 @@
                               <div class="row mt-2">
                                 <div class="col-md-6">
                                   <label class="small" data-i18n="ai.common.provider">Fournisseur</label>
-                                  <select id="proposals-ai-provider" class="form-control form-control-sm"></select>
+                                  <select id="proposals-ai-provider" class="form-control form-control-sm" title="proposals ai provider" aria-label="proposals ai provider"></select>
                                 </div>
                                 <div class="col-md-6">
                                   <label class="small" data-i18n="ai.common.model">Modele</label>
-                                  <select id="proposals-ai-model" class="form-control form-control-sm"></select>
+                                  <select id="proposals-ai-model" class="form-control form-control-sm" title="proposals ai model" aria-label="proposals ai model"></select>
                                 </div>
                               </div>
                             </details>
@@ -827,11 +827,11 @@
                               <div class="row mt-2">
                                 <div class="col-md-6">
                                   <label class="small" data-i18n="ai.common.provider">Fournisseur</label>
-                                  <select id="translate-ai-provider" class="form-control form-control-sm"></select>
+                                  <select id="translate-ai-provider" class="form-control form-control-sm" title="translate ai provider" aria-label="translate ai provider"></select>
                                 </div>
                                 <div class="col-md-6">
                                   <label class="small" data-i18n="ai.common.model">Modele</label>
-                                  <select id="translate-ai-model" class="form-control form-control-sm"></select>
+                                  <select id="translate-ai-model" class="form-control form-control-sm" title="translate ai model" aria-label="translate ai model"></select>
                                 </div>
                               </div>
                             </details>
@@ -885,10 +885,10 @@
                     <div class="col-md-12">
                       <div class="d-flex align-items-center">
                         <div class="mr-3">
-                          <input type="checkbox" id="sheet-field-name"> <label for="sheet-field-name">name</label>
+                          <input type="checkbox" id="sheet-field-name" title="sheet field name" aria-label="sheet field name"> <label for="sheet-field-name">name</label>
                         </div>
                         <div class="mr-3">
-                          <input type="checkbox" id="sheet-field-description"> <label for="sheet-field-description">description</label>
+                          <input type="checkbox" id="sheet-field-description" title="sheet field description" aria-label="sheet field description"> <label for="sheet-field-description">description</label>
                         </div>
                         <button id="sheet-open-convert" class="btn btn-sm btn-outline-secondary ml-2" data-i18n="sheet.convert">Conversion</button>
                         <button id="sheet-refresh" class="btn btn-sm btn-outline-secondary ml-auto" data-i18n="sheet.refresh">Rafraîchir</button>
@@ -915,7 +915,7 @@
                     </div>
                     <div class="col-md-3">
                       <label class="small" data-i18n="sheet.filter_type_label">Filtre type</label>
-                      <select id="sheet-filter-type" class="form-control form-control-sm">
+                      <select id="sheet-filter-type" class="form-control form-control-sm" title="sheet filter type" aria-label="sheet filter type">
                         <option value="" data-i18n="common.all">Tous</option>
                         <option value="node" data-i18n="common.node">Noeud</option>
                         <option value="link" data-i18n="common.link">Lien</option>
@@ -923,7 +923,7 @@
                     </div>
                     <div class="col-md-3">
                       <label class="small" data-i18n="sheet.filter_field_label">Filtre champ</label>
-                      <select id="sheet-filter-field" class="form-control form-control-sm">
+                      <select id="sheet-filter-field" class="form-control form-control-sm" title="sheet filter field" aria-label="sheet filter field">
                         <option value="" data-i18n="common.all">Tous</option>
                         <option value="name">name</option>
                         <option value="description">description</option>
@@ -937,7 +937,7 @@
                   <div class="row mt-2">
                     <div class="col-md-4">
                       <label class="small" data-i18n="sheet.sort_label">Trier par</label>
-                      <select id="sheet-sort" class="form-control form-control-sm">
+                      <select id="sheet-sort" class="form-control form-control-sm" title="sheet sort" aria-label="sheet sort">
                         <option value="type" data-i18n="sheet.sort.type">Type</option>
                         <option value="id" data-i18n="sheet.sort.id">ID</option>
                         <option value="field" data-i18n="sheet.sort.field">Champ</option>
@@ -948,7 +948,7 @@
                     <div class="col-md-4">
                       <label class="small" data-i18n="sheet.column_select_label">Sélection colonne</label>
                       <div class="d-flex">
-                        <select id="sheet-column-field" class="form-control form-control-sm mr-2">
+                        <select id="sheet-column-field" class="form-control form-control-sm mr-2" title="sheet column field" aria-label="sheet column field">
                           <option value="name">name</option>
                           <option value="description">description</option>
                         </select>
@@ -979,11 +979,11 @@
                     <div class="row mt-2">
                       <div class="col-md-6">
                         <label class="small" data-i18n="ai.common.provider">Fournisseur</label>
-                        <select id="sheet-ai-provider" class="form-control form-control-sm"></select>
+                        <select id="sheet-ai-provider" class="form-control form-control-sm" title="sheet ai provider" aria-label="sheet ai provider"></select>
                       </div>
                       <div class="col-md-6">
                         <label class="small" data-i18n="ai.common.model">Modele</label>
-                        <select id="sheet-ai-model" class="form-control form-control-sm"></select>
+                        <select id="sheet-ai-model" class="form-control form-control-sm" title="sheet ai model" aria-label="sheet ai model"></select>
                       </div>
                     </div>
                   </details>
@@ -1008,16 +1008,16 @@
                   <div class="row">
                     <div class="col-md-6">
                       <label class="small" data-i18n="app_config.ai.default_provider">Fournisseur IA par defaut</label>
-                      <select id="config-ai-provider" class="form-control form-control-sm"></select>
+                      <select id="config-ai-provider" class="form-control form-control-sm" title="config ai provider" aria-label="config ai provider"></select>
                     </div>
                     <div class="col-md-6">
                       <label class="small" data-i18n="app_config.ai.default_model">Modele IA par defaut</label>
-                      <select id="config-ai-model" class="form-control form-control-sm"></select>
+                      <select id="config-ai-model" class="form-control form-control-sm" title="config ai model" aria-label="config ai model"></select>
                     </div>
                   </div>
                   <details class="mt-3">
                     <summary class="small" data-i18n="app_config.ai.log_summary">Log IA (echanges complets)</summary>
-                    <textarea id="ai-log" class="w-100 log-textarea mt-2" readonly></textarea>
+                    <textarea id="ai-log" class="w-100 log-textarea mt-2" readonly title="ai log" aria-label="ai log"></textarea>
                   </details>
                 </div>
               </div>
@@ -1029,7 +1029,7 @@
                 </div>
                 <div class="card-body">
                   <label class="small" for="ui-language" data-i18n="app_config.ui_language.label">Langue UI</label>
-                  <select id="ui-language" class="form-control form-control-sm"></select>
+                  <select id="ui-language" class="form-control form-control-sm" title="ui language" aria-label="ui language"></select>
                 </div>
               </div>
               <div class="card mt-3">
@@ -1058,30 +1058,30 @@
                   <div class="row">
                     <div class="col-md-4">
                       <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="app-config-include-ai" checked>
+                        <input type="checkbox" class="custom-control-input" id="app-config-include-ai" checked title="app config include ai" aria-label="app config include ai">
                         <label class="custom-control-label" for="app-config-include-ai" data-i18n="app_config.io.include_ai">IA</label>
                       </div>
                       <div class="custom-control custom-checkbox mt-1">
-                        <input type="checkbox" class="custom-control-input" id="app-config-include-style" checked>
+                        <input type="checkbox" class="custom-control-input" id="app-config-include-style" checked title="app config include style" aria-label="app config include style">
                         <label class="custom-control-label" for="app-config-include-style" data-i18n="app_config.io.include_style">Regles de style</label>
                       </div>
                       <div class="custom-control custom-checkbox mt-1">
-                        <input type="checkbox" class="custom-control-input" id="app-config-include-pie" checked>
+                        <input type="checkbox" class="custom-control-input" id="app-config-include-pie" checked title="app config include pie" aria-label="app config include pie">
                         <label class="custom-control-label" for="app-config-include-pie" data-i18n="app_config.io.include_pie">Pie charts</label>
                       </div>
                       <div class="custom-control custom-checkbox mt-1">
-                        <input type="checkbox" class="custom-control-input" id="app-config-include-groups" checked>
+                        <input type="checkbox" class="custom-control-input" id="app-config-include-groups" checked title="app config include groups" aria-label="app config include groups">
                         <label class="custom-control-label" for="app-config-include-groups" data-i18n="app_config.io.include_groups">Groupes</label>
                       </div>
                       <div class="custom-control custom-checkbox mt-1">
-                        <input type="checkbox" class="custom-control-input" id="app-config-include-context-menu" checked>
+                        <input type="checkbox" class="custom-control-input" id="app-config-include-context-menu" checked title="app config include context menu" aria-label="app config include context menu">
                         <label class="custom-control-label" for="app-config-include-context-menu">Menu contextuel</label>
                       </div>
                     </div>
                   </div>
                   <div class="mt-2 d-flex flex-wrap">
                     <button id="app-config-export" class="btn btn-sm btn-outline-primary m-1" data-i18n="app_config.io.export">Exporter config logiciel</button>
-                    <input type="file" id="app-config-import" accept=".json" class="m-1">
+                    <input type="file" id="app-config-import" accept=".json" class="m-1" title="app config import" aria-label="app config import">
                   </div>
                 </div>
               </div>
@@ -1106,7 +1106,7 @@
           </div>
           <div class="col-md-6">
             <label class="small" data-i18n="conditional.mode_label">Mode</label>
-            <select id="conditional-mode" class="form-control form-control-sm">
+            <select id="conditional-mode" class="form-control form-control-sm" title="conditional mode" aria-label="conditional mode">
               <option value="visual" data-i18n="conditional.mode_visual">Visuel</option>
               <option value="expression" data-i18n="conditional.mode_expression">Expression</option>
             </select>
@@ -1125,7 +1125,7 @@
             <div class="row">
               <div class="col-md-6">
                 <label class="small" data-i18n="conditional.visual_type_label">Type visuel</label>
-                <select id="conditional-visual-kind" class="form-control form-control-sm">
+                <select id="conditional-visual-kind" class="form-control form-control-sm" title="conditional visual kind" aria-label="conditional visual kind">
                   <option value="expression" data-i18n="conditional.visual_type_expression">Expression simple</option>
                   <option value="condition" data-i18n="conditional.visual_type_condition">Condition (Si/Alors)</option>
                 </select>
@@ -1145,83 +1145,83 @@
               <div class="row">
                 <div class="col-md-6">
                   <label class="small" id="then-label" data-i18n="conditional.then_label">Alors</label>
-                  <select id="then-mode" class="form-control form-control-sm mb-1">
+                  <select id="then-mode" class="form-control form-control-sm mb-1" title="then mode" aria-label="then mode">
                     <option value="value" data-i18n="conditional.option_value">Valeur</option>
                     <option value="concat" data-i18n="conditional.option_concat">Concatener</option>
                     <option value="calc" data-i18n="conditional.option_calc">Calcul</option>
                   </select>
                   <div id="then-value-block">
-                    <select id="then-source" class="form-control form-control-sm">
+                    <select id="then-source" class="form-control form-control-sm" title="then source" aria-label="then source">
                       <option value="field" data-i18n="conditional.option_field">Champ</option>
                       <option value="value" data-i18n="conditional.option_value">Valeur</option>
                     </select>
-                    <select id="then-field" class="form-control form-control-sm mt-1"></select>
+                    <select id="then-field" class="form-control form-control-sm mt-1" title="then field" aria-label="then field"></select>
                     <input id="then-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
                   </div>
                   <div id="then-concat-block" class="hidden">
-                    <select id="then-concat-field-a" class="form-control form-control-sm"></select>
+                    <select id="then-concat-field-a" class="form-control form-control-sm" title="then concat field a" aria-label="then concat field a"></select>
                     <input id="then-concat-sep" class="form-control form-control-sm mt-1" placeholder="Separateur" data-i18n-placeholder="conditional.placeholder_separator">
-                    <select id="then-concat-field-b" class="form-control form-control-sm mt-1"></select>
+                    <select id="then-concat-field-b" class="form-control form-control-sm mt-1" title="then concat field b" aria-label="then concat field b"></select>
                   </div>
                   <div id="then-calc-block" class="hidden">
-                    <select id="then-calc-left-source" class="form-control form-control-sm">
+                    <select id="then-calc-left-source" class="form-control form-control-sm" title="then calc left source" aria-label="then calc left source">
                       <option value="field" data-i18n="conditional.option_field">Champ</option>
                       <option value="value" data-i18n="conditional.option_value">Valeur</option>
                     </select>
-                    <select id="then-calc-left-field" class="form-control form-control-sm mt-1"></select>
+                    <select id="then-calc-left-field" class="form-control form-control-sm mt-1" title="then calc left field" aria-label="then calc left field"></select>
                     <input id="then-calc-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
-                    <select id="then-calc-op" class="form-control form-control-sm mt-1">
+                    <select id="then-calc-op" class="form-control form-control-sm mt-1" title="then calc op" aria-label="then calc op">
                       <option value="add">+</option>
                       <option value="sub">-</option>
                       <option value="mul">*</option>
                       <option value="div">/</option>
                     </select>
-                    <select id="then-calc-right-source" class="form-control form-control-sm mt-1">
+                    <select id="then-calc-right-source" class="form-control form-control-sm mt-1" title="then calc right source" aria-label="then calc right source">
                       <option value="field" data-i18n="conditional.option_field">Champ</option>
                       <option value="value" data-i18n="conditional.option_value">Valeur</option>
                     </select>
-                    <select id="then-calc-right-field" class="form-control form-control-sm mt-1"></select>
+                    <select id="then-calc-right-field" class="form-control form-control-sm mt-1" title="then calc right field" aria-label="then calc right field"></select>
                     <input id="then-calc-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
                   </div>
                 </div>
                 <div class="col-md-6" id="conditional-else-block">
                   <label class="small" id="else-label" data-i18n="conditional.else_label">Sinon</label>
-                  <select id="else-mode" class="form-control form-control-sm mb-1">
+                  <select id="else-mode" class="form-control form-control-sm mb-1" title="else mode" aria-label="else mode">
                     <option value="value" data-i18n="conditional.option_value">Valeur</option>
                     <option value="concat" data-i18n="conditional.option_concat">Concatener</option>
                     <option value="calc" data-i18n="conditional.option_calc">Calcul</option>
                   </select>
                   <div id="else-value-block">
-                    <select id="else-source" class="form-control form-control-sm">
+                    <select id="else-source" class="form-control form-control-sm" title="else source" aria-label="else source">
                       <option value="field" data-i18n="conditional.option_field">Champ</option>
                       <option value="value" data-i18n="conditional.option_value">Valeur</option>
                     </select>
-                    <select id="else-field" class="form-control form-control-sm mt-1"></select>
+                    <select id="else-field" class="form-control form-control-sm mt-1" title="else field" aria-label="else field"></select>
                     <input id="else-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
                   </div>
                   <div id="else-concat-block" class="hidden">
-                    <select id="else-concat-field-a" class="form-control form-control-sm"></select>
+                    <select id="else-concat-field-a" class="form-control form-control-sm" title="else concat field a" aria-label="else concat field a"></select>
                     <input id="else-concat-sep" class="form-control form-control-sm mt-1" placeholder="Separateur" data-i18n-placeholder="conditional.placeholder_separator">
-                    <select id="else-concat-field-b" class="form-control form-control-sm mt-1"></select>
+                    <select id="else-concat-field-b" class="form-control form-control-sm mt-1" title="else concat field b" aria-label="else concat field b"></select>
                   </div>
                   <div id="else-calc-block" class="hidden">
-                    <select id="else-calc-left-source" class="form-control form-control-sm">
+                    <select id="else-calc-left-source" class="form-control form-control-sm" title="else calc left source" aria-label="else calc left source">
                       <option value="field" data-i18n="conditional.option_field">Champ</option>
                       <option value="value" data-i18n="conditional.option_value">Valeur</option>
                     </select>
-                    <select id="else-calc-left-field" class="form-control form-control-sm mt-1"></select>
+                    <select id="else-calc-left-field" class="form-control form-control-sm mt-1" title="else calc left field" aria-label="else calc left field"></select>
                     <input id="else-calc-left-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
-                    <select id="else-calc-op" class="form-control form-control-sm mt-1">
+                    <select id="else-calc-op" class="form-control form-control-sm mt-1" title="else calc op" aria-label="else calc op">
                       <option value="add">+</option>
                       <option value="sub">-</option>
                       <option value="mul">*</option>
                       <option value="div">/</option>
                     </select>
-                    <select id="else-calc-right-source" class="form-control form-control-sm mt-1">
+                    <select id="else-calc-right-source" class="form-control form-control-sm mt-1" title="else calc right source" aria-label="else calc right source">
                       <option value="field" data-i18n="conditional.option_field">Champ</option>
                       <option value="value" data-i18n="conditional.option_value">Valeur</option>
                     </select>
-                    <select id="else-calc-right-field" class="form-control form-control-sm mt-1"></select>
+                    <select id="else-calc-right-field" class="form-control form-control-sm mt-1" title="else calc right field" aria-label="else calc right field"></select>
                     <input id="else-calc-right-value" class="form-control form-control-sm mt-1" placeholder="Valeur" data-i18n-placeholder="conditional.placeholder_value">
                   </div>
                 </div>
@@ -1240,7 +1240,7 @@
 
           <div id="conditional-ai-help" class="mt-2">
             <label class="small" data-i18n="conditional.ai_help_label">Assistance IA (beta)</label>
-            <select id="conditional-ai-suggestion" class="form-control form-control-sm mb-1">
+            <select id="conditional-ai-suggestion" class="form-control form-control-sm mb-1" title="conditional ai suggestion" aria-label="conditional ai suggestion">
               <option value="" data-i18n="conditional.ai_suggestion_placeholder">Suggestion rapide...</option>
               <option value="Creer un nom complet en concatenant prenom et nom." data-i18n="conditional.ai_suggestion_full_name">Nom complet (prenom + nom)</option>
               <option value="Si age >= 18 alors 'Majeur' sinon 'Mineur'." data-i18n="conditional.ai_suggestion_simple_condition">Condition simple (age)</option>
@@ -1253,9 +1253,9 @@
               <summary class="small" data-i18n="ai.common.config_summary">Configuration IA</summary>
               <div class="mt-2">
                 <label class="small" data-i18n="ai.common.provider">Fournisseur</label>
-                <select id="conditional-ai-provider" class="form-control form-control-sm"></select>
+                <select id="conditional-ai-provider" class="form-control form-control-sm" title="conditional ai provider" aria-label="conditional ai provider"></select>
                 <label class="small mt-2" data-i18n="ai.common.model">Modele</label>
-                <select id="conditional-ai-model" class="form-control form-control-sm"></select>
+                <select id="conditional-ai-model" class="form-control form-control-sm" title="conditional ai model" aria-label="conditional ai model"></select>
               </div>
             </details>
             <div class="d-flex flex-wrap mt-1">
@@ -1268,7 +1268,7 @@
           <div class="row mt-2">
             <div class="col-md-6">
               <label class="small" data-i18n="conditional.result_type_label">Type de resultat</label>
-              <select id="conditional-result-type" class="form-control form-control-sm">
+              <select id="conditional-result-type" class="form-control form-control-sm" title="conditional result type" aria-label="conditional result type">
                 <option value="auto" data-i18n="conditional.result_type_auto">Auto</option>
               <option value="text" data-i18n="conditional.result_type_text">Texte</option>
               <option value="number" data-i18n="conditional.result_type_number">Nombre</option>
@@ -1279,7 +1279,7 @@
             </div>
             <div class="col-md-6">
               <label class="small" data-i18n="conditional.canonical_label">Expression canonique</label>
-              <input id="conditional-expression-canonical" class="form-control form-control-sm">
+              <input id="conditional-expression-canonical" class="form-control form-control-sm" title="conditional expression canonical" aria-label="conditional expression canonical">
             </div>
           </div>
           <div class="mt-2 d-flex flex-wrap">
@@ -1301,7 +1301,7 @@
         <div class="row">
           <div class="col-md-6">
             <label class="small" data-i18n="multilingual_convert.mode_label">Mode</label>
-            <select id="multilingual-convert-mode" class="form-control form-control-sm">
+            <select id="multilingual-convert-mode" class="form-control form-control-sm" title="multilingual convert mode" aria-label="multilingual convert mode">
               <option value="to-multi" data-i18n="multilingual_convert.mode_to_multi">Unilingue → Multilingue</option>
               <option value="to-uni" data-i18n="multilingual_convert.mode_to_uni">Multilingue → Unilingue</option>
             </select>
@@ -1319,7 +1319,7 @@
           <div class="col-md-6">
             <label class="small" data-i18n="multilingual_convert.keep_label">Conserver les champs d'origine</label>
             <div class="custom-control custom-checkbox">
-              <input type="checkbox" class="custom-control-input" id="multilingual-convert-keep">
+              <input type="checkbox" class="custom-control-input" id="multilingual-convert-keep" title="multilingual convert keep" aria-label="multilingual convert keep">
               <label class="custom-control-label" for="multilingual-convert-keep" data-i18n="multilingual_convert.keep_yes">Oui (ne pas supprimer)</label>
             </div>
           </div>
