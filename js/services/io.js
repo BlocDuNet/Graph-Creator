@@ -103,6 +103,7 @@ function exportJsonAdvanced(options = {}) {
   exportData.schema = buildSchemaForExport(exportData.nodes, exportData.links, graphState?.schema);
   exportData.styleRules = graphConfig?.styleRules || { nodes: [], links: [] };
   exportData.pieRules = graphConfig?.pieRules || { nodes: [] };
+  exportData.groups = sanitizeGroupsForExport(graphConfig?.groups);
 
   if (format === 'csv_nodes') {
     downloadDelimited(exportData.nodes, 'nodes.csv', ',');
@@ -145,7 +146,7 @@ function exportJsonAdvanced(options = {}) {
 function loadJSONGraph(jsonContent) {
   try {
     const jsonData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
-      const { nodes, links, schema, styleRules, pieRules } = normalizeImportedGraph(jsonData);
+      const { nodes, links, schema, styleRules, pieRules, groups } = normalizeImportedGraph(jsonData);
     
     // Save previous state.
     const oldState = {
@@ -166,7 +167,7 @@ function loadJSONGraph(jsonContent) {
     
     // Update the graph.
     renderer.updateGraph();
-    applyImportedRules(styleRules, pieRules);
+    applyImportedRules(styleRules, pieRules, groups);
     
     // Emit a custom event to notify import.
     eventBus.emit('graph-imported', { nodes, links });
@@ -198,14 +199,14 @@ function applyAdvancedImport() {
   if (!pendingAdvancedImport?.raw) return;
   const mapping = readAdvancedMapping();
   try {
-    const { nodes, links, schema, styleRules, pieRules } = normalizeImportedGraph(pendingAdvancedImport.raw, mapping);
+    const { nodes, links, schema, styleRules, pieRules, groups } = normalizeImportedGraph(pendingAdvancedImport.raw, mapping);
     const oldState = { nodes: [...graphState.nodes], links: [...graphState.links], schema: graphState.getSchemaSnapshot?.() || graphState.schema };
     performAction({ 
       type: "import_graph", 
       data: { oldState, newState: { nodes, links, schema }, label: "Import JSON graph (advanced)" } 
     });
     renderer.updateGraph();
-    applyImportedRules(styleRules, pieRules);
+    applyImportedRules(styleRules, pieRules, groups);
     eventBus.emit('graph-imported', { nodes, links });
     // ensure UI selects are refreshed
     // compatibility: some UI code still listens on window
@@ -437,12 +438,12 @@ function normalizeImportedGraph(raw, mapping = null) {
   const schemaSource = raw.schema || data.schema || null;
   const schema = normalizeSchema(schemaSource, nodes, links);
 
-  const { styleRules, pieRules } = extractImportedRules(raw, data);
+  const { styleRules, pieRules, groups } = extractImportedRules(raw, data);
 
-  return { nodes, links, schema, styleRules, pieRules };
+  return { nodes, links, schema, styleRules, pieRules, groups };
 }
 
-function applyImportedRules(styleRules, pieRules) {
+function applyImportedRules(styleRules, pieRules, groups) {
   const nextStyle = styleRules ?? { nodes: [], links: [] };
   graphConfig.styleRules = nextStyle;
   eventBus.emit('style-rules-updated', { rules: nextStyle });
@@ -450,15 +451,21 @@ function applyImportedRules(styleRules, pieRules) {
   const nextPie = pieRules ?? { nodes: [] };
   graphConfig.pieRules = nextPie;
   eventBus.emit('pie-rules-updated', { rules: nextPie });
+
+  const nextGroups = groups ?? { nodes: [], links: [] };
+  graphConfig.groups = nextGroups;
+  eventBus.emit('group-rules-updated', { rules: nextGroups });
 }
 
 function extractImportedRules(raw, data) {
   const configSource = pickConfigSource(raw, data);
   const styleRulesRaw = configSource?.styleRules ?? raw.styleRules ?? data?.styleRules;
   const pieRulesRaw = configSource?.pieRules ?? raw.pieRules ?? data?.pieRules;
+  const groupsRaw = configSource?.groups ?? raw.groups ?? data?.groups;
   const styleRules = styleRulesRaw !== undefined ? normalizeStyleRules(styleRulesRaw) : null;
   const pieRules = pieRulesRaw !== undefined ? normalizePieRules(pieRulesRaw) : null;
-  return { styleRules, pieRules };
+  const groups = groupsRaw !== undefined ? normalizeGroups(groupsRaw) : null;
+  return { styleRules, pieRules, groups };
 }
 
 function pickConfigSource(raw, data) {
@@ -480,6 +487,35 @@ function normalizePieRules(data) {
   if (Array.isArray(data)) return { nodes: data };
   return {
     nodes: Array.isArray(data.nodes) ? data.nodes : []
+  };
+}
+
+function normalizeGroups(data) {
+  if (!data) return { nodes: [], links: [] };
+  if (Array.isArray(data)) return { nodes: data, links: [] };
+  return {
+    nodes: Array.isArray(data.nodes) ? data.nodes : [],
+    links: Array.isArray(data.links) ? data.links : []
+  };
+}
+
+function sanitizeGroup(group, target) {
+  return {
+    id: String(group?.id || ''),
+    name: String(group?.name || ''),
+    enabled: group?.enabled !== false,
+    target,
+    priority: Number(group?.priority ?? 0),
+    when: String(group?.when || ''),
+    manualIds: Array.isArray(group?.manualIds) ? group.manualIds.map(v => String(v)) : []
+  };
+}
+
+function sanitizeGroupsForExport(data) {
+  const normalized = normalizeGroups(data);
+  return {
+    nodes: (normalized.nodes || []).map(group => sanitizeGroup(group, 'node')),
+    links: (normalized.links || []).map(group => sanitizeGroup(group, 'link'))
   };
 }
 

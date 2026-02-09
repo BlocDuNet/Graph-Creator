@@ -545,6 +545,45 @@ function dateDiff(a, b, unit = 'days') {
         total += toNumber(evalForLink(ast, ctx, l));
       });
       return total;
+    },
+    inGroup: (args, ctx) => {
+      const graph = getGraph(ctx);
+      const groupRef = String(args?.[0] ?? '').trim();
+      if (!graph || !groupRef || !ctx?.target || !ctx?.item) return false;
+      return graph.isItemInGroup(ctx.target, ctx.item, groupRef, ctx.__groupStack || []);
+    },
+    inNodeGroup: (args, ctx) => {
+      const graph = getGraph(ctx);
+      const groupRef = String(args?.[0] ?? '').trim();
+      if (!graph || !groupRef) return false;
+      let node = null;
+      if (ctx?.target === 'node') node = ctx.item;
+      if (ctx?.target === 'link') {
+        const which = String(args?.[1] ?? 'source').toLowerCase();
+        node = which === 'target' ? ctx?.item?.target : ctx?.item?.source;
+      }
+      if (!node) return false;
+      return graph.isItemInGroup('node', node, groupRef, ctx.__groupStack || []);
+    },
+    inLinkGroup: (args, ctx) => {
+      const graph = getGraph(ctx);
+      const groupRef = String(args?.[0] ?? '').trim();
+      if (!graph || !groupRef || ctx?.target !== 'link' || !ctx?.item) return false;
+      return graph.isItemInGroup('link', ctx.item, groupRef, ctx.__groupStack || []);
+    },
+    groupCount: (args, ctx) => {
+      const graph = getGraph(ctx);
+      const groupRef = String(args?.[0] ?? '').trim();
+      if (!graph || !groupRef) return 0;
+      const rawTarget = String(args?.[1] ?? ctx?.target ?? 'node').toLowerCase();
+      const target = rawTarget.startsWith('l') ? 'link' : 'node';
+      return graph.getGroupCount(target, groupRef, ctx.__groupStack || []);
+    },
+    groupNames: (args, ctx) => {
+      const graph = getGraph(ctx);
+      if (!graph || !ctx?.target || !ctx?.item) return '';
+      const names = graph.getItemGroupNames(ctx.target, ctx.item, ctx.__groupStack || []);
+      return names.join(', ');
     }
   };
 
@@ -669,9 +708,9 @@ export function inferExpressionType(ast, getFieldType) {
         const t2 = infer(node.args?.[2]);
         return t1 === t2 ? t1 : 'text';
       }
-      if (['add', 'sub', 'mul', 'div', 'len', 'round', 'min', 'max', 'toNumber', 'degree', 'linkCount', 'neighborCount', 'sumNeighbors', 'sumLinks'].includes(name)) return 'number';
-      if (['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'and', 'or', 'not', 'toBool', 'contains', 'startsWith', 'endsWith', 'regex', 'hasNeighbor'].includes(name)) return 'boolean';
-      if (['concat', 'upper', 'lower', 'trim', 'toText', 'coalesce', 'replace', 'substring', 'formatNumber'].includes(name)) return 'text';
+      if (['add', 'sub', 'mul', 'div', 'len', 'round', 'min', 'max', 'toNumber', 'degree', 'linkCount', 'neighborCount', 'sumNeighbors', 'sumLinks', 'groupCount'].includes(name)) return 'number';
+      if (['gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'and', 'or', 'not', 'toBool', 'contains', 'startsWith', 'endsWith', 'regex', 'hasNeighbor', 'inGroup', 'inNodeGroup', 'inLinkGroup'].includes(name)) return 'boolean';
+      if (['concat', 'upper', 'lower', 'trim', 'toText', 'coalesce', 'replace', 'substring', 'formatNumber', 'groupNames'].includes(name)) return 'text';
       if (['dateDiff'].includes(name)) return 'number';
       if (name === 'field') return 'text';
       return 'text';

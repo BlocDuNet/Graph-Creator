@@ -61,6 +61,7 @@ export class GraphState {
     // Type schema for fields.
     this.schema = { nodes: {}, links: {} };
     this.initializeSchema();
+    this.groupAstCache = new Map();
 
     // Update ID counters from current data.
     this.syncNextIds();
@@ -734,6 +735,85 @@ export class GraphState {
     const list = Array.from(fields).filter(f => !excluded.includes(f) && !String(f).startsWith('__'));
     if (!allowedTypes) return list;
     return list.filter(f => allowedTypes.includes(this.getFieldResolvedType(target, f)));
+  }
+
+  getGroupList(target) {
+    const groups = graphConfig?.groups || { nodes: [], links: [] };
+    return target === 'link'
+      ? (Array.isArray(groups.links) ? groups.links : [])
+      : (Array.isArray(groups.nodes) ? groups.nodes : []);
+  }
+
+  findGroup(target, groupRef) {
+    const ref = String(groupRef ?? '').trim().toLowerCase();
+    if (!ref) return null;
+    return this.getGroupList(target).find(group => {
+      if (!group || group.enabled === false) return false;
+      const id = String(group.id ?? '').trim().toLowerCase();
+      const name = String(group.name ?? '').trim().toLowerCase();
+      return ref === id || ref === name;
+    }) || null;
+  }
+
+  isItemInGroup(target, item, groupRef, stack = []) {
+    if (!item || !groupRef) return false;
+    const group = typeof groupRef === 'object'
+      ? groupRef
+      : this.findGroup(target, groupRef);
+    if (!group || group.enabled === false) return false;
+
+    const itemId = String(item.id ?? '');
+    const manualIds = Array.isArray(group.manualIds)
+      ? group.manualIds.map(v => String(v))
+      : [];
+    if (manualIds.includes(itemId)) return true;
+
+    const expr = String(group.when || '').trim();
+    if (!expr) return false;
+
+    const stackKey = `${target}:${group.id || group.name || expr}`;
+    if (stack.includes(stackKey)) return false;
+    const nextStack = stack.concat(stackKey);
+
+    const cacheKey = `${target}:${group.id || group.name || expr}`;
+    let cached = this.groupAstCache.get(cacheKey);
+    if (!cached || cached.expr !== expr) {
+      try {
+        cached = { expr, ast: parseExpression(expr) };
+        this.groupAstCache.set(cacheKey, cached);
+      } catch (e) {
+        return false;
+      }
+    }
+    const ast = cached.ast;
+    try {
+      return !!evaluateExpression(ast, {
+        graph: this,
+        target,
+        item,
+        __groupStack: nextStack,
+        getField: name => this.resolveFieldValue(target, item, name)
+      });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  getGroupMembers(target, groupRef, stack = []) {
+    const items = target === 'link' ? this.links : this.nodes;
+    return (items || []).filter(item => this.isItemInGroup(target, item, groupRef, stack));
+  }
+
+  getGroupCount(target, groupRef, stack = []) {
+    return this.getGroupMembers(target, groupRef, stack).length;
+  }
+
+  getItemGroupNames(target, item, stack = []) {
+    if (!item) return [];
+    return this.getGroupList(target)
+      .filter(group => this.isItemInGroup(target, item, group, stack))
+      .map(group => String(group.name || group.id || '').trim())
+      .filter(Boolean);
   }
 
   getNeighbors(nodeId) {

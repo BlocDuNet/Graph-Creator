@@ -9,6 +9,7 @@ import { UIManager } from './ui/UIManager.js';
 import { AIManager } from './ai/AIManager.js';
 import { ConditionalFieldManager } from './expr/ConditionalFieldManager.js';
 import { StyleRuleManager } from './style/StyleRuleManager.js';
+import { GroupManager } from './groups/GroupManager.js';
 import { registerGraphState, registerUpdateCallback } from './state/undo_redo.js';
 import { initLayoutManager } from './services/layoutManager.js';
 import { initIOServices } from './services/io.js';
@@ -46,6 +47,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 9. Style rules / pie charts manager.
   const styleRuleManager = new StyleRuleManager(graphState, renderer);
+
+  // 9b. Node/link groups manager.
+  const groupManager = new GroupManager(graphState, renderer);
   
   // 10. Initialize the AI manager.
   const aiManager = new AIManager(graphState, renderer);
@@ -72,7 +76,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       uiManager,
       aiManager,
       conditionalFieldManager,
-      styleRuleManager
+      styleRuleManager,
+      groupManager
     };
   }
   

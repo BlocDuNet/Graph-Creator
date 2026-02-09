@@ -599,6 +599,26 @@
                     </div>
                   </div>
 
+                  <div class="col-12 mb-3">
+                    <div class="card h-100">
+                      <div class="card-header section-header" id="headingGroups">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseGroups" aria-expanded="true" aria-controls="collapseGroups">
+                          <span>Groupes (noeuds / liens)</span>
+                        </button>
+                      </div>
+                      <div id="collapseGroups" class="collapse show" aria-labelledby="headingGroups">
+                        <div class="card-body">
+                          <div class="d-flex flex-wrap mb-2">
+                            <button id="group-add-node" class="btn btn-sm btn-outline-secondary m-1">+ Groupe noeud</button>
+                            <button id="group-add-link" class="btn btn-sm btn-outline-secondary m-1">+ Groupe lien</button>
+                          </div>
+                          <div class="small text-muted mb-2">Un groupe peut etre defini par regle logique et/ou par IDs manuels.</div>
+                          <div id="element-groups-list"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -934,6 +954,10 @@
                         <input type="checkbox" class="custom-control-input" id="app-config-include-pie" checked>
                         <label class="custom-control-label" for="app-config-include-pie" data-i18n="app_config.io.include_pie">Pie charts</label>
                       </div>
+                      <div class="custom-control custom-checkbox mt-1">
+                        <input type="checkbox" class="custom-control-input" id="app-config-include-groups" checked>
+                        <label class="custom-control-label" for="app-config-include-groups" data-i18n="app_config.io.include_groups">Groupes</label>
+                      </div>
                     </div>
                   </div>
                   <div class="mt-2 d-flex flex-wrap">
@@ -1083,7 +1107,7 @@
             <textarea id="conditional-expression-text" class="form-control form-control-sm" rows="4" placeholder='if(gt(age,18), concat(prenom," ",nom), "Mineur")' data-i18n-placeholder="conditional.expression_placeholder"></textarea>
             <div id="conditional-expression-error" class="type-warning mt-1"></div>
             <div class="small text-muted mt-1">
-              <span data-i18n="conditional.functions_help">Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks</span>
+              <span data-i18n="conditional.functions_help">Fonctions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks, inGroup, inNodeGroup, inLinkGroup, groupCount, groupNames</span>
             </div>
           </div>
 

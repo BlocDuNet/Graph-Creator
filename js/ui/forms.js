@@ -37,6 +37,7 @@ export class FormManager {
     // Refresh active rule display.
     eventBus.on('style-rules-updated', () => this.refreshRuleMatches());
     eventBus.on('pie-rules-updated', () => this.refreshRuleMatches());
+    eventBus.on('group-rules-updated', () => this.refreshRuleMatches());
   }
   
   /**

@@ -26,6 +26,7 @@ export class GraphRenderer {
     this.ruleCache = new Map();
     eventBus.on('style-rules-updated', () => this.ruleCache.clear());
     eventBus.on('pie-rules-updated', () => this.ruleCache.clear());
+    eventBus.on('group-rules-updated', () => this.ruleCache.clear());
 console.log("Renderer initialized with graph config:", graphConfig);
   }
   

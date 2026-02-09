@@ -316,6 +316,7 @@
       "include_ai": "AI",
       "include_style": "Style rules",
       "include_pie": "Pie charts",
+      "include_groups": "Groups",
       "export": "Export app config"
     }
   },
@@ -350,7 +351,7 @@
     "placeholder_separator": "Separator",
     "expression_label": "Expression",
     "expression_placeholder": "if(gt(age,18), concat(firstname,\" \",lastname), \"Minor\")",
-    "functions_help": "Functions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks",
+    "functions_help": "Functions: if, concat, add, sub, mul, div, contains, startsWith, endsWith, replace, regex, substring, dateDiff, formatNumber, degree, linkCount, hasNeighbor, neighborCount, sumNeighbors, sumLinks, inGroup, inNodeGroup, inLinkGroup, groupCount, groupNames",
     "ai_help_label": "AI assistance (beta)",
     "ai_suggestion_placeholder": "Quick suggestion...",
     "ai_suggestion_full_name": "Full name (first + last)",

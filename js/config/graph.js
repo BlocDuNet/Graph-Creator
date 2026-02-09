@@ -47,6 +47,12 @@ export const graphConfig = {
   // Pie chart rules for nodes.
   pieRules: {
     nodes: []
+  },
+
+  // Dynamic groups for nodes/links (rules + manual ids).
+  groups: {
+    nodes: [],
+    links: []
   }
 };
 
@@ -63,6 +69,15 @@ function normalizePieRules(data) {
   if (!data) return { nodes: [] };
   if (Array.isArray(data)) return { nodes: data };
   return { nodes: Array.isArray(data.nodes) ? data.nodes : [] };
+}
+
+function normalizeGroups(data) {
+  if (!data) return { nodes: [], links: [] };
+  if (Array.isArray(data)) return { nodes: data, links: [] };
+  return {
+    nodes: Array.isArray(data.nodes) ? data.nodes : [],
+    links: Array.isArray(data.links) ? data.links : []
+  };
 }
 
 /**
@@ -203,6 +218,11 @@ export function updateGraphConfig(configData, renderer) {
   if (configData.pieRules !== undefined) {
     graphConfig.pieRules = normalizePieRules(configData.pieRules);
     eventBus.emit('pie-rules-updated', { rules: graphConfig.pieRules });
+  }
+
+  if (configData.groups !== undefined) {
+    graphConfig.groups = normalizeGroups(configData.groups);
+    eventBus.emit('group-rules-updated', { rules: graphConfig.groups });
   }
   
   // Update force simulation if renderer is provided.
