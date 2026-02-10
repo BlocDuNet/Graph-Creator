@@ -19,7 +19,7 @@
 1. [ ] affichage visuel des noeuds et lien possible avec des filtres (dont filtre conditionnel) (affiché les liens entre les noeuds si lien contient champ "poids" > 10 ou encore afficher noeud si statut= "à faire""
 1. [ ] ajouter champs liste déroulante avec variable prédéfini
 1. [ ] exporter et importer rapidement des règles, condition (style raw, json, copier coller...)
-1. [ ] Interface anglais/français (choix dans config) + support ajout multilingue depuis fichier langue.
+1. [X] Interface anglais/français (choix dans config) + support ajout multilingue depuis fichier langue.
 1. [ ] ajouter mode simple/avancé/personnalisé (poru que l'interface s'adapte aux besoin de l'utilisateur sans affiche de fonctionnalité si pas l'utilité. Demander à IA un plan de ce qu'il pense mettre en mode simple/avancé et valider ensuite.
 1. [ ] Au lancement du logiciel la première fois, créer les préférence de l'utilisateur (langue, mode simple, avancée etc, disposition de l'interace, raccourcis...)
 1. [ ] Ajouter groupe de noeuds, groupe de lien, utilisable dans les formules, pour facilement associé des éléments à des noeuds/liens de manière durable. Ces groupes de noeuds/liens peuvent être définit par des règles logiques (exempl tout les noeuds ayant le champs type_personne = "personne physique" et ou manuellement, en ajoutant des noeuds/liens manuellement.
